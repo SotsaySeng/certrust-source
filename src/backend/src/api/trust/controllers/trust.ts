@@ -60,6 +60,14 @@ async function send(strapi: any, message: { to: string; subject: string; text: s
   }
 }
 
+// Routes use `auth.scope: []`, which lets anonymous requests through to the
+// handler (see api/billing/routes/billing.ts) - so check for a user here.
+function requireUser(ctx: any): boolean {
+  if (ctx.state?.user) return true
+  ctx.unauthorized('You must be logged in.')
+  return false
+}
+
 async function callerOrganization(strapi: any, userId: number) {
   const orgId = await strapi.service('api::profile.multi-tenancy').getUserOrganizationId(userId)
   if (!orgId) return null
@@ -94,6 +102,7 @@ function publicStatus(org: any) {
 export default ({ strapi }: { strapi: any }) => ({
   /** GET /trust/verification - the caller's organisation's status. */
   async myVerification(ctx: any) {
+    if (!requireUser(ctx)) return
     const org = await callerOrganization(strapi, ctx.state.user.id)
     if (!org) return ctx.notFound('You are not a member of an organisation')
     return { data: publicStatus(org) }
@@ -101,6 +110,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
   /** POST /trust/verification { domain } */
   async requestVerification(ctx: any) {
+    if (!requireUser(ctx)) return
     const org = await callerOrganization(strapi, ctx.state.user.id)
     if (!org) return ctx.notFound('You are not a member of an organisation')
     if (org.verificationStatus === 'verified') return ctx.badRequest('Your organisation is already verified')
