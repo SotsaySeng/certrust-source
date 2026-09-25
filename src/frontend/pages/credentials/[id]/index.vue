@@ -538,44 +538,6 @@ async function submitRenewal() {
 
     <!-- Credential Details -->
     <div v-else-if="credential" class="max-w-4xl mx-auto">
-      <!-- LinkedIn / Facebook / WhatsApp at the Top (not for visitors of a private credential) -->
-      <div v-if="!isPrivate || canManage" class="flex flex-wrap gap-3 mb-6">
-        <a
-          :href="getLinkedInAddToProfileUrl()"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0077b5] text-white rounded hover:bg-[#005983] transition-colors text-sm font-medium"
-          aria-label="Add this certificate to your LinkedIn profile"
-        >
-          <img src="https://download.linkedin.com/desktop/add2profile/buttons/en_US.png" alt="LinkedIn Add to Profile" class="h-5 w-auto">
-          Add to LinkedIn
-        </a>
-        <!-- A private credential has no public page to preview, so only
-             LinkedIn (which records it on the holder's own profile) stays. -->
-        <template v-if="!isPrivate">
-          <a
-            :href="facebookShareUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0866ff] text-white rounded hover:bg-[#0654d4] transition-colors text-sm font-medium"
-            data-testid="share-facebook"
-          >
-            <span class="i-simple-icons-facebook w-4 h-4" aria-hidden="true" />
-            {{ t('credential.shareFacebook') }}
-          </a>
-          <a
-            :href="getWhatsAppShareUrl()"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#077a55] text-white rounded hover:bg-[#05603f] transition-colors text-sm font-medium"
-            data-testid="share-whatsapp"
-          >
-            <span class="i-simple-icons-whatsapp w-4 h-4" aria-hidden="true" />
-            {{ t('credential.shareWhatsApp') }}
-          </a>
-        </template>
-      </div>
-
       <!-- Expiration / Renewal Banner -->
       <div
         v-if="isExpired || isExpiringSoon"
@@ -654,10 +616,10 @@ async function submitRenewal() {
           'border-red-500': verificationResult && !verificationResult.verified,
         }"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex items-center lg:shrink-0">
             <div
-              class="w-12 h-12 rounded-full flex items-center justify-center mr-4"
+              class="w-12 h-12 shrink-0 rounded-full flex items-center justify-center mr-4"
               :class="{
                 'bg-green-100': verificationResult?.verified,
                 'bg-red-100': verificationResult && !verificationResult.verified,
@@ -673,21 +635,66 @@ async function submitRenewal() {
               />
             </div>
             <div>
-              <h3 class="text-xl font-semibold mb-1">
+              <h3 class="text-xl font-semibold mb-1 flex items-center gap-1">
                 {{ verificationResult?.verified ? t('credential.verificationSuccess') : t('credential.verificationFailed') }}
+                <button
+                  class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  title="Refresh verification"
+                  aria-label="Refresh verification"
+                  @click="refreshCredentialDetails"
+                >
+                  <div class="i-lucide-refresh-cw w-4 h-4" />
+                </button>
               </h3>
               <p class="text-gray-600">
                 {{ verificationResult?.error || (verificationResult?.verified ? t('credential.allChecksPassed') : t('credential.someChecksFailed')) }}
               </p>
             </div>
           </div>
-          <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Refresh verification"
-            @click="refreshCredentialDetails"
-          >
-            <div class="i-lucide-refresh-cw w-5 h-5" />
-          </button>
+          <div class="flex flex-wrap items-center gap-3 lg:justify-end">
+            <!-- LinkedIn / Facebook / WhatsApp (not for visitors of a private credential) -->
+            <template v-if="!isPrivate || canManage">
+              <a
+                :href="getLinkedInAddToProfileUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="share-button bg-[#0a66c2] hover:bg-[#004182]"
+                title="Add this certificate to your LinkedIn profile"
+                aria-label="Add this certificate to your LinkedIn profile"
+              >
+                <span class="i-simple-icons-linkedin w-5 h-5" aria-hidden="true" />
+                LinkedIn
+              </a>
+              <!-- A private credential has no public page to preview, so only
+                   LinkedIn (which records it on the holder's own profile) stays. -->
+              <template v-if="!isPrivate">
+                <a
+                  :href="facebookShareUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="share-button bg-[#0866ff] hover:bg-[#0654d4]"
+                  data-testid="share-facebook"
+                  :title="t('credential.shareFacebook')"
+                  :aria-label="t('credential.shareFacebook')"
+                >
+                  <span class="i-simple-icons-facebook w-5 h-5" aria-hidden="true" />
+                  Facebook
+                </a>
+                <a
+                  :href="getWhatsAppShareUrl()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="share-button bg-[#128c4a] hover:bg-[#0c6b37]"
+                  data-testid="share-whatsapp"
+                  :title="t('credential.shareWhatsApp')"
+                  :aria-label="t('credential.shareWhatsApp')"
+                >
+                  <span class="i-simple-icons-whatsapp w-5 h-5" aria-hidden="true" />
+                  WhatsApp
+                </a>
+              </template>
+            </template>
+          </div>
         </div>
 
         <!-- Verification Checks -->
@@ -781,13 +788,6 @@ async function submitRenewal() {
           </div>
         </div>
       </div>
-
-      <!-- What a verification does and does not confirm, issuer status, report link -->
-      <VerificationNotice
-        v-if="verificationResult"
-        :issuer="verificationResult.rawCredential?.issuer"
-        :credential-id="credentialId"
-      />
 
       <!-- Private credential: notice for visitors, switch for the holder/issuer -->
       <CredentialPrivacy
@@ -1009,6 +1009,46 @@ async function submitRenewal() {
           </div>
         </div>
       </div>
+
+      <!-- What a verification does and does not confirm, issuer status, report link -->
+      <VerificationNotice
+        v-if="verificationResult"
+        :issuer="verificationResult.rawCredential?.issuer"
+        :credential-id="credentialId"
+      />
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Share buttons: the main thing a recipient does on this page, so they are
+   large, solid and lift on hover. */
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+.share-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.2);
+}
+/* Phones and tablets: buttons sit on their own row(s), so fill it evenly. */
+@media (max-width: 1023px) {
+  .share-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+.share-button:focus-visible {
+  outline: 3px solid #1a202c;
+  outline-offset: 2px;
+}
+</style>
