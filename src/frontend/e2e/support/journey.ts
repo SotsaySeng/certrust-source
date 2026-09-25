@@ -119,8 +119,25 @@ export async function checkBox(page: Page, selector: string) {
  * Follow a header link instead of page.goto(). Client-side navigation is the
  * path a real user takes; deep loads are covered by their own regression test.
  */
+/** Opens the issuer "Manage" menu in the header (Dashboard, Issue, Templates, Events...). */
+export async function openManageMenu(page: Page) {
+  const button = page.getByTestId('manage-menu-button')
+  await expect(button).toBeVisible({ timeout: 20000 })
+  if (await button.getAttribute('aria-expanded') !== 'true') {
+    await button.click()
+  }
+}
+
 export async function gotoViaNav(page: Page, linkName: string, expectedUrl: RegExp) {
-  const link = page.locator('nav').first().getByRole('link', { name: linkName }).first()
+  const nav = page.locator('nav').first()
+  const link = nav.getByRole('link', { name: linkName }).first()
+  // Issuer pages live in the Manage menu; public pages stay in the bar.
+  // Wait for the header to render one or the other before deciding.
+  const manage = page.getByTestId('manage-menu-button')
+  await expect(link.or(manage)).toBeVisible({ timeout: 20000 })
+  if (!(await link.isVisible())) {
+    await openManageMenu(page)
+  }
   await expect(link).toBeVisible({ timeout: 20000 })
   await link.click()
   await expect(page).toHaveURL(expectedUrl, { timeout: 20000 })

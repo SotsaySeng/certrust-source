@@ -22,4 +22,13 @@ export const HEADER_NAV_LINKS = [
   { name: 'Solution', href: '/solution', i18nKey: 'solution' },
   { name: 'Verify', href: '/verify', i18nKey: 'verify' },
 ]
+// Issuer pages, grouped under the header's "Manage" menu (Header.vue).
+// i18nKey is a full locale key.
+export const MANAGE_MENU_LINKS = [
+  { href: '/dashboard', i18nKey: 'nav.dashboard', icon: 'i-heroicons-home' },
+  { href: '/issue', i18nKey: 'nav.issue', icon: 'i-heroicons-paper-airplane' },
+  { href: '/achievements/create', i18nKey: 'achievements.createTitle', icon: 'i-heroicons-plus-circle' },
+  { href: '/design-templates', i18nKey: 'nav.designTemplates', icon: 'i-heroicons-paint-brush' },
+  { href: '/events', i18nKey: 'nav.events', icon: 'i-heroicons-calendar-days' },
+]
 export const HELLO_SH_MAIL = 'mailto:hello@schroedinger-hat.org'

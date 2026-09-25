@@ -15,7 +15,8 @@
     "events": "Événements",
     "solution": "Solution",
     "billing": "Facturation",
-    "revenue": "Revenus"
+    "revenue": "Revenus",
+    "manage": "Gérer"
   },
   "common": {
     "loading": "Chargement...",
@@ -192,6 +193,23 @@
       "chartTitle": "Émissions dans le temps",
       "chartEmpty": "Pas encore de données d'émission",
       "chartNoIssuances": "Aucun justificatif émis au cours des 12 derniers mois"
+    },
+    "issuedTable": {
+      "search": "Rechercher par nom, e-mail ou réalisation",
+      "all": "Tous",
+      "recipient": "Destinataire",
+      "achievement": "Réalisation",
+      "issued": "Émis le",
+      "status": "Statut",
+      "actions": "Actions",
+      "view": "Voir le justificatif",
+      "download": "Télécharger le certificat",
+      "copied": "Lien copié",
+      "copyFailed": "Impossible de copier le lien",
+      "noMatches": "Aucun justificatif ne correspond à votre recherche.",
+      "showing": "{from}–{to} sur {total}",
+      "previous": "Précédent",
+      "next": "Suivant"
     }
   },
   "errors": {

@@ -15,7 +15,8 @@
     "events": "Events",
     "solution": "Solution",
     "billing": "Billing",
-    "revenue": "Revenue"
+    "revenue": "Revenue",
+    "manage": "Manage"
   },
   "common": {
     "loading": "Loading...",
@@ -192,6 +193,23 @@
       "chartTitle": "Issuance over time",
       "chartEmpty": "No issuance data yet",
       "chartNoIssuances": "No credentials issued in the last 12 months"
+    },
+    "issuedTable": {
+      "search": "Search by name, email or achievement",
+      "all": "All",
+      "recipient": "Recipient",
+      "achievement": "Achievement",
+      "issued": "Issued",
+      "status": "Status",
+      "actions": "Actions",
+      "view": "View credential",
+      "download": "Download certificate",
+      "copied": "Credential link copied",
+      "copyFailed": "Could not copy the link",
+      "noMatches": "No credentials match your search.",
+      "showing": "Showing {from}–{to} of {total}",
+      "previous": "Previous",
+      "next": "Next"
     }
   },
   "errors": {

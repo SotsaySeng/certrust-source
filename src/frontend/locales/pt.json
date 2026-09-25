@@ -15,7 +15,8 @@
     "events": "Eventos",
     "solution": "Solução",
     "billing": "Faturação",
-    "revenue": "Receita"
+    "revenue": "Receita",
+    "manage": "Gerenciar"
   },
   "common": {
     "loading": "Carregando...",
@@ -192,6 +193,23 @@
       "chartTitle": "Emissões ao longo do tempo",
       "chartEmpty": "Ainda não há dados de emissão",
       "chartNoIssuances": "Nenhuma credencial emitida nos últimos 12 meses"
+    },
+    "issuedTable": {
+      "search": "Pesquisar por nome, e-mail ou conquista",
+      "all": "Todas",
+      "recipient": "Destinatário",
+      "achievement": "Conquista",
+      "issued": "Emitida",
+      "status": "Estado",
+      "actions": "Ações",
+      "view": "Ver credencial",
+      "download": "Baixar certificado",
+      "copied": "Link copiado",
+      "copyFailed": "Não foi possível copiar o link",
+      "noMatches": "Nenhuma credencial corresponde à pesquisa.",
+      "showing": "{from}–{to} de {total}",
+      "previous": "Anterior",
+      "next": "Próxima"
     }
   },
   "errors": {

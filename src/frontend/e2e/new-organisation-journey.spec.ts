@@ -27,6 +27,7 @@ import {
   fillField,
   gotoViaNav,
   MAIL_SINK,
+  openManageMenu,
   selectOptionByLabel,
   signIn as signInAs,
   sql,
@@ -183,6 +184,7 @@ test.describe('new organisation: using the system', () => {
   test('issuer navigation is available to the organisation admin', async ({ page }) => {
     await signIn(page)
     const nav = page.locator('nav').first()
+    await openManageMenu(page)
     await expect(nav.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Design Templates' }).first()).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Events' }).first()).toBeVisible()

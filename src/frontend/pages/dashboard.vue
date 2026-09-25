@@ -319,14 +319,13 @@ onMounted(async () => {
           <h2 class="text-2xl font-semibold">
             {{ t('dashboard.issued') }}
           </h2>
-          <div class="flex items-center gap-4">
-            <NuxtLink
-              to="/issue"
-              class="px-4 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors"
-            >
-              Issue New
-            </NuxtLink>
-          </div>
+          <NuxtLink
+            to="/issue"
+            class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors"
+          >
+            <span class="i-heroicons-plus w-4 h-4" aria-hidden="true" />
+            Issue New
+          </NuxtLink>
         </div>
         <div v-if="issuedCertificates.length === 0" class="text-center py-12 bg-gray-50 rounded-lg">
           <div class="i-heroicons-document-plus w-12 h-12 mx-auto text-gray-400 mb-3" />
@@ -344,26 +343,7 @@ onMounted(async () => {
             Issue Your First Certificate
           </NuxtLink>
         </div>
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CertificateCard
-            v-for="cert in issuedCertificates"
-            :key="cert.id"
-            :certificate="cert"
-          >
-            <template #actions>
-              <a
-                :href="getLinkedInAddToProfileUrl(cert)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0077b5] text-white rounded hover:bg-[#005983] transition-colors text-sm font-medium mt-2"
-                aria-label="Add this certificate to your LinkedIn profile"
-              >
-                <img src="https://download.linkedin.com/desktop/add2profile/buttons/en_US.png" alt="LinkedIn Add to Profile" class="h-5 w-auto">
-                Add to LinkedIn
-              </a>
-            </template>
-          </CertificateCard>
-        </div>
+        <IssuedCredentialsTable v-else :credentials="issuedCertificates" />
       </div>
     </template>
   </div>

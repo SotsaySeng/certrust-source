@@ -15,7 +15,8 @@
     "events": "Eventi",
     "solution": "Soluzione",
     "billing": "Fatturazione",
-    "revenue": "Ricavi"
+    "revenue": "Ricavi",
+    "manage": "Gestisci"
   },
   "common": {
     "loading": "Caricamento...",
@@ -192,6 +193,23 @@
       "chartTitle": "Emissioni nel tempo",
       "chartEmpty": "Ancora nessun dato di emissione",
       "chartNoIssuances": "Nessuna credenziale emessa negli ultimi 12 mesi"
+    },
+    "issuedTable": {
+      "search": "Cerca per nome, email o traguardo",
+      "all": "Tutte",
+      "recipient": "Destinatario",
+      "achievement": "Traguardo",
+      "issued": "Emessa",
+      "status": "Stato",
+      "actions": "Azioni",
+      "view": "Visualizza credenziale",
+      "download": "Scarica certificato",
+      "copied": "Link copiato",
+      "copyFailed": "Impossibile copiare il link",
+      "noMatches": "Nessuna credenziale corrisponde alla ricerca.",
+      "showing": "{from}–{to} di {total}",
+      "previous": "Precedente",
+      "next": "Successiva"
     }
   },
   "errors": {

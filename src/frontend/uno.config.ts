@@ -42,6 +42,13 @@ export default defineConfig({
     'i-heroicons-clipboard-document-check',
     'i-heroicons-clipboard-document-list',
     'i-heroicons-envelope-open',
+    // Header "Manage" menu icons (MANAGE_MENU_LINKS in constants/index.ts),
+    // same indirect-reference reason as above.
+    'i-heroicons-home',
+    'i-heroicons-paper-airplane',
+    'i-heroicons-plus-circle',
+    'i-heroicons-paint-brush',
+    'i-heroicons-calendar-days',
   ],
   theme: {
     colors: {

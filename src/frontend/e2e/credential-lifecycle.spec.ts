@@ -309,7 +309,7 @@ test.describe('credential lifecycle', () => {
     await context.close()
   })
 
-  test('the issuer dashboard reflects the issuance and offers sharing', async ({ page }) => {
+  test('the issuer dashboard lists every issued credential and finds one by search', async ({ page }) => {
     await signIn(page, ORG.email, ORG.password)
 
     // Usage moved off zero and counts every certificate issued. The limit
@@ -317,23 +317,29 @@ test.describe('credential lifecycle', () => {
     // is pinned.
     await expect(page.getByText(new RegExp(`\\b${RECIPIENTS.length} / \\d+\\b`))).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('Issued Badges')).toBeVisible()
-    await expect(page.getByText(ACHIEVEMENT_NAME).first()).toBeVisible()
 
-    // Each issued certificate card exposes the sharing actions behind its
-    // overflow menu. Anchor on the heading and walk up to the card root,
-    // rather than guessing at a class-based container.
-    const card = page
-      .getByRole('heading', { name: ACHIEVEMENT_NAME })
-      .first()
-      .locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]')
-    await card.getByRole('button').first().click()
+    // One compact row per credential, newest first, with the recipient's
+    // name and email.
+    const rows = page.getByTestId('issued-row')
+    await expect(rows).toHaveCount(RECIPIENTS.length)
+    for (const recipient of RECIPIENTS) {
+      await expect(rows.filter({ hasText: recipient.email })).toHaveCount(1)
+    }
 
-    const linkedIn = page.getByRole('link', { name: /Add this certificate to your LinkedIn profile/i }).first()
-    await expect(linkedIn).toBeVisible({ timeout: 15000 })
-    expect(await linkedIn.getAttribute('href')).toContain('linkedin.com/profile/add')
+    // Search narrows the list by recipient name, email or achievement.
+    const search = page.getByTestId('issued-search')
+    await search.fill(RECIPIENTS[1].name)
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText(RECIPIENTS[1].email)
+    await search.fill(ACHIEVEMENT_NAME)
+    await expect(rows).toHaveCount(RECIPIENTS.length)
+    await search.fill('no-such-recipient')
+    await expect(rows).toHaveCount(0)
+    await expect(page.getByText('No credentials match your search.')).toBeVisible()
+    await search.fill('')
 
-    const emailShare = page.getByRole('link', { name: 'Share via Email' }).first()
-    await expect(emailShare).toBeVisible()
-    expect(await emailShare.getAttribute('href')).toMatch(/^mailto:/)
+    // Each row links to the public credential page.
+    const view = rows.first().getByRole('link', { name: 'View credential' })
+    expect(await view.getAttribute('href')).toMatch(/^\/credentials\/urn%3Auuid%3A/)
   })
 })

@@ -43,6 +43,23 @@ const visibleNavLinks = computed(() => HEADER_NAV_LINKS.filter((link) => {
   return true
 }))
 
+// Issuers get their working pages (dashboard, issue, templates, events...)
+// in one "Manage" menu instead of four more links in the bar. Everyone
+// else keeps the plain links (a recipient only has Dashboard).
+const route = useRoute()
+const manageMenuRef = useTemplateRef('manage-menu')
+const showManageMenu = ref(false)
+onClickOutside(manageMenuRef, () => showManageMenu.value = false)
+watch(() => route.fullPath, () => {
+  showManageMenu.value = false
+  isMobileMenuOpen.value = false
+})
+
+const barNavLinks = computed(() => isIssuer.value
+  ? visibleNavLinks.value.filter(link => !link.requiresAuth)
+  : visibleNavLinks.value)
+const isManageActive = computed(() => MANAGE_MENU_LINKS.some(link => route.path === link.href || route.path.startsWith(`${link.href}/`)))
+
 function handleLogout() {
   authStore.logout()
   router.push('/')
@@ -69,13 +86,47 @@ function handleLogout() {
         <!-- Desktop Navigation -->
         <div class="hidden lg:flex items-center gap-6">
           <NuxtLink
-            v-for="link in visibleNavLinks"
+            v-for="link in barNavLinks"
             :key="link.name"
             :to="link.href"
             class="text-text-secondary hover:text-text-primary transition-colors font-medium"
           >
             {{ t(`nav.${link.i18nKey}`) || link.name }}
           </NuxtLink>
+
+          <!-- Issuer "Manage" menu -->
+          <div v-if="isAuthenticated && isIssuer" ref="manage-menu" class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-colors"
+              :class="isManageActive || showManageMenu ? 'bg-[#28A745]/10 text-text-primary' : 'text-text-secondary hover:text-text-primary'"
+              :aria-expanded="showManageMenu"
+              aria-controls="manage-menu-panel"
+              data-testid="manage-menu-button"
+              @click="showManageMenu = !showManageMenu"
+            >
+              <span class="i-heroicons-squares-2x2 w-5 h-5" aria-hidden="true" />
+              {{ t('nav.manage') }}
+              <span class="i-heroicons-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': showManageMenu }" aria-hidden="true" />
+            </button>
+            <div
+              v-if="showManageMenu"
+              id="manage-menu-panel"
+              class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg ring-1 ring-black/5 py-2 z-50"
+            >
+              <NuxtLink
+                v-for="link in MANAGE_MENU_LINKS"
+                :key="link.href"
+                :to="link.href"
+                class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50"
+                :class="route.path === link.href ? 'text-[#1e7e34] font-medium' : 'text-text-secondary hover:text-text-primary'"
+                @click="showManageMenu = false"
+              >
+                <span :class="link.icon" class="w-5 h-5 shrink-0" aria-hidden="true" />
+                {{ t(link.i18nKey) }}
+              </NuxtLink>
+            </div>
+          </div>
 
           <!-- Auth Buttons -->
           <div class="flex items-center gap-4 ml-6">
@@ -172,13 +223,27 @@ function handleLogout() {
     <div v-if="isMobileMenuOpen" ref="mobile-menu" class="lg:hidden bg-white border-t">
       <div class="px-4 py-2 space-y-1">
         <NuxtLink
-          v-for="link in visibleNavLinks"
+          v-for="link in barNavLinks"
           :key="link.name"
           :to="link.href"
           class="block py-2 text-text-secondary hover:text-text-primary transition-colors"
         >
-          {{ link.name }}
+          {{ t(`nav.${link.i18nKey}`) || link.name }}
         </NuxtLink>
+        <div v-if="isAuthenticated && isIssuer" class="pt-3 mt-2 border-t">
+          <p class="pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            {{ t('nav.manage') }}
+          </p>
+          <NuxtLink
+            v-for="link in MANAGE_MENU_LINKS"
+            :key="link.href"
+            :to="link.href"
+            class="flex items-center gap-3 py-2 text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <span :class="link.icon" class="w-5 h-5 shrink-0" aria-hidden="true" />
+            {{ t(link.i18nKey) }}
+          </NuxtLink>
+        </div>
         <div class="pt-4 space-y-2">
           <template v-if="isAuthenticated && userName">
             <NuxtLink
