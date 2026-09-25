@@ -1,0 +1,65 @@
+{
+  "kind": "singleType",
+  "collectionName": "homepages",
+  "info": {
+    "singularName": "homepage",
+    "pluralName": "homepages",
+    "displayName": "Homepage",
+    "description": "Content for the public marketing homepage (/): hero, feature grid, how-it-works walkthrough, audience segments, and the closing CTA. Publicly readable (find only, auth: false) - see routes/homepage.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Pricing content lives on the separate solution-page singleType (its own /solution route); the header/footer logo lives on global-settings (shown on every page, not just this one)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "heroTitleBefore": {
+      "type": "string",
+      "description": "Text before the highlighted phrase in the hero <h1>."
+    },
+    "heroHighlight": {
+      "type": "string",
+      "required": true,
+      "description": "The colored/highlighted phrase, rendered as its own <span>."
+    },
+    "heroTitleAfter": {
+      "type": "string",
+      "description": "Text after the highlighted phrase. These 3 fields are concatenated in the template instead of splitting a single title string on the highlight substring, which would silently drop text if an edit ever broke the substring match."
+    },
+    "heroSubtitle": { "type": "text" },
+    "heroButtonLabel": { "type": "string" },
+    "featuresHeader": { "type": "string" },
+    "featuresSubheader": { "type": "text" },
+    "features": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.feature-item"
+    },
+    "audienceHeader": { "type": "string" },
+    "audienceSubheader": { "type": "text" },
+    "audienceSegments": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.audience-segment"
+    },
+    "howItWorksHeader": { "type": "string" },
+    "howItWorksSubheader": { "type": "text" },
+    "certificateSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "marketing.how-it-works-section"
+    },
+    "recipientSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "marketing.how-it-works-section"
+    },
+    "exportSection": {
+      "type": "component",
+      "repeatable": false,
+      "component": "marketing.how-it-works-section"
+    },
+    "closingHeader": { "type": "string" },
+    "closingSubheader": { "type": "text" },
+    "closingButtonLabel": { "type": "string" }
+  }
+}

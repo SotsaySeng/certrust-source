@@ -1,0 +1,47 @@
+{
+  "kind": "singleType",
+  "collectionName": "billing_settings",
+  "info": {
+    "singularName": "billing-settings",
+    "pluralName": "billing-settings-list",
+    "displayName": "Billing Settings",
+    "description": "Admin-editable trial and reminder configuration for Stripe billing. Same pattern as tier-settings: no REST route, read server-side via strapi.documents('api::billing-settings.billing-settings').findFirst(). Prices themselves live in the Stripe dashboard (STRIPE_PRICE_* env vars)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "trialDays": {
+      "type": "integer",
+      "default": 14,
+      "min": 0,
+      "description": "Length of the free trial new organizations get. 0 disables trials."
+    },
+    "trialTier": {
+      "type": "enumeration",
+      "enum": ["pro", "enterprise"],
+      "default": "pro",
+      "description": "Which tier's limits a trialing organization gets."
+    },
+    "trialRequiresCard": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, new organizations start on Free and the trial only begins when they enter a card at Stripe Checkout (charged automatically when it ends)."
+    },
+    "trialReminderDays": {
+      "type": "json",
+      "description": "Days before trial end to email a reminder, e.g. [7, 3, 1]."
+    },
+    "renewalReminderDays": {
+      "type": "json",
+      "description": "Days before a paid subscription renews to email a reminder, e.g. [30, 7, 1]."
+    },
+    "pastDueGraceDays": {
+      "type": "integer",
+      "default": 7,
+      "min": 0,
+      "description": "Days a past-due organization keeps its paid tier (with daily reminders) before dropping to Free."
+    }
+  }
+}

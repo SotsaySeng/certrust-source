@@ -1,0 +1,102 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: certrust_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: certrust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - certrust-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: certrust_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - certrust-network
+
+  backend:
+    build:
+      context: ./src/backend
+    container_name: certrust_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: certrust
+      DATABASE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-your-admin-jwt-secret}
+      APP_KEYS: ${APP_KEYS:-your-app-keys}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:-your-api-token-salt}
+      # Used to encrypt per-issuer private signing keys at rest (see
+      # src/backend/src/utils/key-encryption.ts). Dev-only default - generate
+      # your own for production!
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-oM/e09YZzP6Pz9gNkS5Y2w==}
+      # Legacy: was the single shared signing key before per-issuer keys
+      # (issuer-key content type) were introduced. No longer read by the
+      # signing/verification code paths; kept only so old container envs
+      # referencing it don't error.
+      ED25519_PRIVATE_KEY_PKCS8: ${ED25519_PRIVATE_KEY_PKCS8:-LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1DNENBUUF3QlFZREsyVndCQ0lFSUFISG5RZ0tlSitZMFFMMlhTbTRQZUxZdUxPWVRaY3NXSDVlR3hLQ3JoUi8KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=}
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:1337}
+    ports:
+      - "1337:1337"
+    volumes:
+      # Without this, uploaded media (achievement/profile images) lives only
+      # in the container's writable layer and is silently lost on every
+      # `docker-compose up --build`/container recreation. Also what
+      # scripts/backup.js and scripts/restore.js read/write - see
+      # docs/self-hosting.md.
+      - uploads-data:/app/public/uploads
+    networks:
+      - certrust-network
+
+  frontend:
+    build:
+      context: ./src/frontend
+    container_name: certrust_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NUXT_PUBLIC_API_URL: http://localhost:1337
+    ports:
+      - "3000:3000"
+    networks:
+      - certrust-network
+
+networks:
+  certrust-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  uploads-data: 

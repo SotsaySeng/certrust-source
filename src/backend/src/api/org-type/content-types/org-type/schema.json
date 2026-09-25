@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "org_types",
+  "info": {
+    "singularName": "org-type",
+    "pluralName": "org-types",
+    "displayName": "Organization Type",
+    "description": "Admin-managed flat lookup list of organization types (e.g. Private, Public, NGO) used to populate the registration form's organization-type dropdown pre-login. Not editorial content."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "organizations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::organization.organization",
+      "mappedBy": "type"
+    }
+  }
+}

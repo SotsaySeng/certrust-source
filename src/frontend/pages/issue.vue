@@ -1,0 +1,795 @@
+<script setup lang="ts">
+import type { Recipient } from '~/composables/useApiClient'
+import { getTemplateTypeChipClass, getTemplateTypeIcon } from '~/constants/templateTypes'
+
+const { t } = useI18n()
+const pageDescription = ref('Issue badges utilizing Certrust software')
+
+useSeoMeta({
+  description: pageDescription.value,
+  ogDescription: pageDescription.value,
+  ogUrl: `${WEBSITE_URL}/issue`
+})
+
+useHead({
+  title: t('issue.title'),
+  link: [
+    { rel: 'canonical', href: `${WEBSITE_URL}/issue` }
+  ]
+})
+
+definePageMeta({
+  middleware: ['auth']
+})
+
+interface Template {
+  id: string
+  title: string
+  description: string
+  image?: {
+    data?: {
+      attributes?: {
+        url?: string
+      }
+    }
+  }
+  type: 'certificate' | 'badge' | 'transcript' | 'training_record' | 'assessment' | 'letter'
+  attributes?: {
+    name?: string
+    description?: string
+    image?: {
+      data?: {
+        attributes?: {
+          url?: string
+        }
+      }
+    }
+    creator?: {
+      data?: {
+        attributes?: {
+          name?: string
+        }
+      }
+    }
+  }
+}
+
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const apiClient = useApiClient()
+const templates = ref<Template[]>([])
+const selectedTemplate = ref<Template | null>(null)
+const recipients = ref<Recipient[]>([{ name: '', email: '', expirationDate: '' }])
+// Credentials are dated when they are issued (the backend stamps "now"), so
+// this is display-only. Local date, not the UTC one toISOString() gives.
+const issueDate = ref(new Date().toLocaleDateString('en-CA'))
+// An expiry must be a future date: earlier than tomorrow would issue a
+// credential that is already expired.
+const minExpiryDate = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toLocaleDateString('en-CA')
+})
+const isLoading = ref(false)
+const isSuccess = ref(false)
+const error = ref<string | null>(null)
+const submissionError = ref<string | null>(null)
+const isLoadingTemplates = ref(false)
+const csvUploaded = ref(false)
+const batchResults = ref<any[]>([])
+// A credential can be issued fine while its notification email fails (the
+// backend catches send errors and reports them per recipient), so "issued"
+// and "emailed" are shown separately.
+const emailFailures = computed(() =>
+  batchResults.value.filter(r => r.success && r.data?.notification && !r.data.notification.sent)
+)
+
+// Load available badges
+async function loadTemplates() {
+  isLoadingTemplates.value = true
+  error.value = null
+
+  try {
+    // Wait for auth store to be ready
+    if (authStore.isLoading) {
+      await new Promise<void>((resolve) => {
+        const unwatch = watch(
+          () => authStore.isLoading,
+          (loading) => {
+            if (!loading) {
+              unwatch()
+              resolve()
+            }
+          },
+          { immediate: true }
+        )
+      })
+    }
+
+    // Check authentication using Pinia store
+    if (!authStore.isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    // Check if user is an issuer
+    if (!authStore.isIssuer) {
+      router.push('/dashboard')
+      return
+    }
+
+    const response = await apiClient.getAvailableBadges(authStore.profile?.id?.toString())
+
+    if (response?.data) {
+      templates.value = response.data.map((badge: any) => {
+        return {
+          id: String(badge.id),
+          title: badge.name || '',
+          description: badge.description || '',
+          image: {
+            data: {
+              attributes: {
+                url: badge.image?.url,
+              },
+            },
+          },
+          type: badge.templateType || 'badge',
+          attributes: {
+            name: badge.name || '',
+            description: badge.description || '',
+            image: {
+              data: {
+                attributes: {
+                  url: badge.image?.url,
+                },
+              },
+            },
+            creator: badge.creator,
+          },
+        }
+      })
+    }
+    else {
+      console.warn('No data in response:', response)
+      error.value = 'No templates available'
+    }
+
+    // Coming back from /achievements/create: preselect the new achievement.
+    const justCreated = route.query.achievement
+    if (justCreated) {
+      const match = templates.value.find(tpl => tpl.id === String(justCreated))
+      if (match) {
+        selectTemplate(match)
+      }
+    }
+  }
+  catch (err) {
+    console.error('Error loading templates:', err)
+    if (err instanceof Error) {
+      if (err.message === 'Authentication required' || err.message === 'Authentication failed') {
+        router.push('/login')
+        return
+      }
+      error.value = err.message
+    }
+    else {
+      error.value = 'Failed to load available templates'
+    }
+  }
+  finally {
+    isLoadingTemplates.value = false
+  }
+}
+
+onMounted(async () => {
+  await loadTemplates()
+})
+
+function selectTemplate(template: Template) {
+  selectedTemplate.value = template
+}
+
+// Per-type icon and chip tint so the template grid visually distinguishes
+// badges from certificates, transcripts, etc. instead of rendering every
+// card identically. Icon/chip-color map lives in constants/templateTypes.ts
+// so pages/design-templates/* can reuse it without duplicating it.
+function getTemplateTypeLabel(type: Template['type']): string {
+  return t(`issue.templateTypes.${type}`)
+}
+
+// Helper function to get image URL
+function getImageUrl(template: Template): string {
+  const config = useRuntimeConfig()
+  const apiUrl = config.public.apiUrl
+
+  let url: string | undefined
+
+  // Check all possible image URL paths
+  if (template.attributes?.image?.data?.attributes?.url) {
+    url = template.attributes.image.data.attributes.url
+  }
+  else if (template.image?.data?.attributes?.url) {
+    url = template.image.data.attributes.url
+  }
+  else if (typeof template.image === 'string') {
+    url = template.image
+  }
+
+  if (!url) {
+    console.warn('No image URL found in template. Template data:', template)
+    return '/placeholder-badge.png'
+  }
+
+  // Handle different URL formats
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  // Ensure we have an API URL
+  if (!apiUrl) {
+    console.warn('No API URL configured, using default')
+  }
+
+  // Handle relative URLs
+  const finalUrl = url.startsWith('/') ? `${apiUrl}${url}` : `${apiUrl}/${url}`
+  return finalUrl
+}
+
+function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) {
+    return
+  }
+
+  const file = input.files[0]
+  const reader = new FileReader()
+  reader.onload = () => {
+    try {
+      const content = reader.result as string
+      const lines = content.split(/\r?\n/)
+      if (lines.length < 2) {
+        throw new Error('CSV file is empty or invalid.')
+      }
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase())
+      const nameIdx = header.indexOf('name')
+      const emailIdx = header.indexOf('email')
+      const orgIdx = header.indexOf('organization')
+      const expIdx = header.indexOf('expirationdate')
+      // Optional "minor" column (yes/no): recipients under 16 get a private
+      // credential by default.
+      const minorIdx = header.findIndex(h => h === 'minor' || h === 'issuedtominor')
+
+      const parsedRecipients: Recipient[] = []
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) {
+          continue
+        }
+        const row = lines[i].split(',')
+        const name = row[nameIdx]?.trim()
+        const email = row[emailIdx]?.trim()
+        const organization = orgIdx !== -1 ? row[orgIdx]?.trim() : ''
+        const expirationDate = expIdx !== -1 ? row[expIdx]?.trim() : ''
+        const issuedToMinor = minorIdx !== -1 && ['yes', 'y', 'true', '1'].includes((row[minorIdx] || '').trim().toLowerCase())
+        if (name && email) {
+          parsedRecipients.push({
+            name,
+            email,
+            organization,
+            expirationDate,
+            issuedToMinor,
+          })
+        }
+      }
+      if (parsedRecipients.length === 0) {
+        throw new Error('CSV file is empty or invalid. Please check the file and try again.')
+      }
+      recipients.value = parsedRecipients
+      csvUploaded.value = true
+      error.value = null
+    }
+    catch (err) {
+      console.error('Error parsing CSV:', err)
+      error.value = err instanceof Error ? err.message : 'Failed to parse CSV file'
+      recipients.value = [{ name: '', email: '', expirationDate: '' }]
+      csvUploaded.value = false
+    }
+  }
+  reader.onerror = () => {
+    console.error('Error reading file:', reader.error)
+    error.value = 'Failed to read CSV file'
+    csvUploaded.value = false
+  }
+  reader.readAsText(file)
+}
+
+function clearCsvRecipients() {
+  recipients.value = [{ name: '', email: '', expirationDate: '' }]
+  csvUploaded.value = false
+}
+
+async function handleIssue() {
+  if (!selectedTemplate.value || !recipients.value.length) {
+    console.warn('Cannot issue: missing template or recipients')
+    return
+  }
+
+  const badExpiry = recipients.value.find(r => r.expirationDate && r.expirationDate < minExpiryDate.value)
+  if (badExpiry) {
+    submissionError.value = `The expiry date for ${badExpiry.email || badExpiry.name || 'a recipient'} must be after today. Leave it empty if the credential should never expire.`
+    return
+  }
+
+  isLoading.value = true
+  submissionError.value = null
+  isSuccess.value = false
+  batchResults.value = []
+
+  try {
+    const response = await apiClient.batchIssueBadges(
+      selectedTemplate.value.id,
+      recipients.value
+    )
+    if (response && Array.isArray(response.results)) {
+      batchResults.value = response.results
+      isSuccess.value = response.results.every((r: { success: boolean }) => r.success)
+    }
+    else {
+      isSuccess.value = true
+    }
+    clearForm()
+  }
+  catch (err) {
+    console.error('Error issuing badges:', err)
+    if (err instanceof Error) {
+      submissionError.value = err.message
+    }
+    else {
+      submissionError.value = 'Failed to issue credentials'
+    }
+    isSuccess.value = false
+  }
+  finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * Reset the *inputs* after a submission, so the next batch starts clean.
+ *
+ * Deliberately leaves isSuccess / batchResults / submissionError alone: this
+ * only ever runs at the end of handleIssue(), immediately after those were
+ * set from the response, and clearing them here wiped the outcome before it
+ * could ever render. The result was that a completely successful issuance
+ * showed the user nothing at all - no success banner, no per-recipient
+ * results table, just a form that silently emptied itself - even though the
+ * credentials had been issued and the recipients emailed. handleIssue()
+ * already resets all three at the start of every submission, which is the
+ * right moment for it.
+ */
+function clearForm() {
+  selectedTemplate.value = null
+  recipients.value = [{ name: '', email: '', expirationDate: '' }]
+  csvUploaded.value = false
+  error.value = null
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+</script>
+
+<template>
+  <div class="min-h-screen bg-gradient-to-b from-white to-[#D9F2DE]/20 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-text-primary">
+          {{ t('issue.title') }}
+        </h1>
+        <p class="mt-2 text-text-secondary">
+          {{ t('issue.subtitle') }}
+        </p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Form Section -->
+        <div class="lg:col-span-2">
+          <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+            <!-- Loading State -->
+            <div v-if="isLoadingTemplates" class="text-center py-8">
+              <div class="w-12 h-12 border-4 border-[#28A745] border-t-transparent rounded-full animate-spin mx-auto" />
+              <p class="mt-4 text-text-secondary">
+                Loading available templates...
+              </p>
+            </div>
+
+            <!-- Error State -->
+            <div v-else-if="error" class="text-center py-8">
+              <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-6 h-6 i-heroicons-exclamation-triangle text-red-500" />
+              </div>
+              <p class="text-red-500">
+                {{ error }}
+              </p>
+              <button
+                class="mt-4 text-[#28A745] hover:text-[#28A745]/80"
+                @click="loadTemplates"
+              >
+                Try Again
+              </button>
+            </div>
+
+            <!-- Content -->
+            <form v-else class="space-y-6" @submit.prevent="handleIssue">
+              <!-- Template Selection -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-medium text-text-primary">
+                    {{ t('issue.chooseTemplate') }}
+                  </label>
+                  <NuxtLink
+                    v-if="templates.length > 0"
+                    to="/achievements/create"
+                    class="inline-flex items-center gap-1 text-sm text-[#28A745] hover:text-[#28A745]/80"
+                  >
+                    <span class="w-4 h-4 i-heroicons-plus" />
+                    {{ t('issue.newAchievement') }}
+                  </NuxtLink>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div
+                    v-for="template in templates"
+                    :key="template.id"
+                    class="relative border rounded-lg p-4 cursor-pointer transition-all"
+                    :class="[
+                      selectedTemplate?.id === template.id
+                        ? 'border-[#28A745] bg-[#28A745]/5'
+                        : 'border-gray-200 hover:border-[#28A745]/50',
+                    ]"
+                    @click="selectTemplate(template)"
+                  >
+                    <div class="flex items-start">
+                      <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                        <img
+                          v-if="getImageUrl(template)"
+                          :src="getImageUrl(template)"
+                          :alt="template.title"
+                          class="max-w-full max-h-full object-contain"
+                        >
+                        <div v-else class="w-8 h-8 text-[#28A745]" :class="getTemplateTypeIcon(template.type)" />
+                      </div>
+                      <div class="ml-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h3 class="text-sm font-medium text-text-primary">
+                            {{ template.title }}
+                          </h3>
+                          <span
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            :class="getTemplateTypeChipClass(template.type)"
+                          >
+                            <span class="w-3 h-3" :class="getTemplateTypeIcon(template.type)" />
+                            {{ getTemplateTypeLabel(template.type) }}
+                          </span>
+                        </div>
+                        <p class="text-xs text-text-secondary mt-1">
+                          {{ template.description }}
+                        </p>
+                        <p v-if="template.attributes?.creator?.data?.attributes?.name" class="text-xs text-[#28A745] mt-1">
+                          By {{ template.attributes.creator.data.attributes.name }}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      v-if="selectedTemplate?.id === template.id"
+                      class="absolute top-2 right-2 w-5 h-5 bg-[#28A745] rounded-full flex items-center justify-center"
+                    >
+                      <div class="w-3 h-3 i-heroicons-check text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-if="templates.length === 0" class="text-center py-8">
+                  <div class="w-16 h-16 bg-[#28A745]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-8 h-8 i-heroicons-document-text text-[#28A745]" />
+                  </div>
+                  <p class="text-text-primary font-medium">
+                    {{ t('issue.noAchievements') }}
+                  </p>
+                  <p class="text-sm text-text-secondary mt-1 max-w-md mx-auto">
+                    {{ t('issue.noAchievementsHint') }}
+                  </p>
+                  <NuxtLink
+                    to="/achievements/create"
+                    class="mt-4 inline-flex items-center gap-1 px-5 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors"
+                  >
+                    <span class="w-4 h-4 i-heroicons-plus" />
+                    {{ t('issue.newAchievement') }}
+                  </NuxtLink>
+                </div>
+              </div>
+
+              <!-- Recipients -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-2">
+                  Recipients
+                </label>
+                <div class="space-y-4">
+                  <!-- CSV Upload -->
+                  <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#28A745] transition-colors">
+                    <div class="flex flex-col items-center">
+                      <div class="w-12 h-12 bg-[#28A745]/10 rounded-full flex items-center justify-center mb-4">
+                        <div class="w-6 h-6 i-heroicons-cloud-arrow-up text-[#28A745]" />
+                      </div>
+                      <div class="text-sm text-text-secondary">
+                        <label
+                          for="csv-upload"
+                          class="relative cursor-pointer rounded-md font-medium text-[#28A745] hover:text-[#28A745]/80 focus-within:outline-none"
+                        >
+                          <span>Upload CSV</span>
+                          <input
+                            id="csv-upload"
+                            name="csv-upload"
+                            type="file"
+                            class="sr-only"
+                            accept=".csv"
+                            :disabled="csvUploaded"
+                            @change="handleFileUpload"
+                          >
+                        </label>
+                        <p class="pl-1">
+                          or drag and drop
+                        </p>
+                      </div>
+                      <p class="text-xs text-text-secondary mt-2">
+                        Download our <a href="/recipients-template.csv" download class="text-[#28A745] hover:text-[#28A745]/80">CSV template</a>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- If CSV uploaded, show summary and clear button -->
+                  <div v-if="csvUploaded" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="font-medium text-text-primary">{{ recipients.length }} recipients loaded from CSV</span>
+                      <button type="button" class="text-red-500 hover:text-red-600 text-sm" @click="clearCsvRecipients">
+                        Clear
+                      </button>
+                    </div>
+                    <ul class="max-h-32 overflow-y-auto text-xs text-gray-600">
+                      <li v-for="(recipient, i) in recipients" :key="i">
+                        {{ recipient.name }} &lt;{{ recipient.email }}&gt;
+                        <span v-if="recipient.expirationDate" class="ml-2 text-gray-400">
+                          (expires {{ formatDate(recipient.expirationDate) }})
+                        </span>
+                        <span v-if="recipient.issuedToMinor" class="ml-2 text-amber-700">
+                          (minor - private)
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- If no CSV, show single manual entry -->
+                  <div v-else class="flex gap-4">
+                    <div class="flex-1">
+                      <label for="recipientName" class="block text-xs font-medium text-text-secondary mb-1">Name</label>
+                      <input
+                        id="recipientName"
+                        v-model="recipients[0].name"
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
+                        placeholder="Recipient name"
+                      >
+                    </div>
+                    <div class="flex-1">
+                      <label for="recipientEmail" class="block text-xs font-medium text-text-secondary mb-1">Email</label>
+                      <input
+                        id="recipientEmail"
+                        v-model="recipients[0].email"
+                        type="email"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
+                        placeholder="Email address"
+                      >
+                    </div>
+                    <div class="flex-1">
+                      <label for="recipientExpiry" class="block text-xs font-medium text-text-secondary mb-1">Expires on (optional)</label>
+                      <input
+                        id="recipientExpiry"
+                        v-model="recipients[0].expirationDate"
+                        :min="minExpiryDate"
+                        type="date"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Minors (Terms s.6): private by default, guardian consent is the issuer's duty -->
+              <div v-if="!csvUploaded" class="flex items-start gap-2">
+                <input id="issuedToMinor" v-model="recipients[0].issuedToMinor" type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#28A745] focus:ring-[#28A745]">
+                <label for="issuedToMinor" class="text-sm text-text-secondary">
+                  The recipient is under 16. The credential will be private, and I confirm we have parental or guardian consent where the law requires it.
+                </label>
+              </div>
+              <p v-else class="text-sm text-text-secondary">
+                Recipients under 16: add a <code>minor</code> column with <code>yes</code> to your CSV. Their credentials will be private, and you confirm you have parental or guardian consent where the law requires it.
+              </p>
+
+              <!-- Issue Date -->
+              <p class="text-sm text-text-secondary">
+                Credentials are dated when you issue them ({{ formatDate(issueDate) }}). Leave "Expires on" empty unless the credential should stop being valid on a set date.
+              </p>
+
+              <!-- Success & Error Messages -->
+              <div class="space-y-4">
+                <!-- Success Message -->
+                <div v-if="isSuccess" class="rounded-lg bg-green-50 p-4">
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      <div class="w-5 h-5 i-heroicons-check-circle text-green-400" />
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm font-medium text-green-800">
+                        Certificates issued successfully!
+                      </p>
+                      <p v-if="emailFailures.length" class="mt-1 text-sm text-amber-700">
+                        {{ emailFailures.length }} of {{ batchResults.length }} notification email(s) could not be sent - see the Notification email column below.
+                      </p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                      <div class="-mx-1.5 -my-1.5">
+                        <button type="button" class="inline-flex bg-green-50 rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600" @click="isSuccess = false">
+                          <span class="sr-only">Dismiss</span>
+                          <div class="w-5 h-5 i-heroicons-x-mark" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Batch Results Table -->
+                <div v-if="batchResults.length > 0" class="rounded-lg bg-gray-50 p-4">
+                  <h3 class="font-medium mb-2">
+                    Batch Issuance Results
+                  </h3>
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm border rounded-lg">
+                      <thead>
+                        <tr class="bg-gray-100">
+                          <th class="px-4 py-2 text-left">
+                            Email
+                          </th>
+                          <th class="px-4 py-2 text-left">
+                            Status
+                          </th>
+                          <th class="px-4 py-2 text-left">
+                            Notification email
+                          </th>
+                          <th class="px-4 py-2 text-left">
+                            Error
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="(row, idx) in batchResults" :key="row.recipient ?? idx">
+                          <td class="px-4 py-2">
+                            {{ row.recipient }}
+                          </td>
+                          <td class="px-4 py-2">
+                            <span v-if="row.success" class="text-green-600">Success</span>
+                            <span v-else class="text-red-600">Failed</span>
+                          </td>
+                          <td class="px-4 py-2">
+                            <span v-if="!row.success" class="text-gray-400">-</span>
+                            <span v-else-if="row.data?.notification?.sent" class="text-green-600">Emailed</span>
+                            <span v-else class="text-amber-700">Not emailed</span>
+                          </td>
+                          <td class="px-4 py-2 text-xs text-red-500">
+                            {{ row.error || row.data?.notification?.error || '' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Error Message -->
+                <div v-if="submissionError" class="rounded-lg bg-red-50 p-4">
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      <div class="w-5 h-5 i-heroicons-x-circle text-red-400" />
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm font-medium text-red-800">
+                        {{ submissionError }}
+                      </p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                      <div class="-mx-1.5 -my-1.5">
+                        <button type="button" class="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600" @click="submissionError = null">
+                          <span class="sr-only">Dismiss</span>
+                          <div class="w-5 h-5 i-heroicons-x-mark" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <div>
+                <button
+                  type="submit"
+                  :disabled="isLoading || !selectedTemplate || recipients.length === 0"
+                  class="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-white bg-[#28A745] hover:bg-[#28A745]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#28A745] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span v-if="!isLoading">Issue Certificates</span>
+                  <div v-else class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="lg:col-span-1">
+          <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+            <h2 class="text-lg font-medium text-text-primary mb-4">
+              Preview
+            </h2>
+
+            <div v-if="selectedTemplate" class="space-y-4">
+              <div class="aspect-[3/4] bg-white rounded-lg shadow-md p-4 flex items-center justify-center">
+                <img
+                  :src="getImageUrl(selectedTemplate)"
+                  :alt="selectedTemplate.title"
+                  class="max-w-full max-h-full object-contain"
+                  @error="(e) => console.error('Image failed to load:', (e.target as HTMLImageElement)?.src)"
+                  @load="() => console.log('Image loaded successfully')"
+                >
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-text-secondary">Template</span>
+                  <span class="font-medium text-text-primary">{{ selectedTemplate.title }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-text-secondary">Recipients</span>
+                  <span class="font-medium text-text-primary">{{ recipients.length }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-text-secondary">Issue Date</span>
+                  <span class="font-medium text-text-primary">{{ formatDate(issueDate) }}</span>
+                </div>
+                <div v-if="recipients[0].expirationDate" class="flex items-center justify-between text-sm">
+                  <span class="text-text-secondary">Expiration Date</span>
+                  <span class="font-medium text-text-primary">{{ formatDate(recipients[0].expirationDate) }}</span>
+                </div>
+                <div v-if="selectedTemplate.attributes?.creator?.data?.attributes?.name" class="flex items-center justify-between text-sm">
+                  <span class="text-text-secondary">Issuer</span>
+                  <span class="font-medium text-text-primary">{{ selectedTemplate.attributes.creator.data.attributes.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="text-center py-8">
+              <div class="w-16 h-16 bg-[#28A745]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-8 h-8 i-heroicons-document-text text-[#28A745]" />
+              </div>
+              <p class="text-text-secondary">
+                Select a template to preview
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

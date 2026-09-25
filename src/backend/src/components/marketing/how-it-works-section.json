@@ -1,0 +1,36 @@
+{
+  "collectionName": "components_marketing_how_it_works_sections",
+  "info": {
+    "displayName": "How It Works Section",
+    "description": "One step (Design & Create / Issue & Deliver / Share & Verify) in the homepage's 'How it works' walkthrough. feature1..4 are fixed slots (blanks are filtered out on the frontend) rather than a repeatable list, and this component is used via 3 separate fixed fields on the homepage singleType rather than one repeatable list - HomeSection.vue hardcodes a lookup from exactly 3 section ids to 3 specific illustration components, so a freely-addable 4th section would have no illustration to map to."
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "description": "Short pill label above the header, e.g. 'Design & Create'."
+    },
+    "header": {
+      "type": "string",
+      "required": true
+    },
+    "feature1": { "type": "string" },
+    "feature2": { "type": "string" },
+    "feature3": { "type": "string" },
+    "feature4": { "type": "string" },
+    "illustrationImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "description": "Replaces the hand-coded inline-SVG illustration when set. Frontend falls back to the original coded illustration if empty."
+    },
+    "badgeCalloutTitle": {
+      "type": "string",
+      "description": "Only used by the Design & Create section's Open Badges callout box."
+    },
+    "badgeCalloutFeature1": { "type": "string" },
+    "badgeCalloutFeature2": { "type": "string" },
+    "badgeCalloutFeature3": { "type": "string" }
+  }
+}

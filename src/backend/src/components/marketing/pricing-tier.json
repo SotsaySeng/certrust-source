@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_marketing_pricing_tiers",
+  "info": {
+    "displayName": "Pricing Tier",
+    "description": "One plan card on the Solution page. Limit fields are flat sibling strings, not a nested usage-limits component, because Strapi 5's populate=* only expands one level deep and this codebase has no existing precedent for populating a component nested inside another component - nesting here would come back undefined. Deliberately separate from settings.usage-limits (tier-settings' real enforced numeric limits) since this is marketing display copy, allowed to include non-numeric strings like 'Unlimited', and may legitimately diverge from the enforced values."
+  },
+  "options": {},
+  "attributes": {
+    "tierId": {
+      "type": "string",
+      "required": true,
+      "description": "Used only as a Vue :key - no branching logic depends on its value."
+    },
+    "name": { "type": "string", "required": true },
+    "tagline": { "type": "string" },
+    "price": {
+      "type": "string",
+      "required": true,
+      "description": "Display string, e.g. 'Free', 'Contact us', 'Custom' - not a number."
+    },
+    "credentialsLimit": { "type": "string", "required": true, "description": "e.g. '50', '1,000', 'Unlimited'." },
+    "designTemplatesLimit": { "type": "string", "required": true },
+    "achievementsLimit": { "type": "string", "required": true },
+    "extraFeature": {
+      "type": "string",
+      "description": "Optional bullet shown only on this tier, in addition to the solution page's shared core features."
+    },
+    "ctaLabel": { "type": "string", "required": true },
+    "ctaHref": {
+      "type": "string",
+      "required": true,
+      "description": "Full href, including e.g. 'mailto:...' for a contact-sales tier."
+    },
+    "highlighted": { "type": "boolean", "default": false },
+    "note": { "type": "string", "description": "Optional small print under the CTA button." }
+  }
+}

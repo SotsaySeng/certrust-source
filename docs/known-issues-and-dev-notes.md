@@ -1,0 +1,611 @@
+# Known Issues & Dev Notes
+
+Things found while documenting the system that are broken, stubbed, inconsistent,
+or otherwise worth knowing before making claims (production-readiness,
+security, "how does X work") elsewhere. Grouped by severity/theme, not by file.
+
+Items marked **[Fixed]** were corrected after this was first written — kept
+here (rather than deleted) so the history/rationale isn't lost, since
+several of them are the kind of thing that tends to silently regress.
+
+## Security-relevant
+
+1. **[Fixed] Credential proof verification is now cryptographic
+   for locally-issued credentials.** `verification.ts`'s `verifyProof()` used
+   to only check structural fields, never the actual signature. It now fetches
+   the issuer's public key (`api::profile.issuer-keys`' `getPublicKey()`) and
+   calls `jose.jwtVerify(proof.jws, publicKey)`, failing on any mismatch,
+   missing key, or malformed JWS. See
+   [open-badges.md](./open-badges.md#verification). This does **not** cover
+   externally-submitted credentials — see item 4.
+
+2. **[Fixed] Signing no longer silently degrades if the key is
+   missing.** `credential.ts`'s `generateProof()` used to catch any signing
+   error and fall back to a fake `proofValue` instead of failing the
+   issuance. Now that keys are generated automatically per issuer
+   (`api::profile.issuer-keys`), the original failure mode (a missing global
+   env var) can't happen, and any other signing error now propagates and
+   fails the issuance instead of silently producing an unsigned "signed"
+   credential.
+
+3. **[Partially superseded] The old global Ed25519 dev keypair
+   committed to the repo** (`ed25519-private.pem` / `ed25519-public.pem` at
+   the repo root) and `docker-compose.yml`'s hardcoded default for
+   `ED25519_PRIVATE_KEY_PKCS8` are now **unused** — signing uses per-issuer
+   keys generated automatically (see item 1/2 and
+   [open-badges.md](./open-badges.md#signing)) and encrypted at rest via a
+   new `ENCRYPTION_KEY`-derived AES-256-GCM key (`utils/key-encryption.ts`).
+   The `.pem` files were removed (Aug 2026 cleanup); the
+   `ED25519_PRIVATE_KEY_PKCS8` env var in `docker-compose.yml` is **kept**
+   for legacy support so old container environments referencing it don't
+   error, even though no code path reads it any more.
+   `ENCRYPTION_KEY` itself has the same "make sure production generates its
+   own, don't reuse the dev default" caveat the old key had.
+
+4. **External-credential proof verification is still a stub.**
+   `open-badge.ts`'s `validateExternalCredential()` sets
+   `const proofVerified = true` unconditionally — importing/validating a
+   third-party OBv3 credential doesn't check its signature. Deliberately not
+   addressed here: that work covers *our own* issuers' keys; verifying
+   an arbitrary external issuer needs DID resolution or fetching a remote
+   key, a separate, larger interoperability feature.
+
+5. **Several controller actions bypass Strapi's permission system in code**
+   rather than through the role/permission model — e.g. `credential.issue` sets
+   `ctx.state.auth = { strategy: { name: 'public' } }` to disable the auth
+   check, and `achievement.create` calls `entityService` directly to bypass
+   permission checks. Don't assume permissions shown in the Strapi admin UI
+   fully describe what's actually enforced. **[Partially mitigated]**
+   these three actions (`credential.issue`, `credential.revoke`,
+   `achievement.create`) now record an `audit-log-entry` with the real
+   caller's user ID, so "who did this" is at least recoverable after the
+   fact even though the permission bypass itself is unchanged — see
+   [security.md](./security.md#authorization).
+
+6. **[Fixed] Revocation lists are now wired into issuance,
+   revocation, serialization, and verification.** Previously the entire
+   `revocation-list` subsystem was dead code — `checkCredentialStatus`,
+   `checkStatusInList`, `createStatusListCredential`, and
+   `revokeCredentialInStatusList` had zero callers, and there was no field
+   linking a credential to a slot in any list at all. Now: `credential.ts`'s
+   `issue()` assigns a slot in the issuer's list (creating one on first
+   use), the revoke controller flips that slot too, `open-badge.ts` emits a
+   `credentialStatus` (StatusList2021Entry) object in the serialized OBv3
+   JSON, and `verification.ts` also checks the list alongside the `revoked`
+   boolean. `checkStatusInList` remains a simplified comma-separated-indices
+   implementation, not a real GZIP+base64 bitstring — documented as a known
+   simplification rather than fixed, since publishing a standards-compliant
+   external status list credential is a separate, larger task. See
+   [open-badges.md](./open-badges.md) and
+   [strapi-and-credentials.md](./strapi-and-credentials.md).
+
+## Correctness / config bugs
+
+7. **[Fixed] `SMTP_*` env vars had no effect.**
+   `src/backend/config/plugins.ts` hardcoded Ethereal SMTP credentials
+   directly in source instead of reading from env, so
+   `docker-compose.yml`'s `SMTP_HOST=mailhog`/`SMTP_PORT=1025` silently did
+   nothing. Fixed by reading `SMTP_HOST`/`SMTP_PORT`/`SMTP_USERNAME`/
+   `SMTP_PASSWORD`/`SMTP_FROM`/`SMTP_REPLY_TO`/`SMTP_SECURE`/`SMTP_REQUIRE_TLS`
+   from env (matching the names already used in `.env.example`), with the
+   previous hardcoded Ethereal values kept as defaults for anyone who hasn't
+   set the vars. `requireTLS` now defaults to `false` rather than `true`,
+   since Mailhog (the Docker Compose dev SMTP target) doesn't support
+   STARTTLS — Ethereal still works fine with it unset since nodemailer
+   upgrades to STARTTLS opportunistically when the server offers it. The
+   pre-existing (separately hardcoded) `SMTP_FROM_EMAIL` env var name used by
+   `users-permissions.advanced.email_reset_password` was also corrected to
+   `SMTP_FROM`, matching `.env.example`.
+
+8. **[Fixed] Backend Dockerfile booted in dev mode.**
+   `src/backend/Dockerfile` built with `npm run build` but started the
+   container with `CMD ["npm", "run", "develop"]` (Strapi dev mode), and
+   overwrote `config/middlewares.js` with a minimal placeholder during the
+   build step, discarding the real CORS/CSP config from
+   `config/middlewares.ts`. Fixed: the middlewares-overwrite step was removed
+   and `CMD` now runs `npm run start`.
+
+9. **[Fixed] `src/bootstrap.ts` was entirely dead code, not a
+   second active implementation.** The original note here described this as
+   "two parallel permission-bootstrap implementations." On closer inspection,
+   Strapi 5 only auto-loads `src/index.ts` as the app's `register`/`bootstrap`
+   lifecycle hooks — and `index.ts` only imports from
+   `./bootstrap/seed-data` and `./bootstrap/permissions-setup`. The
+   standalone `src/bootstrap.ts` (with `setupPublicPermissions`,
+   `setupAuthenticatedPermissions`, `forceEnableEndpoints`,
+   `enableAllAuthenticatedPermissions`, `setupIssuerPermissions`) was never
+   imported by anything and never ran. Its one piece of functionality nothing
+   else covered — issuer-role permissions — was ported into
+   `bootstrap/permissions-setup.ts` as a new `ISSUER_PERMISSIONS` list, wired
+   through the existing `setupRolePermissions(strapi, 'issuer', ...)` call.
+   `src/bootstrap.ts` was then deleted. Also deleted:
+   `src/backend/src/bootstrap/permissions-setup.js`, a stale, incomplete
+   (public-permissions-only) JS duplicate of `permissions-setup.ts` that
+   wasn't the file `index.ts` actually imports — `permissions-setup.ts` is now
+   the single source of truth for permission bootstrapping.
+
+10. **[Fixed] `notification.ts`'s `sendBadgeIssuedEmail` was dead
+    code.** It built a richer email (with an inline certificate image) but
+    was never called anywhere in the codebase — confirmed by search. The real
+    issuance flow (`credential.ts`) uses a plainer template
+    (`templates/credential-issuance.ts`). The file was deleted rather than
+    wired in, since reviving it is a design decision (which template should
+    "win," and whether embedding a base64 certificate image in every
+    issuance email is desirable) better made deliberately later, not as
+    part of this cleanup.
+
+11. **[Fixed] Credential route overlap consolidated.**
+    The three files previously defining credential routes were
+    `credential-public.ts`, `credential-custom.ts`, and
+    `credential-fallback.ts`:
+    - `credential-custom.ts` previously exposed `export`, `import`, and `revoke`
+      as `auth: false` public routes — a security issue (Aug 2026). Deleted;
+      consolidated into `credential-public.ts` with proper auth config
+      (users-permissions on mutating routes, `auth: false` on read/verify/validate).
+    - `credential-fallback.ts` — kept as a last-resort legacy safety net
+      for public credential listing (`GET /api/credentials`). Its route
+      (`/api/credentials`) is a subset of `credential-public.ts`'s
+      listing route; it provides backward compatibility for integrations
+      that depend on the standalone file.
+    - `credential-public.ts` — now the single source of truth for all
+      unauthenticated credential endpoints. Contains 7 routes (listing,
+      detail, verify, validate, certificate, direct-certificate) all with
+      explicit `auth: false`, and no `auth: false` on mutating operations.
+    All three have been consolidated with the security gap closed and
+    backward compatibility preserved.
+
+    See `src/backend/src/api/credential/routes/credential-public.ts`,
+    `src/backend/src/api/credential/routes/credential-custom.ts` (deleted),
+    `src/backend/src/api/credential/routes/credential-fallback.ts`.
+
+## Doc / metadata inconsistencies
+
+12. **[Fixed] License conflict.** Root `LICENSE` is AGPL-3.0 (and
+    the README agrees) — confirmed as the correct license going forward.
+    `docs/fresh-install-implementation.md`, `scripts/fresh-install.sh`,
+    `src/backend/scripts/fresh-install.js`, and
+    `src/backend/scripts/README.md` all previously claimed MIT (including two
+    places where the *running script itself* printed "This project is
+    licensed under the MIT License" to the console) — all four were corrected
+    to reference AGPL-3.0.
+
+13. **[Fixed] Aligned the two seeding mechanisms to use the same admin
+    credentials.** The original note here correctly identified a UX footgun:
+    `seedDevelopmentData()` (auto-running on first `docker-compose up`)
+    creates `admin@certrust.dev`/`certrust`, while `fresh-install.js` (manually
+    invoked via `npm run fresh-install`) created `admin@certrust.dev`/`Admin123!`.
+    Since both can run against the same database, the "current" admin password
+    depends on order of operations.
+    Fixed (Aug 2026) by making `fresh-install.js`'s admin password
+    match `seed-data.ts` (`admin@certrust.dev`/`certrust`). The issuer user
+    (`issuer@certrust.dev`/`Issuer123!`) remains the distinguishing feature of
+    the fresh-install path. The two-mechanism architecture itself is kept —
+    one auto on server start, one manual for richer setup — since each serves
+    a different use case.
+
+14. **[Fixed] `CONTRIBUTING.md` referenced a `frontend/` directory**
+    that doesn't exist (it's `src/frontend/`) and a backend `npm test` script
+    that didn't exist at the time (it does now — see #19). Both corrected.
+
+15. **[Fixed] `.cursorrules` (repo root) has been deleted** — it was
+    an unedited generic template describing an unrelated Next.js 15/React 19
+    stack. The `.gitignore` already had `.cursorrules` so it was never tracked;
+    the file was removed from disk. `.cursor/rules/vue.mdc` remains the
+    relevant one (Nuxt3/Vue3/UnoCSS/UnaUI/Strapi5).
+
+## Minor / cleanup
+
+16. **[Fixed] The scaffold directories at `src/frontend/src/frontend/` and
+    `src/frontend/src/frontend-una/` were already absent on inspection
+    (Aug 2026). No action needed.**
+
+17. **[Fixed] `netlify/functions/og-credential/` node_modules is properly
+    gitignored** via the root `.gitignore`'s `node_modules/` pattern. Confirmed
+    by `git check-ignore -v --no-index`. No `node_modules` currently present.
+
+18. **[Fixed] `nuxt-gtag` GA4 measurement ID is now env-driven.**
+    Replaced with `process.env.NUXT_PUBLIC_GA4_ID` (defaults to `''`, sending
+    no analytics when unset). See `src/frontend/nuxt.config.ts`.
+
+19. **[Fixed] Backend now has a Jest suite and both apps run in
+    CI.** Coverage is intentionally narrow (unit tests for the new/changed
+    crypto logic — `key-encryption.ts`, `issuer-keys.ts`,
+    `verification.ts`'s `verifyProof()` — not a full Strapi-integration test
+    suite; see [architecture.md](./architecture.md#testing)).
+    `.github/workflows/ci.yml` runs backend type-check/test/build and
+    frontend test/build on push/PR to `main`, alongside the pre-existing
+    `frontend/autofix.yml`. Playwright E2E still isn't run in CI. Broader
+    backend test coverage (controllers, other services) remains a good
+    follow-up.
+
+20. **[Fixed] `strapi.log.error()`/`.warn()` only print their first
+    argument.** Unlike `console.error`, Strapi's Winston-based logger
+    doesn't concatenate/print additional arguments — every
+    `strapi.log.error('message:', error)` call in the codebase (seed data,
+    permission setup, credential issuance error handlers, the upload
+    service) was silently discarding the actual error, so a real failure
+    in any of these paths would show up in logs as e.g.
+    `[Seed] Error seeding development data:` with nothing useful after it.
+    Fixed by interpolating error details directly into the log message.
+    Confirmed by simulating a failure before/after the fix. If you add a
+    new `strapi.log.*` call, pass one interpolated string, not multiple
+    arguments.
+
+## Self-hosting
+
+Found and reported via a real self-hosted deployment attempt —
+[issue #78](https://github.com/Schroedinger-Hat/certo/issues/78) is the full
+deployment log; #75/#76/#77 below are the three concrete bugs split out of it.
+The Dockerfile dev-mode issue also reported there was already covered by
+item 8 above.
+
+21. **[Fixed] CORS middleware crashed (`originList.split is not a
+    function`) for any origin not on the hardcoded whitelist**
+    ([#75](https://github.com/Schroedinger-Hat/certo/issues/75)).
+    `config/middlewares.ts`'s `strapi::cors` origin function returned `false`
+    for unrecognized origins, but `@strapi/core`'s cors middleware
+    unconditionally calls `.split(',')` on whatever the function returns -
+    `false` isn't a string or array, so every request from a non-whitelisted
+    origin threw internally. Fixed by returning `''` instead (the sentinel
+    `@koa/cors`/Strapi's wrapper already use internally for "no match"), and
+    by making the whitelist extensible via a new `CORS_ALLOWED_ORIGINS`
+    env var (comma-separated) so self-hosters don't have to edit source to
+    deploy on their own domain.
+
+22. **[Fixed] `GET /api/users/me?populate=*` returned 403, breaking
+    any frontend logic depending on the user's role**
+    ([#76](https://github.com/Schroedinger-Hat/certo/issues/76)). Strapi's
+    built-in `me` controller (`@strapi/plugin-users-permissions`) runs the
+    requested `populate` through `strapi.contentAPI.validate.query`, which
+    doesn't allow `role` by default - so the request was rejected before ever
+    checking the (correctly configured) Authenticated-role permissions. Fixed
+    with a `strapi-server.ts` extension
+    (`src/extensions/users-permissions/strapi-server.ts`) that overrides `me`
+    to fetch the role directly via `strapi.db.query(...).findOne({ populate:
+    ['role'] })`, bypassing that unrelated validation layer, and manually
+    strips the private fields (`password`, `resetPasswordToken`,
+    `confirmationToken`) that the default controller's sanitizer would have
+    removed.
+
+23. **[Fixed] Frontend checked a Strapi role called "Issuer" that
+    can never exist, making `/issue` unreachable for everyone**
+    ([#77](https://github.com/Schroedinger-Hat/certo/issues/77)).
+    `stores/auth.ts`'s `isIssuer` checked `user.role.name === 'issuer'` - the
+    Strapi Users & Permissions role - but a fresh instance only ever has the
+    built-in `Public`/`Authenticated` roles; issuer-ness is actually the
+    `Profile.profileType` field (`Issuer`/`Recipient`/`Both`). Fixed to check
+    `profile.value?.profileType` instead. This depended on item 22 being
+    fixed first in practice, since without it `/api/users/me` calls that
+    populate `role` 403 during session restore.
+
+24. **New: boot-time warning if the seeded default admin credentials
+    are still active.** #78 flagged that `admin@certrust.dev`/`certrust` (the
+    README's documented dev credentials) end up live in production
+    deployments that don't explicitly set `NODE_ENV=production` (the only
+    thing that makes `seedDevelopmentData()` skip seeding). Added
+    `bootstrap/default-credentials-warning.ts`, run unconditionally on every
+    boot (not gated by environment): if `admin@certrust.dev` exists and its
+    password still validates against the seeded default, it logs a loud
+    `strapi.log.warn` block. This is advisory only — it doesn't rotate the
+    password or block startup, since a self-hoster may be mid-setup.
+
+## Enterprise readiness: Import/Export, Backup/Restore, Monitoring
+
+Continues the audit log + RBAC work above (item 5) — multi-tenancy remains
+deliberately deferred (see item 5's rationale) — with three more
+production-readiness items: self-service data portability, full-instance
+backup/restore, and basic monitoring.
+
+25. **New: self-service data export/import, per profile.**
+    `api::profile.profile`'s new `exportMyData`/`importMyData` actions
+    (`GET`/`POST /profiles/me/export`, `/profiles/me/import`) let an
+    authenticated issuer take *all* their own data with them - achievements
+    they created, credentials they issued or received, and evidence - as one
+    JSON bundle, and re-import it (achievements/credentials they issued
+    only, never `credentialsReceived`) into a fresh instance under the same
+    account. Distinct from the pre-existing
+    `credential.import`/`credential.export` actions and
+    `open-badge.ts`'s `importCredential()`, which handle ingesting/emitting a
+    single *externally-issued* OB3 VC - naming was deliberately kept
+    separate to avoid confusing the two. Import is idempotent: achievements/
+    credentials/evidence already present (matched by their natural unique
+    key - `achievementId`/`credentialId`/`evidenceId`) are skipped, never
+    duplicated or overwritten. Implementation:
+    `api/profile/services/data-portability.ts`; recipient resolution reuses
+    `credential.ts`'s find-or-create-by-email logic, extracted into its own
+    `findOrCreateRecipientProfile()` method rather than duplicated.
+
+26. **New: full-instance backup/restore (`npm run backup`/`restore`).**
+    DB-native rather than a generic content-type JSON dump - `pg_dump`/
+    `pg_restore` for Postgres, a plain file copy for sqlite - plus
+    `public/uploads`, all into one timestamped directory under `backups/`
+    (gitignored). Deliberately does **not** boot a full Strapi instance like
+    `scripts/fresh-install.js` does: backup/restore only need the raw
+    `DATABASE_*` connection config (read the same way
+    `config/database.ts` does, via `dotenv`), not the ORM - and for sqlite
+    specifically, booting Strapi would mean holding the very DB file open
+    that restore is about to overwrite. `restore.js` refuses to run without
+    an explicit `--yes` (it's destructive: `pg_restore --clean --if-exists`
+    drops existing objects first; sqlite restore overwrites the live file
+    outright). MySQL isn't supported - nothing in this repo's docker-compose/
+    docs uses it. The backend `Dockerfile` now installs
+    `postgresql16-client` (matching the `postgres:16` image in
+    `docker-compose.yml`) so `docker exec certrust_backend npm run backup`
+    works without extra setup.
+
+27. **[Fixed] `docker-compose.yml`'s `backend` service had no volume
+    for `public/uploads` at all.** Every container recreation silently
+    deleted all uploaded media (achievement/profile images) - found while
+    scoping what a backup actually needs to capture, since there was nothing
+    durable to back up otherwise. Fixed by adding a named `uploads-data`
+    volume mounted at `/app/public/uploads`.
+
+28. **New: monitoring (`/api/health`, `/api/metrics`).** `/api/health`
+    is a richer JSON DB-connectivity check than Strapi's built-in `/_health`
+    (204, no body), which is unchanged and still present. `/api/metrics` is
+    a `prom-client`-backed Prometheus endpoint: default Node process metrics
+    plus four counters (`certrust_credentials_issued_total`,
+    `certrust_credentials_revoked_total`,
+    `certrust_credentials_verified_total{result}`,
+    `certrust_achievements_created_total`) incremented at the same call sites
+    already touched by item 5's audit log. Both routes are unauthenticated
+    by design (Prometheus/health-check convention, same as `/_health`) -
+    self-hosters should restrict `/api/metrics` at the reverse proxy, not
+    app auth. Neither is tied to a content type, so both are registered via
+    `strapi.server.routes()` inside `src/index.ts`'s `register()` hook
+    rather than a fake content-type-less `api/` folder - this has to happen
+    in `register()`, not `bootstrap()`, since Strapi finalizes routing
+    (`server.initRouting()`) partway through its own `bootstrap()`, before
+    this app's `bootstrap({ strapi })` hook ever runs. See
+    [monitoring.md](./monitoring.md).
+
+29. **New: structured logging (`LOG_FORMAT_JSON`) with per-request
+    correlation.** Closes out the last open Enterprise Readiness item
+    (multi-tenancy remains deliberately deferred per item 5). New
+    `config/logger.ts` — Strapi's standard "every file in `config/` becomes
+    a config key" convention, no monkey-patching — switches from the default
+    colored `prettyPrint()` to `winston.format.json()` when
+    `LOG_FORMAT_JSON=true`, off by default so local dev is unaffected. A new
+    `src/middlewares/request-id.ts` (`global::request-id`, first in
+    `config/middlewares.ts` so its context covers the whole request
+    lifecycle) assigns a correlation id per request and runs the rest of the
+    chain inside an `AsyncLocalStorage` context
+    (`src/utils/request-context.ts`); `config/logger.ts`'s format reads that
+    same store and attaches `requestId` to **every** log line produced
+    during the request — including `strapi::logger`'s own access-log line —
+    with no changes needed to any of the ~40 existing `strapi.log.*()` call
+    sites (item 20's single-interpolated-string convention is untouched).
+    See [logging.md](./logging.md).
+
+30. **New: Helm chart + reverse-proxy examples.** Closes Phase 1's
+    remaining deployment items (`docs/architecture.md` previously stated
+    plainly that no Kubernetes manifests, Helm charts, or Terraform existed
+    - Terraform remains genuinely out of scope, a separate Phase 4 item).
+    New `.github/workflows/docker-publish.yml` builds and pushes
+    backend/frontend images to `ghcr.io/schroedinger-hat/certrust-{backend,
+    frontend}` on push to `main` and on version tags, using the workflow's
+    own `GITHUB_TOKEN` (no new secrets). New `helm/certrust/` mirrors
+    `docker-compose.yml`'s services/env vars exactly rather than inventing
+    a different shape: an optional bundled Postgres (a plain StatefulSet,
+    not a Bitnami chart dependency, to avoid taking on an external chart's
+    version churn), a PVC for uploads matching the docker-compose volume
+    from item 27, readiness/liveness probes on `/api/health` (item 28's
+    recommended target), and secrets that auto-generate on first install
+    and persist across `helm upgrade` via Helm's `lookup` function so
+    upgrading never rotates a running instance's credentials out from under
+    it (verified end-to-end against a real local `kind` cluster - install,
+    confirm `JWT_SECRET` byte-identical after `helm upgrade`, confirm the
+    single-replica-Postgres StatefulSet reaches `Running` and its PVC
+    binds). Also new: `docs/examples/nginx.conf.example`,
+    `Caddyfile.example`, and a Traefik docker-compose label overlay for the
+    non-Kubernetes deployment path. See [kubernetes.md](./kubernetes.md) and
+    [reverse-proxy.md](./reverse-proxy.md).
+
+31. **New: `/api/v1` versioning, closing out Phase 1.** Previously
+    documented as "deliberately deferred since it's a breaking change to
+    every route the frontend calls" (`docs/backend.md`) - that framing
+    assumed versioning meant migrating every route/consumer at once. It
+    doesn't: Strapi mounts its entire content-API router under one global
+    prefix (`config/api.ts`'s `rest.prefix`, read at
+    `@strapi/core/dist/services/server/content-api.js:7`), so every route
+    already shares a single prefix with no per-file registration. New
+    `src/middlewares/api-version-alias.ts` (`global::api-version-alias`,
+    first in `config/middlewares.ts`) rewrites an incoming `/api/v1/*` path
+    to `/api/*` before Strapi's router matches it (confirmed via Koa's own
+    `ctx.path` setter that this correctly updates the underlying URL,
+    preserving the query string, for `@koa/router` to re-match) - so
+    `/api/v1/*` becomes a transparent, zero-maintenance alias for every
+    current *and future* route, with `/api/*` continuing to work unchanged
+    since the frontend (`api-client.ts`) and the Netlify OG-image function
+    both hardcode literal `/api/...` paths and were deliberately left
+    untouched. See [backend.md](./backend.md).
+
+32. **New: S3-compatible upload provider.** `config/plugins.ts`'s
+    `upload.config` was hardcoded to `provider: 'local'` - the only storage
+    option, and a real problem for the Helm chart from item 30, whose
+    `backend.uploads` PVC is `ReadWriteOnce` and can't be shared across
+    `backend.replicaCount > 1`. New `UPLOAD_PROVIDER=s3` env var switches to
+    `@strapi/provider-upload-aws-s3` (added as a dependency); confirmed by
+    reading the package's own README and `dist/index.js` (not guessing) that
+    its `providerOptions.s3Options` is spread directly into `new S3Client()`,
+    so `S3_ENDPOINT`/`S3_FORCE_PATH_STYLE` (unset for real AWS) make it work
+    with any S3-compatible service, exactly as the package's own "S3
+    compatible services" doc section describes for Scaleway. No CSP change
+    needed - `config/middlewares.ts`'s `img-src`/`media-src` already include
+    a bare `*`. Verified end-to-end against a real local MinIO container
+    (not just config review): uploaded a file through Strapi's actual
+    upload API, confirmed the object landed in the bucket, and confirmed
+    the returned URL served the exact uploaded content back; also confirmed
+    `UPLOAD_PROVIDER` unset still uses local disk exactly as before. See
+    [self-hosting.md](./self-hosting.md#or-skip-local-disk-entirely-s3-compatible-storage).
+
+33. **New: QR codes on certificates.** The backend-generated
+    certificate SVG (`GET /credentials/:id/certificate`,
+    `utils/certificate-template.ts`) now embeds a QR code (bottom-right
+    corner, the one part of the 800x650 layout previously left empty)
+    linking to the credential's public verification page, and the frontend
+    credential detail page (`pages/credentials/[id]/index.vue`) renders the
+    same QR client-side (`onMounted`, matching the existing
+    `navigator.share()` pattern). Both use the new `qrcode` npm package
+    (added to both `src/backend/package.json` and
+    `src/frontend/package.json` independently - no monorepo tooling shares
+    dependencies between them). The backend's QR URL is built from
+    `strapi.config.get('frontend.url', ...)` (the same self-hosting-aware
+    config `credential.ts` already uses for notification emails) +
+    `credential.credentialId`, not a hardcoded production URL. Verified
+    end-to-end, not just code review: decoded the actual rendered QR from a
+    real certificate SVG with a QR decoder library (`jsqr` against a
+    `rsvg-convert`-rendered PNG) and confirmed it resolves to the exact
+    expected `/credentials/<credentialId>` URL; loaded the frontend detail
+    page in a real (Playwright) browser and confirmed the QR renders with a
+    valid image and the same URL underneath.
+
+    In passing: the frontend's `shareableUrl` (which this QR reuses) is
+    built from a hardcoded `WEBSITE_URL` constant
+    (`constants/index.ts`), not an env var - a pre-existing self-hosting
+    gap this feature inherits but doesn't fix, since fixing it was out of
+    scope here.
+
+34. **New: Multi-tenancy enforcement (user-owned profiles).** Profiles can now
+    have an owner user (new `owner_id` FK in `profiles` table, added via
+    `database/migrations/2026-08-06_add_profile_owner.js`). The new
+    `api::profile.multi-tenancy` service provides 8 methods for scoping
+    queries: `getUserProfiles()`, `getUserProfileIds()`, `getUserAchievements()`,
+    `getUserCredentials()` (handles both issuer and recipient), `userOwnsProfile()`,
+    `userCanAccessCredential()`, `userCanAccessAchievement()`, and
+    `getUserEvidence()`. Controllers (profile, credential, achievement) have
+    `find()` and `findOne()` overrides that check authentication via
+    `ctx.state.user.id` and return 403 if the user doesn't own the
+    resource. All queries use `entityService.findMany` with filters on
+    profile ID arrays (from `getUserProfileIds`) rather than adding new
+    permission middleware, so tenant data isolation is enforced at the
+    service/query layer and applies to all endpoints automatically. Tests
+    added: 15 unit tests covering all multi-tenancy service methods (mock
+    strapi.entityService) and permission checks. The seed data links the
+    admin user's profile to that user so local dev multi-tenancy works
+    out-of-the-box. This closes the last open item from Phase 2 (Build
+    Trust). See
+    [self-hosting.md](./self-hosting.md#multi-tenancy-user-owned-profiles) and
+    [backend.md](./backend.md#api-structure).
+
+35. **[Fixed] Self-service registration was entirely blocked by a dead SMTP
+    mailbox.** Email confirmation is mandatory
+    (`src/backend/src/bootstrap/email-confirmation-setup.ts`), and the
+    users-permissions register override runs user creation, org/profile
+    provisioning and the confirmation email inside one
+    `strapi.db.transaction`. So when the shared Ethereal test mailbox in
+    `src/backend/.env` expired and began answering `535 Authentication
+    failed`, every signup returned `400 "Error sending confirmation email"`
+    and rolled back completely — no user, no organization, no profile, and
+    no way to create an account in local dev at all. The transaction
+    behaviour is correct (a user who can never receive a confirmation link
+    is worse than a clean failure); the problem is that local dev depended
+    on a disposable external mailbox that can silently expire.
+    `docker-compose.yml` already runs Mailhog on `:1025` for the
+    containerized stack, but the local sqlite/dev-server setup had no
+    equivalent. Fixed by adding
+    `src/backend/src/bootstrap/dev-mail-catcher.ts`: a dependency-free SMTP
+    sink started inside the Strapi process, opt-in via `DEV_MAIL_CATCHER=true`
+    and hard-refused when `NODE_ENV=production`. It accepts any AUTH, writes
+    each message to `.tmp/mail/*.eml` plus an `index.jsonl`, and logs every
+    link it finds — so a confirmation link can be clicked straight out of the
+    dev console. Local `.env` now points `SMTP_HOST`/`SMTP_PORT` at it. It
+    no-ops on `EADDRINUSE`, so running Mailhog/Mailpit on the same port still
+    works.
+
+36. **[Fixed] Refreshing or deep-linking an issuer-only route bounced the
+    user to the dashboard.** Hard-loading `/design-templates` or `/issue` —
+    a bookmark, a refresh, a pasted URL — always redirected a signed-in
+    issuer to `/dashboard` (reproduced 4/4); clicking the same link in the
+    header worked. `middleware/auth.ts` gates those routes on
+    `authStore.isIssuer`, which derives from `profile.profileType`, but on a
+    fresh page load the middleware ran before
+    `plugins/auth-init.client.ts` had started `init()`. It only waited on
+    `authStore.isLoading`, which is still `false` at that point, so there was
+    nothing to wait on: the store looked logged out, the issuer route
+    redirected to `/login`, and `/login`'s own guard — initialized by then —
+    redirected on to `/dashboard`. Fixed by awaiting `authStore.init()` at the
+    top of both `middleware/auth.ts` and `middleware/route-guard.ts`.
+    `init()` was also made concurrency-safe (it previously set its
+    `isInitialized` flag only *after* awaiting its profile fetch, so
+    concurrent callers each ran the whole body); callers now share one
+    in-flight promise. Covered by two regression tests in
+    `src/frontend/e2e/new-organisation-journey.spec.ts` — one asserting deep
+    link + refresh stay put, one asserting signed-out visitors are still
+    redirected to `/login`.
+
+37. **[Fixed] The first batch issuance of every new organisation failed, and
+    permanently broke the achievement it was issuing.** `api::profile.issuer-keys`'
+    `getOrCreateKeyPair()` generated the issuer's Ed25519 keypair lazily, on
+    the first signature, and then mirrored the public key onto the issuer's
+    profile with `entityService.update()`. On a `draftAndPublish` content type
+    that is not an in-place write: verified against `@strapi/core`'s
+    entity-service compat layer, it delegates to
+    `documents().update({ status: 'published' })`, which re-publishes by
+    DELETING the published row and cloning the draft into a new one with a new
+    numeric id. Every relation pointing at the old published profile row went
+    with it. Because the mirror ran mid-issuance, and `credential.batchIssue`
+    puts its recipients through `Promise.all`, the rest of the batch was left
+    holding a numeric profile id that no longer existed:
+    `insert into issuer_keys_profile_lnk ... FOREIGN KEY constraint failed`
+    and `Error creating status list credential: Issuer not found`. The
+    achievement's own `creator` link pointed at that same deleted row, so it
+    was dropped too — every subsequent attempt then failed outright with
+    `Achievement creator not found`. This is the mechanism behind the
+    "re-running the identical issuance immediately after succeeded" flakiness
+    recorded in earlier sessions: on a retry the key already existed, so
+    nothing re-published. Fixed by removing the mirror entirely — signing must
+    not mutate the issuer's identity record. The issuer-key row is now the
+    authoritative home of the public key, and the profile read paths
+    (`getPublicKeys`, `getJWKS`, `getIssuer`) resolve it from there via
+    `issuer-keys.publicKeysForProfile()`, which also still returns anything
+    stored on the profile itself so profiles mirrored before this change are
+    unaffected. `verification.ts` already preferred the issuer-key record.
+
+38. **[Fixed] A batch issuance signed each certificate with a different key,
+    so most of the batch failed verification.** Exposed once item 37 let a
+    batch get far enough to complete. `getOrCreateKeyPair()` was a plain
+    read-then-write find-or-create with no concurrency guard, and
+    `batchIssue` calls it once per recipient through `Promise.all`. For a
+    brand-new issuer all N calls missed the lookup and created N different
+    keypairs for the same profile (confirmed in the dev DB: three
+    `issuer_keys` rows for one profile after a three-recipient batch). Each
+    certificate was signed with whichever key its own call generated, but
+    `getPublicKey()` only ever returns the single row `findOne` picks — so the
+    certificates were issued, emailed out, and then failed verification with
+    "Signature verification failed" for every recipient who did not win the
+    lookup. Silent and hard to spot, since issuance itself reported success.
+    Fixed with a module-scoped in-flight promise map keyed by profile id, so
+    concurrent callers share one creation, plus a post-create re-read: if
+    another process won the race anyway, the loser's row is discarded and the
+    canonical key is used, because that is the one verifiers will be handed.
+
+39. **[Fixed] A successful issuance showed the user nothing at all.**
+    `pages/issue.vue`'s `handleIssue()` set `isSuccess` and `batchResults`
+    from the response and then called `clearForm()`, which reset both — plus
+    `submissionError` — back to their empty values on the very next line. The
+    success banner and the per-recipient results table therefore never
+    rendered: a completely successful batch just silently emptied the form,
+    with no way to tell it apart from a no-op. (The credentials really were
+    issued and the recipients really were emailed.) Fixed by narrowing
+    `clearForm()` to the form *inputs*; `handleIssue()` already resets the
+    outcome state at the start of every submission, which is the correct
+    moment for it.
+
+40. **[Fixed] Dashboard stats and the Plan Usage bar reported exactly double.**
+    `api::profile.dashboard`'s `credentialsIssued`, `credentialsRevoked`,
+    `credentialsExpired`, `credentialsReceived`, `achievementsCreated` and the
+    two `findMany`s behind `uniqueRecipients`/`topAchievements` queried through
+    `strapi.db.query()` without `publishedAt: { $notNull: true }`. That is the
+    low-level query engine, and a `draftAndPublish` create writes two physical
+    rows per entry, so every one of those counts came back at 2×. Three issued
+    certificates displayed as "6 Credentials Issued" and, since `dashboard.vue`
+    feeds `credentialsIssued` into the usage bar's numerator, as "6 / 50" —
+    a free-tier organisation would appear to hit its 50-credential limit after
+    25 real certificates. Enforcement was never affected: the lifecycle hooks
+    count through `api::organization.usage`, which documents this exact hazard
+    and has always filtered. The queries further down the same `Promise.all`
+    (`draftCredentials`, `issuanceByMonth`) had the filter too — which is why
+    the "Issuance over time" chart showed the correct 3 while the headline
+    number said 6. Fixed by adding the filter to all seven, with a regression
+    test that feeds in draft shadow rows and asserts single counts.

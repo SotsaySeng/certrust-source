@@ -1,0 +1,151 @@
+{
+  "kind": "collectionType",
+  "collectionName": "organizations",
+  "info": {
+    "singularName": "organization",
+    "pluralName": "organizations",
+    "displayName": "Organization",
+    "description": "Billing/tenant boundary. Owns profiles, design templates, and events, and is subject to its tier's usage limits (see api::tier-settings.tier-settings, an admin-editable singleType)."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "tier": {
+      "type": "enumeration",
+      "enum": [
+        "free",
+        "pro",
+        "enterprise"
+      ],
+      "default": "free",
+      "required": true
+    },
+    "billingEmail": {
+      "type": "email"
+    },
+    "members": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user"
+    },
+    "profiles": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::profile.profile",
+      "mappedBy": "organization"
+    },
+    "designTemplates": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::design-template.design-template",
+      "mappedBy": "organization"
+    },
+    "events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::event.event",
+      "mappedBy": "organization"
+    },
+    "type": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::org-type.org-type",
+      "inversedBy": "organizations"
+    },
+    "subscriptionStatus": {
+      "type": "enumeration",
+      "enum": [
+        "none",
+        "trialing",
+        "active",
+        "past_due",
+        "canceled"
+      ],
+      "default": "none"
+    },
+    "billingInterval": {
+      "type": "enumeration",
+      "enum": [
+        "month",
+        "year"
+      ]
+    },
+    "billedTier": {
+      "type": "enumeration",
+      "enum": [
+        "pro",
+        "enterprise"
+      ]
+    },
+    "trialEndsAt": {
+      "type": "datetime"
+    },
+    "trialUsed": {
+      "type": "boolean",
+      "default": false
+    },
+    "currentPeriodEnd": {
+      "type": "datetime"
+    },
+    "cancelAtPeriodEnd": {
+      "type": "boolean",
+      "default": false
+    },
+    "pastDueSince": {
+      "type": "datetime"
+    },
+    "canceledAt": {
+      "type": "datetime"
+    },
+    "closedAt": {
+      "type": "datetime"
+    },
+    "suspendedAt": {
+      "type": "datetime"
+    },
+    "suspensionReason": {
+      "type": "text",
+      "private": true
+    },
+    "verificationStatus": {
+      "type": "enumeration",
+      "enum": ["unverified", "pending", "verified", "rejected"],
+      "default": "unverified"
+    },
+    "verificationDomain": {
+      "type": "string"
+    },
+    "verificationDomainProven": {
+      "type": "boolean",
+      "default": false
+    },
+    "verificationRequestedAt": {
+      "type": "datetime"
+    },
+    "verifiedAt": {
+      "type": "datetime"
+    },
+    "verificationNote": {
+      "type": "text",
+      "private": true
+    },
+    "stripeCustomerId": {
+      "type": "string",
+      "private": true
+    },
+    "stripeSubscriptionId": {
+      "type": "string",
+      "private": true
+    }
+  }
+}

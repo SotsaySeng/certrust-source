@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "reports",
+  "info": {
+    "singularName": "report",
+    "pluralName": "reports",
+    "displayName": "Report",
+    "description": "Abuse, impersonation, takedown and privacy reports submitted through /report"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "category": {
+      "type": "enumeration",
+      "enum": ["impersonation", "false-credential", "privacy", "other"],
+      "required": true
+    },
+    "targetUrl": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "details": {
+      "type": "text",
+      "required": true
+    },
+    "reporterName": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "reporterEmail": {
+      "type": "email",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["open", "acknowledged", "actioned", "dismissed"],
+      "default": "open"
+    },
+    "resolution": {
+      "type": "text"
+    },
+    "resolvedAt": {
+      "type": "datetime"
+    }
+  }
+}

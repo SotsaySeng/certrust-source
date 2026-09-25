@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Event",
+    "description": "A real-world event (cohort, ceremony, conference) that an achievement is issued in connection with."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "startDate": {
+      "type": "datetime"
+    },
+    "endDate": {
+      "type": "datetime"
+    },
+    "location": {
+      "type": "string"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "scheduled", "completed", "cancelled"],
+      "default": "draft",
+      "required": true
+    },
+    "achievement": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::achievement.achievement"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::profile.profile"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization",
+      "inversedBy": "events"
+    }
+  }
+}

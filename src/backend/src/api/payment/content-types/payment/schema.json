@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payments",
+  "info": {
+    "singularName": "payment",
+    "pluralName": "payments",
+    "displayName": "Payment",
+    "description": "Ledger of Stripe invoices, written only by the billing webhook (api::billing). Feeds the platform revenue dashboard. Keyed to the organization by documentId rather than a relation, because organization is draftAndPublish and a republish from the admin panel re-creates its row under a new numeric id."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "stripeInvoiceId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "stripeSubscriptionId": {
+      "type": "string"
+    },
+    "organizationDocumentId": {
+      "type": "string"
+    },
+    "organizationName": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "integer",
+      "required": true,
+      "description": "Amount in the currency's smallest unit (cents for USD)."
+    },
+    "currency": {
+      "type": "string",
+      "default": "usd"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["paid", "failed", "refunded"],
+      "required": true
+    },
+    "tier": {
+      "type": "enumeration",
+      "enum": ["pro", "enterprise"]
+    },
+    "interval": {
+      "type": "enumeration",
+      "enum": ["month", "year"]
+    },
+    "paidAt": {
+      "type": "datetime"
+    },
+    "periodStart": {
+      "type": "datetime"
+    },
+    "periodEnd": {
+      "type": "datetime"
+    }
+  }
+}

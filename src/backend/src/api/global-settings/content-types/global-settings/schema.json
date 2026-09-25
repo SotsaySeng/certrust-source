@@ -1,0 +1,55 @@
+{
+  "kind": "singleType",
+  "collectionName": "global_settings",
+  "info": {
+    "singularName": "global-settings",
+    "pluralName": "global-settings-list",
+    "displayName": "Global Settings",
+    "description": "Site-wide chrome shown on every page: the header/footer logo, footer tagline/description, social links, contact info, and the footer's Quick Links / Resources / Legal link lists. Publicly readable (find only, auth: false) so the Nuxt frontend can render the header and footer without authentication - see routes/global-settings.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "description": "Brand mark shown in both the header nav and the footer."
+    },
+    "tagline": { "type": "string" },
+    "description": { "type": "text" },
+    "socialGithubUrl": { "type": "string" },
+    "socialDiscordUrl": { "type": "string" },
+    "socialTwitterUrl": { "type": "string" },
+    "contactEmail": { "type": "email" },
+    "contactWebsiteLabel": {
+      "type": "string",
+      "description": "Display text for the website link, e.g. 'www.example.com' (no scheme)."
+    },
+    "contactWebsiteUrl": {
+      "type": "string",
+      "description": "Actual href for the website link, e.g. 'https://www.example.com'."
+    },
+    "quickLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.link-item"
+    },
+    "resourceLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.link-item"
+    },
+    "legalLinks": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.link-item"
+    },
+    "copyrightText": {
+      "type": "string",
+      "description": "Full footer copyright line, with a literal '{year}' token the frontend substitutes with the current year at render time, e.g. 'Certrust © {year}. All rights reserved.'"
+    }
+  }
+}

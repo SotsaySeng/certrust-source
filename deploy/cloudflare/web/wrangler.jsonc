@@ -1,0 +1,16 @@
+// certrust.app - the Nuxt frontend, built with NITRO_PRESET=cloudflare_module
+// (../deploy.sh builds it with the production URLs baked in, then deploys).
+{
+  "$schema": "../api/node_modules/wrangler/config-schema.json",
+  "name": "certrust-web",
+  "main": "../../../src/frontend/.output/server/index.mjs",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [{ "pattern": "certrust.app", "custom_domain": true }],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "../../../src/frontend/.output/public"
+  },
+  "observability": { "enabled": true }
+}

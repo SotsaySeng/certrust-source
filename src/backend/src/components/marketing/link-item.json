@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_marketing_link_items",
+  "info": {
+    "displayName": "Link Item",
+    "description": "A single {label, url} pair used for admin-editable footer link lists (Quick Links, Resources, Legal). On the frontend, a url starting with '/' renders as a client-side NuxtLink (internal route); anything else renders as an external <a target=\"_blank\">."
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

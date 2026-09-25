@@ -1,0 +1,129 @@
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 134 61% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 140 41% 95%;
+    --secondary-foreground: 150 30% 15%;
+
+    --muted: 140 20% 95.5%;
+    --muted-foreground: 150 8% 40%;
+
+    --accent: 140 41% 95%;
+    --accent-foreground: 150 30% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 140 20% 88%;
+    --input: 140 20% 88%;
+    --ring: 134 61% 41%;
+    --radius: 0.5rem;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+} 
+
+/* Force light mode for dark mode */
+html.dark {
+  color-scheme: light;
+}
+
+@keyframes blob-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-12px) scale(1.03); }
+}
+.blob-float {
+  animation: blob-float 7s ease-in-out infinite;
+}
+
+/* Slow ambient drift for hero-scale gradient mesh blobs - bigger, slower
+   excursion than blob-float so it reads as atmosphere, not a "loading"
+   pulse. */
+@keyframes mesh-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(3%, -4%) scale(1.08); }
+  66% { transform: translate(-2%, 3%) scale(0.96); }
+}
+.mesh-drift {
+  animation: mesh-drift 18s ease-in-out infinite;
+}
+
+/* Gentle continuous float for the hero credential-card visual. */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0) rotate(var(--card-tilt, -4deg)); }
+  50% { transform: translateY(-14px) rotate(calc(var(--card-tilt, -4deg) + 1deg)); }
+}
+.card-float {
+  animation: card-float 6s ease-in-out infinite;
+}
+
+/* Sheen sweep for the "Most popular" pricing badge - a single soft pass of
+   light rather than a garish looping glow. */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
+}
+.shimmer-sweep {
+  animation: shimmer-sweep 3.5s ease-in-out infinite;
+}
+
+/* Fine grain overlay for atmosphere on hero/section backgrounds. Inline
+   SVG feTurbulence data-URI so it needs no image asset; kept extremely
+   subtle (low opacity) so it reads as texture, not noise. */
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Plain CSS staggered fade-up for the hero - deliberately NOT v-motion's
+   JS-timer-scheduled `enter`/`visibleOnce` transitions here: with several
+   simultaneous same-tick bindings at spread-out delays, those proved to
+   race a client-side remount shortly after initial mount (observed via
+   onMounted firing a 2nd time ~450ms in, likely tied to auth-store/i18n
+   client hydration) - elements whose delayed start hadn't fired yet at
+   that point got stuck permanently at their initial opacity:0 state.
+   Browser-native CSS animations aren't scheduled by JS and aren't
+   susceptible to that race. Already covered by the reduced-motion block
+   below since it targets all animations globally. */
+@keyframes hero-reveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-reveal {
+  animation: hero-reveal 0.6s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

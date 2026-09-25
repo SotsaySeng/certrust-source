@@ -1,0 +1,16 @@
+{
+  "name": "certrust-api-worker",
+  "private": true,
+  "description": "Cloudflare Worker + Container that runs the Certrust Strapi backend at api.certrust.app",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "latest"
+  },
+  "devDependencies": {
+    "wrangler": "latest",
+    "typescript": "^5"
+  }
+}

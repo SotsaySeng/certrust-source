@@ -1,0 +1,36 @@
+/**
+ * A notification provider is anything that can tell a recipient they've
+ * been issued a credential. The default (and only, for now) implementation
+ * sends email via Strapi's own email plugin - this interface exists so
+ * alternate providers (SES, Mailgun, Slack, ...) can be added later without
+ * touching credential.ts's issuance logic.
+ */
+
+export interface NotificationPayload {
+  to: string
+  achievement: { name: string; description?: string }
+  credential: { credentialId: string; id: number | string }
+  frontendUrl: string
+  user: { username: string; email: string } | null
+  /** Display name of the issuing organisation/profile (defaults to "Certrust") */
+  issuerName?: string
+  /** Address shown as the help contact; the support line is omitted when empty */
+  supportEmail?: string
+}
+
+export interface ExpirationWarningPayload {
+  to: string
+  achievement: { name: string }
+  credential: { credentialId: string; id: number | string }
+  frontendUrl: string
+  user: { username: string; email: string } | null
+  daysLeft: number
+  expirationDate: Date
+  issuerName?: string
+  supportEmail?: string
+}
+
+export interface NotificationProvider {
+  sendCredentialIssued(payload: NotificationPayload): Promise<void>
+  sendExpirationWarning(payload: ExpirationWarningPayload): Promise<void>
+}

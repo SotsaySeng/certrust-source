@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_settings_usage_limits",
+  "info": {
+    "displayName": "Usage Limits",
+    "description": "Per-dimension usage caps for a single tier. Each field null = unlimited for that dimension."
+  },
+  "options": {},
+  "attributes": {
+    "credentialLimit": {
+      "type": "integer",
+      "min": 0,
+      "description": "Max credentials an organization on this tier may issue. Null = unlimited."
+    },
+    "designTemplateLimit": {
+      "type": "integer",
+      "min": 0,
+      "description": "Max design templates an organization on this tier may create. Null = unlimited."
+    },
+    "achievementLimit": {
+      "type": "integer",
+      "min": 0,
+      "description": "Max achievements (credential templates) an organization on this tier may create. Null = unlimited."
+    }
+  }
+}

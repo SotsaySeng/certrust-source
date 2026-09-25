@@ -1,0 +1,70 @@
+// api.certrust.app - Worker + Container running the Strapi backend.
+// Secrets are NOT in this file: ../push-secrets.sh uploads them with
+// `wrangler secret bulk` from src/backend/.env.production.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "certrust-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [{ "pattern": "api.certrust.app", "custom_domain": true }],
+
+  "containers": [
+    {
+      "class_name": "StrapiBackend",
+      "image": "../../../src/backend/Dockerfile",
+      "image_build_context": "../../../src/backend",
+      // 1 GiB. Move to "standard-1" (4 GiB) only if a test batch runs out of memory.
+      "instance_type": "basic",
+      // Exactly one: see INSTANCE in src/index.ts.
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "STRAPI", "class_name": "StrapiBackend" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StrapiBackend"] }],
+
+  // Every 6h: wake the backend so its scanners run. 14:30 UTC: also the daily backup.
+  "triggers": { "crons": ["0 */6 * * *", "30 14 * * *"] },
+  "observability": { "enabled": true },
+
+  "vars": {
+    "NODE_ENV": "production",
+    "HOST": "0.0.0.0",
+    "PORT": "1337",
+    "IS_PROXIED": "true",
+    "PUBLIC_URL": "https://api.certrust.app",
+    "FRONTEND_URL": "https://certrust.app",
+    "CORS_ALLOWED_ORIGINS": "https://certrust.app,https://api.certrust.app",
+    "STRAPI_TELEMETRY_DISABLED": "true",
+
+    "DATABASE_CLIENT": "postgres",
+    "DATABASE_SSL": "true",
+
+    "UPLOAD_PROVIDER": "s3",
+    "S3_REGION": "auto",
+    "S3_BUCKET": "certrust-files",
+    "S3_FORCE_PATH_STYLE": "true",
+    "S3_PUBLIC_URL": "https://files.certrust.app",
+    "S3_ACL": "",
+    "BACKUP_S3_BUCKET": "certrust-backups",
+
+    "SMTP_HOST": "smtp.mx.cloudflare.net",
+    "SMTP_PORT": "465",
+    "SMTP_SECURE": "true",
+    "SMTP_REQUIRE_TLS": "false",
+    "SMTP_USERNAME": "api_token",
+    "SMTP_FROM": "Certrust <certificates@certrust.app>",
+    "SMTP_REPLY_TO": "support@certrust.app",
+    // Trust & safety / DPO inbox (reports, issuer verification), published
+    // in the Privacy Policy and DPA. Email Routing forwards it to Gmail.
+    "PRIVACY_EMAIL": "privacy@certrust.app",
+    "SUPPORT_EMAIL": "support@certrust.app",
+    "DEV_MAIL_CATCHER": "false",
+
+    // Off until Stripe is live (see src/backend/.env.example).
+    "BILLING_SCANNER_ENABLED": "false"
+  }
+}

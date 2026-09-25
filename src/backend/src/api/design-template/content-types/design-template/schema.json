@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "design_templates",
+  "info": {
+    "singularName": "design-template",
+    "pluralName": "design-templates",
+    "displayName": "Design Template",
+    "description": "Reusable visual layout (colors, background, fonts) for rendering a badge or certificate."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["certificate", "badge", "transcript", "training_record", "assessment", "letter"],
+      "default": "badge",
+      "required": true
+    },
+    "previewImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "layoutConfig": {
+      "type": "json",
+      "default": {}
+    },
+    "isDefault": {
+      "type": "boolean",
+      "default": false
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::profile.profile"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization",
+      "inversedBy": "designTemplates"
+    }
+  }
+}

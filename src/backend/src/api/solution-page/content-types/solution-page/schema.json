@@ -1,0 +1,30 @@
+{
+  "kind": "singleType",
+  "collectionName": "solution_pages",
+  "info": {
+    "singularName": "solution-page",
+    "pluralName": "solution-pages",
+    "displayName": "Solution Page",
+    "description": "Content for the public /solution page's pricing plans. Publicly readable (find only, auth: false) - see routes/solution-page.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Deliberately separate from tier-settings (the real enforced numeric limits, read server-side by organization/services/usage.ts, admin-only with no REST endpoint) - this is marketing display copy and may legitimately show different numbers than what's actually enforced."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "header": { "type": "string" },
+    "subheader": { "type": "text" },
+    "mostPopularLabel": { "type": "string" },
+    "limitLabelCredentials": { "type": "string" },
+    "limitLabelDesignTemplates": { "type": "string" },
+    "limitLabelAchievements": { "type": "string" },
+    "coreFeature1": { "type": "string" },
+    "coreFeature2": { "type": "string" },
+    "coreFeature3": { "type": "string" },
+    "tiers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.pricing-tier"
+    }
+  }
+}

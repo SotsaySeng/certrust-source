@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_marketing_audience_segments",
+  "info": {
+    "displayName": "Audience Segment",
+    "description": "One card in the homepage's 'Who it's for' grid (Government / Education / Corporate / Nonprofit, etc.)."
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "icon": {
+      "type": "enumeration",
+      "enum": [
+        "pencil-square", "rocket-launch", "shield-check", "building-library",
+        "academic-cap", "briefcase", "heart", "check-circle", "star",
+        "document-text", "clipboard-document-check", "clipboard-document-list",
+        "envelope-open", "globe-alt", "lock-closed", "chart-bar", "users",
+        "sparkles", "bolt", "flag", "check"
+      ],
+      "required": true,
+      "description": "Heroicons name, rendered via BaseIcon.vue (collection='heroicons'). Restricted to an enum rather than free text so an admin can't type an icon name that doesn't exist in the bundled @iconify-json/heroicons set and silently render nothing."
+    }
+  }
+}
