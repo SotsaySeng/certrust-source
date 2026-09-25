@@ -108,7 +108,7 @@ describe('strapi-email-provider', () => {
     expect(sentEmails[0].from).toBe('"Zettabyte Lab via Certrust" <certificates@certrust.app>')
   })
 
-  it('mentions signing in without a username/"set your password" block', async () => {
+  it('has no account/sign-in or set-password block', async () => {
     const { strapi, sentEmails } = createFakeStrapi()
     const provider = createStrapiEmailProvider(strapi)
 
@@ -123,7 +123,7 @@ describe('strapi-email-provider', () => {
     const { html, text } = sentEmails[0]
     for (const body of [html, text]) {
       expect(body).not.toMatch(/Username|recipient1790|Set Your Password/i)
-      expect(body).toContain('Forgot password')
+      expect(body).not.toMatch(/Forgot password|signing in|sign in/i)
     }
   })
 

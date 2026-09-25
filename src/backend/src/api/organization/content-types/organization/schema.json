@@ -139,6 +139,10 @@
       "type": "text",
       "private": true
     },
+    "verificationMessage": {
+      "type": "text",
+      "private": true
+    },
     "stripeCustomerId": {
       "type": "string",
       "private": true

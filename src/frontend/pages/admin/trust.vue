@@ -63,6 +63,41 @@ const updateReport = (report: any, status: string) =>
   act(`r${report.id}`, () => apiClient.post(`/api/trust/admin/reports/${report.id}`, { status, resolution: notes[`r${report.id}`] || report.resolution || '' }))
 
 const formatDate = (d?: string) => d ? new Date(d).toLocaleString() : '–'
+const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+
+const STATUS_CLASS: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-900',
+  verified: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+}
+
+// Evidence is private: fetched with the session and shown from a blob URL,
+// never linked directly. Open the tab first so the popup blocker allows it.
+async function viewDocument(doc: any) {
+  const tab = window.open('', '_blank')
+  busy.value = `d${doc.id}`
+  try {
+    const blob = await apiClient.getBlob(`/api/trust/admin/verification-documents/${doc.id}`)
+    const url = URL.createObjectURL(blob)
+    if (tab) {
+      tab.location.href = url
+    }
+    else {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.fileName
+      a.click()
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
+  catch (err: any) {
+    tab?.close()
+    error.value = err?.message || 'Could not open the document'
+  }
+  finally {
+    busy.value = null
+  }
+}
 
 onMounted(load)
 </script>
@@ -74,7 +109,7 @@ onMounted(load)
         Trust &amp; safety
       </h1>
       <p class="text-gray-600 mb-8">
-        Acknowledge reports within 2 business days and decide within 5 (Terms s.7). Every decision here is audit-logged.
+        Acknowledge reports within 2 business days and decide within 5 (Terms s.7). Every decision, and every document opened, is audit-logged.
       </p>
 
       <p v-if="error" class="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
@@ -97,18 +132,40 @@ onMounted(load)
               <div>
                 <p class="font-semibold">
                   {{ org.name }}
-                  <span class="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs">{{ org.verificationStatus }}</span>
+                  <span class="ml-2 rounded-full px-2 py-0.5 text-xs" :class="STATUS_CLASS[org.verificationStatus] || 'bg-gray-100'">{{ org.verificationStatus }}</span>
                   <span v-if="org.suspended" class="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">suspended</span>
                 </p>
                 <p class="text-sm text-gray-600 mt-1">
                   Domain: <strong>{{ org.verificationDomain || '–' }}</strong>
-                  · {{ org.verificationDomainProven ? 'a member signed up with an email on this domain' : 'no email on this domain - ask for official documents' }}
+                  <template v-if="org.verificationDomain">
+                    · {{ org.verificationDomainProven ? 'proven: the requester signed up with an email on this domain' : 'not proven by email - rely on the documents' }}
+                  </template>
                 </p>
                 <p class="text-sm text-gray-500">
                   Requested {{ formatDate(org.verificationRequestedAt) }} · Members: {{ org.members.join(', ') }}
                 </p>
-                <p v-if="org.verificationNote" class="text-sm text-gray-500">
-                  Note: {{ org.verificationNote }}
+                <p v-if="org.verificationMessage" class="mt-2 whitespace-pre-line rounded-lg bg-gray-50 p-3 text-sm text-gray-800">
+                  <span class="block text-xs font-medium text-gray-500 mb-1">Message from the organisation</span>{{ org.verificationMessage }}
+                </p>
+                <div class="mt-2 text-sm" data-testid="trust-org-documents">
+                  <p v-if="!org.documents?.length" class="text-gray-500">
+                    No documents uploaded.
+                  </p>
+                  <ul v-else class="flex flex-wrap gap-2">
+                    <li v-for="doc in org.documents" :key="doc.id">
+                      <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-50" :disabled="busy === `d${doc.id}`" :title="`Uploaded ${formatDate(doc.createdAt)}${doc.uploadedByEmail ? ` by ${doc.uploadedByEmail}` : ''}`" @click="viewDocument(doc)">
+                        <span :class="doc.mimeType === 'application/pdf' ? 'i-heroicons-document-text' : 'i-heroicons-photo'" class="h-4 w-4 text-gray-500" aria-hidden="true" />
+                        {{ doc.fileName }}
+                        <span class="text-xs text-gray-400">{{ formatSize(doc.size) }}</span>
+                      </button>
+                    </li>
+                  </ul>
+                  <p v-if="org.documents?.some((d: any) => d.purgeAfter)" class="mt-1 text-xs text-gray-400">
+                    Scheduled for deletion {{ formatDate(org.documents.find((d: any) => d.purgeAfter).purgeAfter) }} (90 days after the decision).
+                  </p>
+                </div>
+                <p v-if="org.verificationNote" class="mt-2 text-sm text-gray-500">
+                  Decision note: {{ org.verificationNote }}
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">

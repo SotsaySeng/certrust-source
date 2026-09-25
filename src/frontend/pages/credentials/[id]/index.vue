@@ -20,7 +20,6 @@ const credentialId = rawId
   : ''
 
 const shareableUrl = `${WEBSITE_URL}/credentials/${encodeURIComponent(credentialId)}`
-const ogImageUrl = `${WEBSITE_URL}/.netlify/functions/og-credential?id=${encodeURIComponent(credentialId)}`
 
 // ============================================================================
 // 2. DATA FETCHING
@@ -138,6 +137,17 @@ function getIssuerName(): string {
 const isPrivate = computed(() => verificationData.value?.rawCredential?.visibility === 'private')
 const canManage = computed(() => !!verificationData.value?.viewer?.canManage)
 
+// Link preview picture for Facebook/WhatsApp/LinkedIn: the rendered
+// certificate (backend share-image endpoint). It shows the recipient's name,
+// so private, revoked or unloaded credentials get the generic site image.
+const ogImageUrl = computed(() => {
+  const raw = verificationData.value?.rawCredential
+  if (!raw || isPrivate.value || raw.revoked || !apiUrl) {
+    return `${WEBSITE_URL}/og-default.png`
+  }
+  return `${apiUrl}/api/credentials/${encodeURIComponent(credentialId)}/share-image`
+})
+
 function onVisibilityChanged(visibility: 'public' | 'private') {
   if (verificationData.value?.rawCredential) {
     verificationData.value.rawCredential.visibility = visibility
@@ -177,7 +187,7 @@ useSeoMeta({
     if (name) { return `View and verify "${name}" issued by ${getIssuerName()} via Certrust.` }
     return 'View and verify this digital credential issued via Certrust.'
   },
-  ogImage: ogImageUrl,
+  ogImage: () => ogImageUrl.value,
   ogImageWidth: 1200,
   ogImageHeight: 630,
   ogImageAlt: () => {
@@ -198,7 +208,7 @@ useSeoMeta({
     if (name) { return `View and verify "${name}" issued by ${getIssuerName()} via Certrust.` }
     return 'View and verify this digital credential issued via Certrust.'
   },
-  twitterImage: ogImageUrl,
+  twitterImage: () => ogImageUrl.value,
   twitterImageAlt: () => {
     const name = getCredentialName()
     return name ? `${name} - verified credential` : 'Certrust credential'
@@ -409,6 +419,20 @@ function getLinkedInAddToProfileUrl() {
   return `https://www.linkedin.com/profile/add?${params.toString()}`
 }
 
+// Plain share links, no Facebook/WhatsApp SDK or tracking script on the page.
+// Both apps build the preview (title, description, certificate picture) from
+// this page's og: tags, so there is nothing else to pass.
+const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}`
+
+function getWhatsAppShareUrl() {
+  const text = t('credential.whatsappShareText', {
+    name: getCredentialName() || t('credential.title'),
+    issuer: getIssuerName(),
+    url: shareableUrl,
+  })
+  return `https://wa.me/?text=${encodeURIComponent(text)}`
+}
+
 // ============================================================================
 // EXPIRATION & RENEWAL
 // ============================================================================
@@ -514,8 +538,8 @@ async function submitRenewal() {
 
     <!-- Credential Details -->
     <div v-else-if="credential" class="max-w-4xl mx-auto">
-      <!-- LinkedIn Add to Profile Button at the Top (not for visitors of a private credential) -->
-      <div v-if="!isPrivate || canManage" class="flex flex-wrap gap-4 mb-6">
+      <!-- LinkedIn / Facebook / WhatsApp at the Top (not for visitors of a private credential) -->
+      <div v-if="!isPrivate || canManage" class="flex flex-wrap gap-3 mb-6">
         <a
           :href="getLinkedInAddToProfileUrl()"
           target="_blank"
@@ -526,6 +550,30 @@ async function submitRenewal() {
           <img src="https://download.linkedin.com/desktop/add2profile/buttons/en_US.png" alt="LinkedIn Add to Profile" class="h-5 w-auto">
           Add to LinkedIn
         </a>
+        <!-- A private credential has no public page to preview, so only
+             LinkedIn (which records it on the holder's own profile) stays. -->
+        <template v-if="!isPrivate">
+          <a
+            :href="facebookShareUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0866ff] text-white rounded hover:bg-[#0654d4] transition-colors text-sm font-medium"
+            data-testid="share-facebook"
+          >
+            <span class="i-simple-icons-facebook w-4 h-4" aria-hidden="true" />
+            {{ t('credential.shareFacebook') }}
+          </a>
+          <a
+            :href="getWhatsAppShareUrl()"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#077a55] text-white rounded hover:bg-[#05603f] transition-colors text-sm font-medium"
+            data-testid="share-whatsapp"
+          >
+            <span class="i-simple-icons-whatsapp w-4 h-4" aria-hidden="true" />
+            {{ t('credential.shareWhatsApp') }}
+          </a>
+        </template>
       </div>
 
       <!-- Expiration / Renewal Banner -->

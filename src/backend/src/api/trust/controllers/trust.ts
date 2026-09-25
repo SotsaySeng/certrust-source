@@ -1,10 +1,11 @@
 /**
  * Trust & safety: issuer verification and reports (Terms s.7).
  *
- * - An organisation asks to be verified for an official domain. If the
- *   member asking signed up with an email on that domain, the domain is
- *   recorded as proven; otherwise they are told to send official documents
- *   to the privacy inbox. A platform admin decides either way.
+ * - An organisation asks to be verified, giving its official domain and/or
+ *   uploading official documents (services/verification-documents.ts -
+ *   private, never in the public upload bucket). If the member asking
+ *   signed up with an email on that domain, the domain is recorded as
+ *   proven. A platform admin reviews the evidence and decides either way.
  * - Anyone can report a credential or account (impersonation, false
  *   credential, privacy). Reports are stored, forwarded to the privacy
  *   inbox and acknowledged to the reporter.
@@ -16,7 +17,10 @@
  * published rows) - see the header of api/billing/services/billing.ts.
  */
 
+import { DocumentError } from '../services/verification-documents'
+
 const ORG_UID = 'api::organization.organization'
+const DOCS = 'api::trust.verification-documents'
 const REPORT_UID = 'api::trust.report'
 const CATEGORIES = ['impersonation', 'false-credential', 'privacy', 'other']
 const DOMAIN_RE = /^(?=.{3,253}$)(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/
@@ -93,6 +97,7 @@ function publicStatus(org: any) {
     verificationStatus: org.verificationStatus || 'unverified',
     verificationDomain: org.verificationDomain || null,
     verificationDomainProven: !!org.verificationDomainProven,
+    verificationMessage: org.verificationMessage || null,
     verificationRequestedAt: org.verificationRequestedAt || null,
     verifiedAt: org.verifiedAt || null,
     suspended: !!org.suspendedAt,
@@ -100,32 +105,46 @@ function publicStatus(org: any) {
 }
 
 export default ({ strapi }: { strapi: any }) => ({
-  /** GET /trust/verification - the caller's organisation's status. */
+  /** GET /trust/verification - the caller's organisation's status and the documents it has on file. */
   async myVerification(ctx: any) {
     if (!requireUser(ctx)) return
     const org = await callerOrganization(strapi, ctx.state.user.id)
     if (!org) return ctx.notFound('You are not a member of an organisation')
-    return { data: publicStatus(org) }
+    const documents = await strapi.service(DOCS).list(org.documentId)
+    return { data: { ...publicStatus(org), documents } }
   },
 
-  /** POST /trust/verification { domain } */
+  /** POST /trust/verification { domain?, message? } - submit (or update) a request for review. */
   async requestVerification(ctx: any) {
     if (!requireUser(ctx)) return
     const org = await callerOrganization(strapi, ctx.state.user.id)
     if (!org) return ctx.notFound('You are not a member of an organisation')
     if (org.verificationStatus === 'verified') return ctx.badRequest('Your organisation is already verified')
+    if (org.suspendedAt) return ctx.forbidden('Your organisation is suspended pending review')
 
-    const domain = normaliseDomain((ctx.request.body as any)?.domain)
-    if (!domain) return ctx.badRequest('Enter your organisation\'s official website domain, for example example.edu')
+    const body = (ctx.request.body as any) || {}
+    const rawDomain = typeof body.domain === 'string' ? body.domain.trim() : ''
+    const domain = rawDomain ? normaliseDomain(rawDomain) : null
+    if (rawDomain && !domain) return ctx.badRequest('Enter your organisation\'s official website domain, for example example.edu')
+    const message = clean(body.message, 2000) || null
 
-    const proven = emailDomainMatches(ctx.state.user.email, domain)
+    const docs = strapi.service(DOCS)
+    const documentCount = await docs.count(org.documentId)
+    if (!domain && !documentCount) {
+      return ctx.badRequest('Give your official website domain or upload at least one document')
+    }
+
+    const proven = !!domain && emailDomainMatches(ctx.state.user.email, domain)
     const now = new Date()
-    await strapi.service('api::billing.billing').updateOrg(org.documentId, {
+    const changes = {
       verificationStatus: 'pending',
       verificationDomain: domain,
       verificationDomainProven: proven,
+      verificationMessage: message,
       verificationRequestedAt: now,
-    })
+    }
+    await strapi.service('api::billing.billing').updateOrg(org.documentId, changes)
+    await docs.keep(org.documentId)
 
     const privacyEmail = strapi.config.get('custom.privacyEmail', '')
     await send(strapi, {
@@ -135,10 +154,11 @@ export default ({ strapi }: { strapi: any }) => ({
       text: [
         `Organisation: ${org.name} (id ${org.id})`,
         `Requested by: ${ctx.state.user.email}`,
-        `Domain: ${domain}`,
-        `Email on that domain: ${proven ? 'yes - domain control proven by a confirmed sign-up email' : 'no - ask for official documents'}`,
+        `Domain: ${domain ? `${domain} (${proven ? 'proven - the requester signed up with an email on it' : 'not proven by email'})` : '(none given)'}`,
+        `Documents on file: ${documentCount}`,
+        ...(message ? ['', 'Message:', message] : []),
         '',
-        'Review it in the Certrust admin page (Trust tab).',
+        'Review it in the Certrust admin page (Trust & safety).',
       ].join('\n'),
     })
 
@@ -147,10 +167,74 @@ export default ({ strapi }: { strapi: any }) => ({
       entityType: 'organization',
       entityId: String(org.id),
       actorId: ctx.state.user.id,
-      metadata: { domain, proven },
+      metadata: { domain, proven, documentCount },
     })
 
-    return { data: { ...publicStatus({ ...org, verificationStatus: 'pending', verificationDomain: domain, verificationDomainProven: proven, verificationRequestedAt: now }) } }
+    const documents = await docs.list(org.documentId)
+    return { data: { ...publicStatus({ ...org, ...changes }), documents } }
+  },
+
+  /** POST /trust/verification/documents (multipart, field "files") */
+  async uploadVerificationDocuments(ctx: any) {
+    if (!requireUser(ctx)) return
+    const org = await callerOrganization(strapi, ctx.state.user.id)
+    if (!org) return ctx.notFound('You are not a member of an organisation')
+    if (org.verificationStatus === 'verified') return ctx.badRequest('Your organisation is already verified')
+    if (org.suspendedAt) return ctx.forbidden('Your organisation is suspended pending review')
+
+    const raw = ctx.request.files?.files ?? ctx.request.files?.file
+    const files = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter(Boolean)
+    if (!files.length) return ctx.badRequest('Choose at least one file')
+
+    let stored
+    try {
+      stored = await strapi.service(DOCS).store(org.documentId, files, ctx.state.user)
+    }
+    catch (err) {
+      if (err instanceof DocumentError) return ctx.badRequest(err.message)
+      throw err
+    }
+
+    await strapi.service('api::audit-log-entry.audit-log').record({
+      action: 'organization.verification.document.upload',
+      entityType: 'organization',
+      entityId: String(org.id),
+      actorId: ctx.state.user.id,
+      metadata: { documents: stored.map((d: any) => ({ id: d.id, fileName: d.fileName, size: d.size })) },
+    })
+
+    // A pending request gets new evidence: tell the reviewers.
+    if (org.verificationStatus === 'pending') {
+      await send(strapi, {
+        to: strapi.config.get('custom.privacyEmail', ''),
+        replyTo: ctx.state.user.email,
+        subject: `New verification documents: ${org.name}`,
+        text: `${ctx.state.user.email} added ${stored.length} document(s) to the pending verification request for ${org.name}.\n\nReview it in the Certrust admin page (Trust & safety).`,
+      })
+    }
+
+    return { data: await strapi.service(DOCS).list(org.documentId) }
+  },
+
+  /** DELETE /trust/verification/documents/:id */
+  async deleteVerificationDocument(ctx: any) {
+    if (!requireUser(ctx)) return
+    const org = await callerOrganization(strapi, ctx.state.user.id)
+    if (!org) return ctx.notFound('You are not a member of an organisation')
+    if (org.verificationStatus === 'verified') return ctx.badRequest('Your organisation is already verified')
+
+    const docs = strapi.service(DOCS)
+    const doc = await docs.findOwn(org.documentId, Number(ctx.params.id))
+    if (!doc) return ctx.notFound('Document not found')
+    await docs.remove(doc.id)
+    await strapi.service('api::audit-log-entry.audit-log').record({
+      action: 'organization.verification.document.delete',
+      entityType: 'organization',
+      entityId: String(org.id),
+      actorId: ctx.state.user.id,
+      metadata: { id: doc.id, fileName: doc.fileName },
+    })
+    return { data: await docs.list(org.documentId) }
   },
 
   /** POST /trust/reports - anonymous. */
@@ -199,7 +283,10 @@ export default ({ strapi }: { strapi: any }) => ({
       populate: { members: { select: ['id', 'email', 'username'] } },
       orderBy: { verificationRequestedAt: 'desc' },
     })
+    const order: Record<string, number> = { pending: 0, rejected: 1, verified: 2 }
+    orgs.sort((a: any, b: any) => (order[a.verificationStatus] ?? 3) - (order[b.verificationStatus] ?? 3))
     const contacts = await Promise.all(orgs.map((o: any) => organisationContacts(strapi, o)))
+    const documents = await Promise.all(orgs.map((o: any) => strapi.service(DOCS).list(o.documentId)))
     return {
       data: orgs.map((o: any, i: number) => ({
         id: o.id,
@@ -210,8 +297,31 @@ export default ({ strapi }: { strapi: any }) => ({
         suspensionReason: o.suspensionReason,
         verificationNote: o.verificationNote,
         ...publicStatus(o),
+        documents: documents[i],
       })),
     }
+  },
+
+  /** GET /trust/admin/verification-documents/:id - the file itself. */
+  async adminDownloadDocument(ctx: any) {
+    const doc = await strapi.service(DOCS).read(Number(ctx.params.id))
+    if (!doc) return ctx.notFound('Document not found')
+    await strapi.service('api::audit-log-entry.audit-log').record({
+      action: 'organization.verification.document.view',
+      entityType: 'verification-document',
+      entityId: String(doc.id),
+      actorId: ctx.state.user.id,
+      metadata: { organizationDocumentId: doc.organizationDocumentId, fileName: doc.fileName },
+    })
+    // Served as an inert download: the type was sniffed on upload, the
+    // browser must not second-guess it, and nothing in it may run on the
+    // API's origin or be cached along the way.
+    ctx.set('Content-Type', doc.mimeType)
+    ctx.set('Content-Disposition', `attachment; filename="${doc.fileName}"`)
+    ctx.set('X-Content-Type-Options', 'nosniff')
+    ctx.set('Content-Security-Policy', "default-src 'none'; sandbox")
+    ctx.set('Cache-Control', 'no-store')
+    ctx.body = doc.buffer
   },
 
   /** POST /trust/admin/organizations/:id/verification { status, note } */
@@ -226,6 +336,9 @@ export default ({ strapi }: { strapi: any }) => ({
       verifiedAt: status === 'verified' ? new Date() : null,
       verificationNote: clean(note, 2000) || null,
     })
+    // Decided: the evidence is kept for a while in case of questions or an
+    // appeal, then deleted (Privacy Policy s.9).
+    await strapi.service(DOCS).scheduleDeletion(org.documentId)
     await strapi.service('api::audit-log-entry.audit-log').record({
       action: 'organization.verification.decide',
       entityType: 'organization',

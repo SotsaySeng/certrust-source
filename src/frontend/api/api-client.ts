@@ -69,7 +69,11 @@ export class ApiClient {
       throw new Error('API baseUrl is not set. Make sure the Nuxt plugin initializes the API client before use.')
     }
     const url = `${this.baseUrl}${endpoint}`
-    const headers = this.getHeaders()
+    const headers = this.getHeaders() as Record<string, string>
+    if (options.body instanceof FormData) {
+      // The browser sets multipart/form-data with its boundary.
+      delete headers['Content-Type']
+    }
 
     const config: RequestInit = {
       ...options,
@@ -167,6 +171,23 @@ export class ApiClient {
    */
   delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'DELETE' })
+  }
+
+  /**
+   * POST multipart/form-data (file uploads). The browser must set the
+   * Content-Type itself so it can add the multipart boundary.
+   */
+  postForm<T>(endpoint: string, form: FormData): Promise<T> {
+    return this.request<T>(endpoint, { method: 'POST', body: form })
+  }
+
+  /** GET a file, with the session cookie, as a Blob. */
+  async getBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, { headers: this.getHeaders(), credentials: 'include' })
+    if (!response.ok) {
+      throw new Error(`Download failed with status ${response.status}`)
+    }
+    return response.blob()
   }
 
   // Badge-specific methods
@@ -791,7 +812,7 @@ export class ApiClient {
 
   /** Platform admins only: the org table as CSV, fetched with auth so it can be saved as a file. */
   async downloadBillingCsv(): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/api/billing/admin/export`, { headers: this.getHeaders() })
+    const response = await fetch(`${this.baseUrl}/api/billing/admin/export`, { headers: this.getHeaders(), credentials: 'include' })
     if (!response.ok) {
       throw new Error(`Export failed with status ${response.status}`)
     }

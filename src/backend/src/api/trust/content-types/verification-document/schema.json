@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "verification_documents",
+  "info": {
+    "singularName": "verification-document",
+    "pluralName": "verification-documents",
+    "displayName": "Verification document",
+    "description": "Evidence an organisation uploads to become a verified issuer. Kept in the database, never in the public upload bucket; only platform admins can read it (api::trust.verification-documents)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    },
+    "content-type-builder": {
+      "visible": false
+    }
+  },
+  "attributes": {
+    "organizationDocumentId": {
+      "type": "string",
+      "required": true
+    },
+    "fileName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200
+    },
+    "mimeType": {
+      "type": "string",
+      "required": true
+    },
+    "size": {
+      "type": "integer",
+      "required": true
+    },
+    "sha256": {
+      "type": "string"
+    },
+    "data": {
+      "type": "text",
+      "private": true
+    },
+    "uploadedById": {
+      "type": "integer"
+    },
+    "uploadedByEmail": {
+      "type": "string"
+    },
+    "purgeAfter": {
+      "type": "datetime"
+    }
+  }
+}

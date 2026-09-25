@@ -18,7 +18,11 @@
       // 1 GiB. Move to "standard-1" (4 GiB) only if a test batch runs out of memory.
       "instance_type": "basic",
       // Exactly one: see INSTANCE in src/index.ts.
-      "max_instances": 1
+      "max_instances": 1,
+      // Keep the container next to the Neon database (Singapore). Unconstrained,
+      // Cloudflare started it in Atlanta and every Strapi query crossed the
+      // Pacific; the Durable Object location hint alone does not move it.
+      "constraints": { "regions": ["APAC"] }
     }
   ],
   "durable_objects": {

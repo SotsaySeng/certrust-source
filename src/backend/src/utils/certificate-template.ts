@@ -89,11 +89,11 @@ export const generateCertificateSvg = async (data: CertificateData): Promise<str
   <text x="400" y="440" font-family="'Georgia', serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#333">${escapeXml(issuerName)}</text>
   
   <!-- Date -->
-  <text x="400" y="490" font-family="'Georgia', serif" font-size="16" text-anchor="middle" fill="#555">on ${formattedDate}</text>
+  <text x="400" y="466" font-family="'Georgia', serif" font-size="16" text-anchor="middle" fill="#555">on ${formattedDate}</text>
   
-  <!-- Signature Line -->
-  <line x1="250" y1="450" x2="550" y2="450" stroke="#333" stroke-width="1" />
-  <text x="400" y="480" font-family="'Georgia', serif" font-size="16" text-anchor="middle" fill="#555">Authorized Signature</text>
+  <!-- Signature Line (below the date; they used to overlap) -->
+  <line x1="300" y1="498" x2="500" y2="498" stroke="#333" stroke-width="1" />
+  <text x="400" y="516" font-family="'Georgia', serif" font-size="14" text-anchor="middle" fill="#555">Authorized Signature</text>
   <text x="400" y="540" font-size="14" fill="#888" text-anchor="middle">Credential ID: ${escapeXml(credentialId)}</text>
 
   <!-- QR Code: scan to verify -->

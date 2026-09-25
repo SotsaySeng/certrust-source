@@ -529,6 +529,31 @@ export default factories.createCoreController('api::credential.credential', ({ s
   },
 
   /**
+   * GET /credentials/:id/share-image - the og:image of the credential page,
+   * fetched anonymously by Facebook, WhatsApp etc. when a link is shared.
+   * Public, unrevoked credentials only: the image carries the recipient's
+   * name, and a crawler never has the holder's session anyway.
+   */
+  async getShareImage(ctx) {
+    try {
+      const credential = await findPublicCredential(strapi, ctx.params.id)
+      if (!credential || credential.revoked || isCredentialPrivate(credential)) {
+        return ctx.notFound('Credential not found')
+      }
+
+      const image = await strapi.service('api::credential.certificate').generateShareImage(credential.id)
+      ctx.type = 'image/jpeg'
+      // Short: a credential made private or revoked should drop out of
+      // caches we control soon (Facebook keeps its own copy regardless).
+      ctx.set('Cache-Control', 'public, max-age=3600')
+      ctx.body = image
+    } catch (error) {
+      console.error('Error generating share image:', error)
+      return ctx.internalServerError('Failed to generate share image')
+    }
+  },
+
+  /**
    * Direct certificate endpoint for /verify/:id
    * Returns the certificate image for a credential
    */

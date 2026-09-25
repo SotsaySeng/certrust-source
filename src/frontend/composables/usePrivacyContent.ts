@@ -27,6 +27,7 @@ export function usePrivacyContent() {
         items: [
           '<strong>Account holders:</strong> name, username, email address, organisation name and type, encrypted password (we store only a one-way hash), account settings, and an audit log of actions in the account.',
           '<strong>Billing:</strong> billing email, plan, invoices and payment status. Card details are collected and held by Stripe. We never receive full card numbers.',
+          '<strong>Issuer verification:</strong> if an Issuer asks to be verified, the official domain it gives, its message to us, and any documents it uploads to prove who it is (for example a registration certificate or a letter of authority), which may name the people who signed them. These documents are stored privately and seen only by Certrust staff who review the request.',
           '<strong>Recipients</strong> (provided by the Issuer): name, email address, the credential\'s content (achievement, dates, evidence and any description), whether it was issued to a minor, and its visibility setting. If a Recipient sets a password, we also hold their account data as above.',
           '<strong>Verifiers and website visitors:</strong> IP address, browser and device information, pages and credentials viewed, and the time of the request, kept in security and server logs.',
           '<strong>Communications:</strong> emails you send us, reports submitted through our report page, and records of what we did about them.',
@@ -114,6 +115,7 @@ export function usePrivacyContent() {
           '<strong>Credentials:</strong> for as long as the Issuer keeps them, including after the Issuer leaves (section 5), until the Issuer or the Recipient asks for deletion.',
           '<strong>Security and server logs:</strong> up to 90 days, unless needed to investigate an incident.',
           '<strong>Reports and support emails:</strong> up to 2 years after the matter is closed.',
+          '<strong>Issuer verification documents:</strong> while the request is being reviewed, then deleted 90 days after we decide it, or straight away if the Issuer closes its account. We keep the decision itself (verified or not, and when) for as long as the account exists.',
           `<strong>Backups:</strong> deleted data can remain in our encrypted backups for up to <strong>${L.backupRetentionDays} days</strong>, until those backups rotate out. Backups are used only to recover from a disaster; data deleted before a restore is not brought back into use.`,
         ],
       },

@@ -49,8 +49,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
 
       const recipientEntity = await this.findOrCreateRecipientProfile(recipient)
 
-      // Find or create user associated with the profile
-      await this.findOrCreateUser(recipientEntity)
 
       // Generate a unique credential ID
       const credentialId = `urn:uuid:${this.generateUUID()}`
@@ -172,11 +170,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
 
       try {
         if (recipientEntity.email) {
-          // Check if a user was created for this profile
-          const user = await strapi.query('plugin::users-permissions.user').findOne({
-            where: { email: recipientEntity.email }
-          })
-
           const frontendUrl = strapi.config.get('frontend.url', 'http://localhost:3000')
 
           const notificationProvider = getNotificationProvider(strapi)
@@ -185,7 +178,7 @@ export default factories.createCoreService('api::credential.credential', ({ stra
             achievement,
             credential,
             frontendUrl,
-            user,
+            user: null,
             issuerName: issuerDisplayName(
               await strapi.db.query('api::profile.profile').findOne({
                 where: { id: credentialPayload.issuer },
@@ -293,70 +286,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
     }
 
     return recipientEntity
-  },
-
-  /**
-   * Find or create a user associated with a profile
-   * @param {Object} profile - The profile to associate with a user
-   */
-  async findOrCreateUser(profile) {
-    try {
-      if (!profile.email) {
-        return null
-      }
-
-      // Check if user already exists
-      const existingUser = await strapi.query('plugin::users-permissions.user').findOne({
-        where: { email: profile.email },
-        populate: {
-          role: true,
-          createdBy: true,
-          updatedBy: true,
-          localizations: true,
-          provider: true,
-          resetPasswordToken: true,
-          username: true,
-          email: true,
-          password: true,
-          locale: true,
-          publishedAt: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      })
-
-      if (existingUser) {
-        return existingUser
-      }
-
-      // Get the authenticated role
-      const authenticatedRole = await strapi
-        .query('plugin::users-permissions.role')
-        .findOne({ where: { type: 'authenticated' } })
-
-      if (!authenticatedRole) {
-        console.error('Authenticated role not found')
-        return null
-      }
-
-      // Generate a random password
-      const randomPassword = this.generateRandomPassword()
-
-      // Create a new user with a random password
-      const newUser = await strapi.service('plugin::users-permissions.user').add({
-        username: profile.email.split('@')[0] + Date.now(),
-        email: profile.email,
-        password: randomPassword,
-        role: authenticatedRole.id,
-        confirmed: true,
-        provider: 'local'
-      })
-
-      return newUser
-    } catch (error) {
-      console.error('Error finding or creating user:', error)
-      return null
-    }
   },
 
   /**

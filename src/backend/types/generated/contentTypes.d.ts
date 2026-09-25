@@ -545,6 +545,7 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
     expirationDate: Schema.Attribute.DateTime;
     image: Schema.Attribute.Media<'images'>;
     issuanceDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    issuedToMinor: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     issuer: Schema.Attribute.Relation<'manyToOne', 'api::profile.profile'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -571,6 +572,8 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    visibility: Schema.Attribute.Enumeration<['public', 'private']> &
+      Schema.Attribute.DefaultTo<'public'>;
   };
 }
 
@@ -936,6 +939,7 @@ export interface ApiOrganizationOrganization
     cancelAtPeriodEnd: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     canceledAt: Schema.Attribute.DateTime;
+    closedAt: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -966,6 +970,8 @@ export interface ApiOrganizationOrganization
       ['none', 'trialing', 'active', 'past_due', 'canceled']
     > &
       Schema.Attribute.DefaultTo<'none'>;
+    suspendedAt: Schema.Attribute.DateTime;
+    suspensionReason: Schema.Attribute.Text & Schema.Attribute.Private;
     tier: Schema.Attribute.Enumeration<['free', 'pro', 'enterprise']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'free'>;
@@ -975,6 +981,16 @@ export interface ApiOrganizationOrganization
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    verificationDomain: Schema.Attribute.String;
+    verificationDomainProven: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    verificationNote: Schema.Attribute.Text & Schema.Attribute.Private;
+    verificationRequestedAt: Schema.Attribute.DateTime;
+    verificationStatus: Schema.Attribute.Enumeration<
+      ['unverified', 'pending', 'verified', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'unverified'>;
+    verifiedAt: Schema.Attribute.DateTime;
   };
 }
 
@@ -1229,6 +1245,51 @@ export interface ApiTierSettingsTierSettings extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     pro: Schema.Attribute.Component<'settings.usage-limits', false>;
     publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiTrustReport extends Struct.CollectionTypeSchema {
+  collectionName: 'reports';
+  info: {
+    description: 'Abuse, impersonation, takedown and privacy reports submitted through /report';
+    displayName: 'Report';
+    pluralName: 'reports';
+    singularName: 'report';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    category: Schema.Attribute.Enumeration<
+      ['impersonation', 'false-credential', 'privacy', 'other']
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    details: Schema.Attribute.Text & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::trust.report'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    reporterEmail: Schema.Attribute.Email & Schema.Attribute.Required;
+    reporterName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 200;
+      }>;
+    resolution: Schema.Attribute.Text;
+    resolvedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['open', 'acknowledged', 'actioned', 'dismissed']
+    > &
+      Schema.Attribute.DefaultTo<'open'>;
+    targetUrl: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1795,6 +1856,7 @@ declare module '@strapi/strapi' {
       'api::scheduled-issuance.scheduled-issuance': ApiScheduledIssuanceScheduledIssuance;
       'api::solution-page.solution-page': ApiSolutionPageSolutionPage;
       'api::tier-settings.tier-settings': ApiTierSettingsTierSettings;
+      'api::trust.report': ApiTrustReport;
       'api::webhook-subscription.webhook-subscription': ApiWebhookSubscriptionWebhookSubscription;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

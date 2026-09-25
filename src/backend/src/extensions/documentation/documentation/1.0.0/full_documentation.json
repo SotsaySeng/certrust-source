@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-09-24T21:13:47.195Z"
+    "x-generation-date": "2026-09-25T02:06:02.547Z"
   },
   "openapi": "3.0.0",
   "x-strapi-config": {
@@ -24,7 +24,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:1345/api",
+      "url": "http://localhost:1347/api",
       "description": "Development server"
     }
   ],
@@ -10044,6 +10044,9 @@
                   "verificationNote": {
                     "type": "string"
                   },
+                  "verificationMessage": {
+                    "type": "string"
+                  },
                   "stripeCustomerId": {
                     "type": "string"
                   },
@@ -12206,6 +12209,9 @@
                         "format": "date-time"
                       },
                       "verificationNote": {
+                        "type": "string"
+                      },
+                      "verificationMessage": {
                         "type": "string"
                       },
                       "stripeCustomerId": {
@@ -15732,6 +15738,9 @@
                   "verificationNote": {
                     "type": "string"
                   },
+                  "verificationMessage": {
+                    "type": "string"
+                  },
                   "stripeCustomerId": {
                     "type": "string"
                   },
@@ -18392,6 +18401,9 @@
                   "verificationNote": {
                     "type": "string"
                   },
+                  "verificationMessage": {
+                    "type": "string"
+                  },
                   "stripeCustomerId": {
                     "type": "string"
                   },
@@ -20522,6 +20534,9 @@
                         "format": "date-time"
                       },
                       "verificationNote": {
+                        "type": "string"
+                      },
+                      "verificationMessage": {
                         "type": "string"
                       },
                       "stripeCustomerId": {
@@ -23360,6 +23375,9 @@
                             "format": "date-time"
                           },
                           "verificationNote": {
+                            "type": "string"
+                          },
+                          "verificationMessage": {
                             "type": "string"
                           },
                           "stripeCustomerId": {
@@ -28419,6 +28437,9 @@
                 "verificationNote": {
                   "type": "string"
                 },
+                "verificationMessage": {
+                  "type": "string"
+                },
                 "stripeCustomerId": {
                   "type": "string"
                 },
@@ -28722,6 +28743,9 @@
                 "format": "date-time"
               },
               "verificationNote": {
+                "type": "string"
+              },
+              "verificationMessage": {
                 "type": "string"
               },
               "stripeCustomerId": {
@@ -31117,6 +31141,9 @@
                     "verificationNote": {
                       "type": "string"
                     },
+                    "verificationMessage": {
+                      "type": "string"
+                    },
                     "stripeCustomerId": {
                       "type": "string"
                     },
@@ -31406,6 +31433,9 @@
             "format": "date-time"
           },
           "verificationNote": {
+            "type": "string"
+          },
+          "verificationMessage": {
             "type": "string"
           },
           "stripeCustomerId": {
@@ -34246,6 +34276,9 @@
               "verificationNote": {
                 "type": "string"
               },
+              "verificationMessage": {
+                "type": "string"
+              },
               "stripeCustomerId": {
                 "type": "string"
               },
@@ -36836,6 +36869,9 @@
                     "format": "date-time"
                   },
                   "verificationNote": {
+                    "type": "string"
+                  },
+                  "verificationMessage": {
                     "type": "string"
                   },
                   "stripeCustomerId": {

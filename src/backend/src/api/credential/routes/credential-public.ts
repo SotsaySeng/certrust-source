@@ -93,6 +93,18 @@ export default {
       },
     },
 
+    // JPEG link preview (og:image) for Facebook/WhatsApp shares
+    {
+      method: 'GET',
+      path: '/credentials/:id/share-image',
+      handler: 'credential.getShareImage',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+
     // Short-form direct certificate URL (/verify/<id>)
     {
       method: 'GET',

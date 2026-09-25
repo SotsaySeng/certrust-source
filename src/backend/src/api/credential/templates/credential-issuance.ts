@@ -52,9 +52,7 @@ ${description ? `\n${description}\n` : ''}
 View your credential: ${credentialUrl}
 
 From that page you can download it, share it, or add it to your LinkedIn profile. Anyone you share it with can check that it is genuine.
-${user ? `
-You can see all your credentials in one place by signing in at ${frontendUrl}/login with this email address. The first time, choose "Forgot password" to set a password.
-` : ''}${supportEmail ? `
+${supportEmail ? `
 Questions? Reply to this email or write to ${supportEmail}.
 ` : ''}
 You received this email because ${issuer} issued you a credential using Certrust.
@@ -93,7 +91,6 @@ ${privacyNotice}`
           <tr>
             <td style="padding: 0 32px 24px 32px; color: #4a5568; font-size: 14px; line-height: 1.6;">
               <p style="margin: 0 0 12px 0;">From that page you can download it, share it, or add it to your LinkedIn profile. Anyone you share it with can check that it is genuine.</p>
-              ${user ? `<p style="margin: 0 0 12px 0;">You can see all your credentials in one place by signing in at certrust.app with this email address. The first time, choose &ldquo;Forgot password&rdquo; to set a password.</p>` : ''}
               ${supportEmail ? `<p style="margin: 0;">Questions? Reply to this email or write to ${escapeHtml(supportEmail)}.</p>` : ''}
             </td>
           </tr>

@@ -275,7 +275,7 @@ onMounted(async () => {
       </div>
 
       <!-- Received Certificates Section -->
-      <div class="mb-12">
+      <div v-if="!authStore.isIssuer" class="mb-12">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-semibold">
             {{ t('dashboard.received') }}

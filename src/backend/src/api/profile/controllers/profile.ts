@@ -590,6 +590,8 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
           // Credentials the organisation issued keep verifying, labelled
           // "Issuer account inactive" (Terms s.14).
           await strapi.service('api::billing.billing').updateOrg(org.documentId, { closedAt: now });
+          // Its verification evidence has no further use (Privacy Policy s.9).
+          await strapi.service('api::trust.verification-documents').removeAllFor(org.documentId);
         }
       }
 

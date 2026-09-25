@@ -10,6 +10,7 @@ import { seedHomepage } from './bootstrap/homepage-seed';
 import { seedSolutionPage } from './bootstrap/solution-page-seed';
 import { setupEmailConfirmation } from './bootstrap/email-confirmation-setup';
 import { setupEmailSender } from './bootstrap/email-sender-setup';
+import { setupEmailBranding } from './bootstrap/email-branding';
 import { startDevMailCatcher } from './bootstrap/dev-mail-catcher';
 import { assertPersistentStorage } from './bootstrap/persistence-guard';
 import { registerMonitoringRoutes } from './monitoring/routes';
@@ -71,6 +72,8 @@ export default {
     // ...and send those confirmation/reset emails from SMTP_FROM rather than
     // the plugin's seeded no-reply@strapi.io (see bootstrap/email-sender-setup.ts).
     await setupEmailSender(strapi);
+    // ...and put the Certrust logo at the top of every email sent.
+    setupEmailBranding(strapi);
 
     // Seed development data (only creates data if it doesn't exist)
     await seedDevelopmentData(strapi);
@@ -109,6 +112,19 @@ export default {
 
     setTimeout(runScheduledIssuanceCheck, 35_000);
     setInterval(runScheduledIssuanceCheck, 24 * 60 * 60 * 1000);
+
+    // Delete issuer-verification documents 90 days after their request was
+    // decided (Privacy Policy s.9 - see api/trust/services/verification-documents.ts).
+    const runVerificationDocumentPurge = async () => {
+      try {
+        await strapi.service('api::trust.verification-documents').purgeExpired();
+      } catch (err: any) {
+        strapi.log.error('[bootstrap] Verification document purge error:', { error: err.message });
+      }
+    };
+
+    setTimeout(runVerificationDocumentPurge, 45_000);
+    setInterval(runVerificationDocumentPurge, 24 * 60 * 60 * 1000);
 
     // Billing scanner: trial/renewal reminders, trial expiry, past-due
     // grace. Every 6h rather than daily so a trial that ends mid-day drops

@@ -18,6 +18,11 @@ RUN npm install pg --save
 # database (Neon, Postgres 18): pg_dump refuses to dump a newer server, and
 # an 18 client still dumps the postgres:16 in docker-compose.yml.
 RUN apk add --no-cache postgresql18-client
+# Fonts for rasterising the certificate SVG into link-preview images
+# (/credentials/:id/share-image). Alpine ships none, and without them every
+# line of text renders blank. Lao and Thai cover recipient names in the
+# region; noto-emoji draws the trophy on certificates without a badge image.
+RUN apk add --no-cache fontconfig font-dejavu font-noto font-noto-lao font-noto-thai font-noto-emoji
 
 # Copy application files
 COPY . .

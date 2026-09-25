@@ -8,7 +8,7 @@
  * (src/backend/src/bootstrap/persistence-guard.ts).
  */
 
-import { Container, getContainer } from '@cloudflare/containers'
+import { Container } from '@cloudflare/containers'
 import { env as workerEnv } from 'cloudflare:workers'
 
 /**
@@ -58,7 +58,18 @@ const STRAPI_PORT = 1337
 const BOOT_TIMEOUT_MS = 180_000
 // One named instance only: the backend's in-process scanners, SMTP pool,
 // rate-limit store and backup lock all assume a single process.
-const INSTANCE = 'primary'
+//
+// Pinned to Asia-Pacific, next to the Neon database in Singapore. Strapi
+// makes dozens of sequential queries per request, so the container must sit
+// near the database: the unpinned 'primary' instance was placed in Atlanta
+// and every query crossed the Pacific (~0.6 s for a 404, many seconds to
+// issue a credential). A location hint only applies when the Durable Object
+// is first created, hence the new name.
+const INSTANCE = 'primary-apac'
+const LOCATION_HINT: DurableObjectLocationHint = 'apac'
+// Earlier instance names. POST /__ops/retire-instances stops their
+// containers so two backends never run the scanners side by side.
+const RETIRED_INSTANCES = ['primary']
 // Daily off-site backup (UTC) - 02:30 in New Zealand.
 const DAILY_BACKUP_CRON = '30 14 * * *'
 
@@ -84,8 +95,41 @@ export class StrapiBackend extends Container {
   }
 }
 
+function backend(env: Env, name = INSTANCE) {
+  return env.STRAPI.get(env.STRAPI.idFromName(name), { locationHint: LOCATION_HINT })
+}
+
+async function retireOldInstances(env: Env): Promise<string[]> {
+  const results: string[] = []
+  for (const name of RETIRED_INSTANCES) {
+    try {
+      await env.STRAPI.get(env.STRAPI.idFromName(name)).destroy()
+      results.push(`${name}: destroyed`)
+    }
+    catch (err) {
+      results.push(`${name}: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+  return results
+}
+
+function tokenMatches(given: string | null, expected: string | undefined): boolean {
+  if (!given || !expected) return false
+  const a = new TextEncoder().encode(given)
+  const b = new TextEncoder().encode(expected)
+  return a.byteLength === b.byteLength && crypto.subtle.timingSafeEqual(a, b)
+}
+
 export default {
   async fetch(request: Request, env: Env & Secrets): Promise<Response> {
+    const url = new URL(request.url)
+    if (url.pathname === '/__ops/retire-instances') {
+      if (request.method !== 'POST' || !tokenMatches(request.headers.get('x-ops-token'), env.OPS_TOKEN)) {
+        return new Response('Not Found', { status: 404 })
+      }
+      return Response.json({ retired: await retireOldInstances(env) })
+    }
+
     // The backend trusts X-Forwarded-For (IS_PROXIED) for rate limiting, so
     // overwrite it with the address Cloudflare saw - never pass through
     // whatever the client sent. The body is forwarded untouched, which the
@@ -99,16 +143,16 @@ export default {
     // redirect: 'manual' so Strapi's redirects (e.g. / -> /admin, which it
     // builds from the https PUBLIC_URL) go back to the browser instead of
     // being followed over the plain-HTTP container link, which fails.
-    return getContainer(env.STRAPI, INSTANCE).fetch(new Request(request, { headers, redirect: 'manual' }))
+    return backend(env).fetch(new Request(request, { headers, redirect: 'manual' }))
   },
 
   async scheduled(controller: ScheduledController, env: Env & Secrets, ctx: ExecutionContext): Promise<void> {
-    const backend = getContainer(env.STRAPI, INSTANCE)
+    const container = backend(env)
     ctx.waitUntil((async () => {
       // Waking the container is all the expiration / scheduled-issuance /
       // billing scanners need: they run 30-40s after every boot
       // (src/backend/src/index.ts) and on their own timers while it is up.
-      const health = await backend.fetch(new Request('https://api.certrust.app/_health'))
+      const health = await container.fetch(new Request('https://api.certrust.app/_health'))
       console.log(`[cron ${controller.cron}] backend health: ${health.status}`)
 
       if (controller.cron === DAILY_BACKUP_CRON) {
@@ -116,7 +160,7 @@ export default {
           console.error('[cron] OPS_TOKEN is not set - daily backup skipped')
           return
         }
-        const res = await backend.fetch(new Request('https://api.certrust.app/api/ops/backup', {
+        const res = await container.fetch(new Request('https://api.certrust.app/api/ops/backup', {
           method: 'POST',
           headers: { 'x-ops-token': env.OPS_TOKEN, 'content-type': 'application/json' },
           body: JSON.stringify({ label: 'daily' }),
