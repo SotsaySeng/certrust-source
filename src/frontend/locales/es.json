@@ -203,14 +203,15 @@
       "status": "Estado",
       "actions": "Acciones",
       "view": "Ver credencial",
-      "download": "Descargar certificado",
       "copied": "Enlace copiado",
       "copyFailed": "No se pudo copiar el enlace",
       "noMatches": "Ninguna credencial coincide con la búsqueda.",
       "showing": "{from}–{to} de {total}",
       "previous": "Anterior",
       "next": "Siguiente",
-      "downloadFailed": "No se pudo descargar el certificado"
+      "downloadFailed": "No se pudo descargar el certificado",
+      "downloadImage": "Descargar imagen (PNG)",
+      "downloadPdf": "Descargar PDF"
     }
   },
   "errors": {

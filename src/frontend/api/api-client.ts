@@ -500,6 +500,11 @@ export class ApiClient {
     return `${this.baseUrl}/api/credentials/${encodeURIComponent(id)}/certificate`
   }
 
+  /** Server-rendered PNG of the certificate (badge image included), for downloads. */
+  getCertificatePngUrl(id: number | string): string {
+    return `${this.getCertificateUrl(id)}?format=png`
+  }
+
   /**
    * Get certificate by ID
    */

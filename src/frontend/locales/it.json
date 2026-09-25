@@ -203,14 +203,15 @@
       "status": "Stato",
       "actions": "Azioni",
       "view": "Visualizza credenziale",
-      "download": "Scarica certificato",
       "copied": "Link copiato",
       "copyFailed": "Impossibile copiare il link",
       "noMatches": "Nessuna credenziale corrisponde alla ricerca.",
       "showing": "{from}–{to} di {total}",
       "previous": "Precedente",
       "next": "Successiva",
-      "downloadFailed": "Impossibile scaricare il certificato"
+      "downloadFailed": "Impossibile scaricare il certificato",
+      "downloadImage": "Scarica immagine (PNG)",
+      "downloadPdf": "Scarica PDF"
     }
   },
   "errors": {

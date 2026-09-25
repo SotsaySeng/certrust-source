@@ -143,6 +143,23 @@ export default ({ strapi }) => ({
   },
 
   /**
+   * The certificate as a PNG, for downloading and printing: the top
+   * 800x600 of the template (the canvas has 50px of empty space below)
+   * rendered at 2x, with the badge image inlined so it is not missing the
+   * way it would be when a browser rasterises the SVG itself.
+   * @param {number|string} credentialId - The ID of the credential
+   * @returns {Buffer} PNG bytes (1600x1200)
+   */
+  async generateCertificatePng(credentialId: number | string): Promise<Buffer> {
+    const svg = await this.generateCertificate(credentialId, { inlineImages: true })
+    const scale = 2
+    return sharp(Buffer.from(svg), { density: 72 * scale })
+      .extract({ left: 0, top: 0, width: CERT_WIDTH * scale, height: CERT_HEIGHT * scale })
+      .png()
+      .toBuffer()
+  },
+
+  /**
    * Generate a data URI for the certificate SVG
    * @param {number|string} credentialId - The ID of the credential
    * @returns {string} The data URI

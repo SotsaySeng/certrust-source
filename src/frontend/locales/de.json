@@ -203,14 +203,15 @@
       "status": "Status",
       "actions": "Aktionen",
       "view": "Nachweis ansehen",
-      "download": "Zertifikat herunterladen",
       "copied": "Link kopiert",
       "copyFailed": "Link konnte nicht kopiert werden",
       "noMatches": "Keine Nachweise entsprechen Ihrer Suche.",
       "showing": "{from}–{to} von {total}",
       "previous": "Zurück",
       "next": "Weiter",
-      "downloadFailed": "Zertifikat konnte nicht heruntergeladen werden"
+      "downloadFailed": "Zertifikat konnte nicht heruntergeladen werden",
+      "downloadImage": "Bild herunterladen (PNG)",
+      "downloadPdf": "PDF herunterladen"
     }
   },
   "errors": {

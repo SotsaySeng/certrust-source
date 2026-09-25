@@ -517,6 +517,16 @@ export default factories.createCoreController('api::credential.credential', ({ s
       }
 
       const certificateService = strapi.service('api::credential.certificate')
+
+      // ?format=png: the downloadable/printable version (PNG and PDF
+      // downloads on the website are built from it).
+      if (ctx.query?.format === 'png') {
+        ctx.type = 'image/png'
+        ctx.set('Cache-Control', 'private, no-store')
+        ctx.body = await certificateService.generateCertificatePng(credential.id)
+        return
+      }
+
       const svg = await certificateService.generateCertificate(credential.id)
       
       // Set the content type and return the SVG

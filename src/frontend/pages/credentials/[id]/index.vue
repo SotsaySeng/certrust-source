@@ -382,13 +382,21 @@ async function shareCredential() {
   }
 }
 
-async function downloadCredential() {
-  const imageUrl = displayImageUrl.value
-  if (!imageUrl) { return }
+async function downloadCredential(format: 'image' | 'pdf' = 'image') {
+  if (!displayImageUrl.value || !credential.value) { return }
+  // The certificate itself comes from the server as a PNG with the badge
+  // image included; a fallback image (achievement/issuer picture) is used
+  // as it is.
+  const certificateUrl = apiClient.getCertificateUrl(credential.value.id)
+  const imageUrl = displayImageUrl.value === certificateUrl
+    ? apiClient.getCertificatePngUrl(credential.value.id)
+    : displayImageUrl.value
 
   try {
-    // The certificate endpoint serves SVG: converted to a real PNG here.
-    await downloadImageFile(imageUrl, credential.value?.name || 'credential')
+    // The certificate endpoint serves SVG: converted to a real PNG (or a
+    // one-page PDF) here.
+    const name = credential.value?.name || 'credential'
+    await (format === 'pdf' ? downloadPdfFile(imageUrl, name) : downloadImageFile(imageUrl, name))
   }
   catch (err) {
     console.error('Error downloading credential:', err)
@@ -808,11 +816,22 @@ async function submitRenewal() {
           >
           <div class="absolute bottom-4 right-4 flex gap-2">
             <button
-              class="p-2 rounded-lg bg-white/90 hover:bg-white shadow-lg transition-colors"
-              title="Download image"
-              @click="downloadCredential"
+              class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/90 hover:bg-white shadow-lg transition-colors text-sm font-medium"
+              :title="t('dashboard.issuedTable.downloadImage')"
+              data-testid="download-image"
+              @click="downloadCredential('image')"
             >
-              <div class="i-lucide-download w-5 h-5" />
+              <div class="i-lucide-image-down w-5 h-5" />
+              PNG
+            </button>
+            <button
+              class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/90 hover:bg-white shadow-lg transition-colors text-sm font-medium"
+              :title="t('dashboard.issuedTable.downloadPdf')"
+              data-testid="download-pdf"
+              @click="downloadCredential('pdf')"
+            >
+              <div class="i-lucide-file-down w-5 h-5" />
+              PDF
             </button>
             <button
               class="p-2 rounded-lg bg-white/90 hover:bg-white shadow-lg transition-colors"

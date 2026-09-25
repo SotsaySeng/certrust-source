@@ -203,14 +203,15 @@
       "status": "Statut",
       "actions": "Actions",
       "view": "Voir le justificatif",
-      "download": "Télécharger le certificat",
       "copied": "Lien copié",
       "copyFailed": "Impossible de copier le lien",
       "noMatches": "Aucun justificatif ne correspond à votre recherche.",
       "showing": "{from}–{to} sur {total}",
       "previous": "Précédent",
       "next": "Suivant",
-      "downloadFailed": "Impossible de télécharger le certificat"
+      "downloadFailed": "Impossible de télécharger le certificat",
+      "downloadImage": "Télécharger l'image (PNG)",
+      "downloadPdf": "Télécharger le PDF"
     }
   },
   "errors": {

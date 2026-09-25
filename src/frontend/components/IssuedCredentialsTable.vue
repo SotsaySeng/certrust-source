@@ -108,12 +108,16 @@ async function copyLink(row: { credentialId: string | number }) {
   }
 }
 
-async function downloadCertificate(row: { id: string | number, achievementName: string, recipientName: string }) {
+async function downloadCertificate(
+  row: { credentialId: string | number, achievementName: string, recipientName: string },
+  format: 'image' | 'pdf',
+) {
+  // By the public credential id: the certificate endpoint does not answer
+  // to internal database ids.
+  const url = apiClient.getCertificatePngUrl(row.credentialId)
+  const name = [row.achievementName, row.recipientName].filter(Boolean).join(' - ') || 'certificate'
   try {
-    await downloadImageFile(
-      apiClient.getCertificateUrl(row.id),
-      [row.achievementName, row.recipientName].filter(Boolean).join(' - ') || 'certificate',
-    )
+    await (format === 'pdf' ? downloadPdfFile(url, name) : downloadImageFile(url, name))
   }
   catch (error) {
     console.error('Error downloading certificate:', error)
@@ -236,11 +240,22 @@ function statusLabel(status: StatusFilter) {
                 <button
                   type="button"
                   class="p-2 rounded-lg text-gray-500 hover:text-[#1e7e34] hover:bg-[#28A745]/10 transition-colors hidden sm:block"
-                  :title="t('dashboard.issuedTable.download')"
-                  :aria-label="t('dashboard.issuedTable.download')"
-                  @click="downloadCertificate(row)"
+                  :title="t('dashboard.issuedTable.downloadImage')"
+                  :aria-label="t('dashboard.issuedTable.downloadImage')"
+                  data-testid="download-image"
+                  @click="downloadCertificate(row, 'image')"
                 >
-                  <span class="block i-heroicons-arrow-down-tray w-5 h-5" />
+                  <span class="block i-heroicons-photo w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  class="p-2 rounded-lg text-gray-500 hover:text-[#1e7e34] hover:bg-[#28A745]/10 transition-colors hidden sm:block"
+                  :title="t('dashboard.issuedTable.downloadPdf')"
+                  :aria-label="t('dashboard.issuedTable.downloadPdf')"
+                  data-testid="download-pdf"
+                  @click="downloadCertificate(row, 'pdf')"
+                >
+                  <span class="block i-heroicons-document-arrow-down w-5 h-5" />
                 </button>
               </div>
             </td>
