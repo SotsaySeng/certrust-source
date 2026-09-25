@@ -108,8 +108,17 @@ async function copyLink(row: { credentialId: string | number }) {
   }
 }
 
-function downloadCertificate(row: { id: string | number }) {
-  window.open(apiClient.getCertificateUrl(row.id), '_blank', 'noopener')
+async function downloadCertificate(row: { id: string | number, achievementName: string, recipientName: string }) {
+  try {
+    await downloadImageFile(
+      apiClient.getCertificateUrl(row.id),
+      [row.achievementName, row.recipientName].filter(Boolean).join(' - ') || 'certificate',
+    )
+  }
+  catch (error) {
+    console.error('Error downloading certificate:', error)
+    toast.show(t('dashboard.issuedTable.downloadFailed'), '', 'error')
+  }
 }
 
 const STATUS_FILTERS: StatusFilter[] = ['all', 'active', 'expired', 'revoked']

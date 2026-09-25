@@ -209,7 +209,8 @@
       "noMatches": "Aucun justificatif ne correspond à votre recherche.",
       "showing": "{from}–{to} sur {total}",
       "previous": "Précédent",
-      "next": "Suivant"
+      "next": "Suivant",
+      "downloadFailed": "Impossible de télécharger le certificat"
     }
   },
   "errors": {

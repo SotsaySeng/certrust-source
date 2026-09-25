@@ -209,7 +209,8 @@
       "noMatches": "Keine Nachweise entsprechen Ihrer Suche.",
       "showing": "{from}–{to} von {total}",
       "previous": "Zurück",
-      "next": "Weiter"
+      "next": "Weiter",
+      "downloadFailed": "Zertifikat konnte nicht heruntergeladen werden"
     }
   },
   "errors": {

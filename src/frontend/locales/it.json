@@ -209,7 +209,8 @@
       "noMatches": "Nessuna credenziale corrisponde alla ricerca.",
       "showing": "{from}–{to} di {total}",
       "previous": "Precedente",
-      "next": "Successiva"
+      "next": "Successiva",
+      "downloadFailed": "Impossibile scaricare il certificato"
     }
   },
   "errors": {

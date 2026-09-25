@@ -387,16 +387,8 @@ async function downloadCredential() {
   if (!imageUrl) { return }
 
   try {
-    const response = await fetch(imageUrl)
-    const blob = await response.blob()
-    const downloadUrl = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = downloadUrl
-    a.download = `${credential.value?.name || 'credential'}.png`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(downloadUrl)
-    document.body.removeChild(a)
+    // The certificate endpoint serves SVG: converted to a real PNG here.
+    await downloadImageFile(imageUrl, credential.value?.name || 'credential')
   }
   catch (err) {
     console.error('Error downloading credential:', err)
