@@ -64,6 +64,8 @@ interface Recipient {
   expirationDate?: string
   /** Under 16: the credential starts private (Terms s.6). */
   issuedToMinor?: boolean
+  /** Values for the organization's custom attributes, by key. */
+  customFields?: Record<string, string>
 }
 
 export default () => {
@@ -147,7 +149,13 @@ export default () => {
     }
   }
 
-  async function batchIssueBadges(badgeId: string, recipients: Recipient[]): Promise<any> {
+  /**
+   * @param badgeId achievement id
+   * @param recipients the people to issue to
+   * @param designs per-kind design overrides for this issuance: omitted =
+   *   the achievement's default, null = none, documentId = that design.
+   */
+  async function batchIssueBadges(badgeId: string, recipients: Recipient[], designs: { certificateDesignId?: string | null, badgeDesignId?: string | null } = {}): Promise<any> {
     try {
       const headers = await getHeaders()
 
@@ -158,7 +166,8 @@ export default () => {
         body: JSON.stringify({
           data: {
             achievementId: badgeId,
-            recipients
+            recipients,
+            ...designs,
           }
         }),
       })
@@ -170,7 +179,12 @@ export default () => {
           statusText: response.statusText,
           error: errorText
         })
-        throw new Error(`Failed to issue badges: ${response.status} ${response.statusText}`)
+        let message = `Failed to issue badges: ${response.status} ${response.statusText}`
+        try {
+          message = JSON.parse(errorText)?.error?.message || message
+        }
+        catch {}
+        throw new Error(message)
       }
       // Return the parsed response for per-recipient feedback
       return await response.json()

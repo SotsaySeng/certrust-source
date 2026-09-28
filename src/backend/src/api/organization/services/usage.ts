@@ -21,6 +21,20 @@
 
 export type UsageDimension = 'credential' | 'designTemplate' | 'achievement';
 
+/**
+ * Design Studio limits for one organization, after choosing the right
+ * Tier Settings column: 'trial' while the organization is trialing (when
+ * that column has been configured), otherwise the organization's tier.
+ */
+export interface DesignLimits {
+  /** Which Tier Settings column the limits came from. */
+  source: string;
+  /** Max saved designs (org-owned design templates). null = unlimited. */
+  designTemplateLimit: number | null;
+  /** May use Premium system templates. */
+  premiumTemplates: boolean;
+}
+
 const DIMENSION_LIMIT_FIELD: Record<UsageDimension, string> = {
   credential: 'credentialLimit',
   designTemplate: 'designTemplateLimit',
@@ -41,6 +55,37 @@ export default () => ({
    * config/tiers.ts. populate is required - Strapi doesn't populate
    * component fields by default.
    */
+  async getTierSettings(): Promise<any> {
+    return strapi.documents('api::tier-settings.tier-settings').findFirst({
+      populate: ['free', 'pro', 'enterprise', 'trial'],
+    } as any);
+  },
+
+  /**
+   * Design Studio limits for an organization (needs tier and
+   * subscriptionStatus). The trial column deliberately covers only the
+   * design dimensions - credential/achievement limits keep following the
+   * tier a trial runs on, exactly as before it existed.
+   *
+   * premiumTemplates falls back to "pro/enterprise yes, free no" when the
+   * flag was never set on that column (records seeded before it existed).
+   */
+  async getDesignLimits(organization: { tier?: string | null, subscriptionStatus?: string | null } | null): Promise<DesignLimits> {
+    const tier = organization?.tier || 'free';
+    const settings: any = await this.getTierSettings();
+    const trialing = organization?.subscriptionStatus === 'trialing' && settings?.trial;
+    const source = trialing ? 'trial' : tier;
+    const column = settings?.[source];
+    if (!column) {
+      return { source, designTemplateLimit: null, premiumTemplates: tier !== 'free' };
+    }
+    return {
+      source,
+      designTemplateLimit: column.designTemplateLimit ?? null,
+      premiumTemplates: typeof column.premiumTemplates === 'boolean' ? column.premiumTemplates : tier !== 'free' && source !== 'trial',
+    };
+  },
+
   async getTierLimit(tier: string, dimension: UsageDimension = 'credential'): Promise<number | null> {
     const tierSettings: any = await strapi.documents('api::tier-settings.tier-settings').findFirst({
       populate: ['free', 'pro', 'enterprise'],

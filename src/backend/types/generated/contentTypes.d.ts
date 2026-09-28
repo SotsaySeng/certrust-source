@@ -389,6 +389,8 @@ export interface ApiAchievementAchievement extends Struct.CollectionTypeSchema {
     achievementType: Schema.Attribute.String &
       Schema.Attribute.DefaultTo<'Achievement'>;
     alignment: Schema.Attribute.Component<'badge.alignment', true>;
+    badgeDesignId: Schema.Attribute.String;
+    certificateDesignId: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -514,6 +516,45 @@ export interface ApiBillingSettingsBillingSettings
   };
 }
 
+export interface ApiBrandKitBrandKit extends Struct.CollectionTypeSchema {
+  collectionName: 'brand_kits';
+  info: {
+    description: "An organization's logo, colours, fonts and signers. Applied to Design Studio templates in one click.";
+    displayName: 'Brand Kit';
+    pluralName: 'brand-kits';
+    singularName: 'brand-kit';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    accent: Schema.Attribute.String;
+    bodyFont: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    headingFont: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::brand-kit.brand-kit'
+    > &
+      Schema.Attribute.Private;
+    logo: Schema.Attribute.String;
+    organization: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::organization.organization'
+    >;
+    primary: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    secondary: Schema.Attribute.String;
+    signers: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<[]>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
   collectionName: 'credentials';
   info: {
@@ -530,6 +571,8 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::achievement.achievement'
     >;
+    badgeDesignSnapshot: Schema.Attribute.JSON;
+    certificateDesignSnapshot: Schema.Attribute.JSON;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -540,7 +583,9 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
         maxLength: 255;
         minLength: 36;
       }>;
+    customFields: Schema.Attribute.JSON;
     description: Schema.Attribute.Text;
+    designTemplateId: Schema.Attribute.String;
     evidence: Schema.Attribute.Relation<'oneToMany', 'api::evidence.evidence'>;
     expirationDate: Schema.Attribute.DateTime;
     image: Schema.Attribute.Media<'images'>;
@@ -577,11 +622,141 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCustomAttributeCustomAttribute
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'custom_attributes';
+  info: {
+    description: 'Per-organization recipient fields (e.g. location, training date) filled at issuance and printed on certificates as {{custom.<key>}}.';
+    displayName: 'Custom Attribute';
+    pluralName: 'custom-attributes';
+    singularName: 'custom-attribute';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    key: Schema.Attribute.String & Schema.Attribute.Required;
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::custom-attribute.custom-attribute'
+    > &
+      Schema.Attribute.Private;
+    organization: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::organization.organization'
+    > &
+      Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    required: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    type: Schema.Attribute.Enumeration<['text', 'date', 'number']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'text'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDesignAssetDesignAsset extends Struct.CollectionTypeSchema {
+  collectionName: 'design_assets';
+  info: {
+    description: "Images for the Design Studio: an organization's uploads (logos, signatures, seals) and, with organization empty, the platform's Elements library.";
+    displayName: 'Design Asset';
+    pluralName: 'design-assets';
+    singularName: 'design-asset';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    creator: Schema.Attribute.Relation<'manyToOne', 'api::profile.profile'>;
+    elementCategory: Schema.Attribute.Enumeration<
+      [
+        'shapes',
+        'graphics',
+        'ribbons',
+        'bases',
+        'seals',
+        'frames',
+        'laurels',
+        'icons',
+      ]
+    >;
+    file: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    height: Schema.Attribute.Integer;
+    kind: Schema.Attribute.Enumeration<['upload', 'element']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'upload'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::design-asset.design-asset'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    organization: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::organization.organization'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    width: Schema.Attribute.Integer;
+  };
+}
+
+export interface ApiDesignCategoryDesignCategory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'design_categories';
+  info: {
+    description: 'Admin-managed categories for the Design Studio template gallery (Education, Corporate, Events...).';
+    displayName: 'Design Category';
+    pluralName: 'design-categories';
+    singularName: 'design-category';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    designTemplates: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::design-template.design-template'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::design-category.design-category'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiDesignTemplateDesignTemplate
   extends Struct.CollectionTypeSchema {
   collectionName: 'design_templates';
   info: {
-    description: 'Reusable visual layout (colors, background, fonts) for rendering a badge or certificate.';
+    description: 'A certificate or badge design made in the Design Studio. layoutConfig holds the design document (see src/shared/design-core/types.ts). organization null = platform/system template.';
     displayName: 'Design Template';
     pluralName: 'design-templates';
     singularName: 'design-template';
@@ -590,12 +765,20 @@ export interface ApiDesignTemplateDesignTemplate
     draftAndPublish: true;
   };
   attributes: {
+    category: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::design-category.design-category'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     creator: Schema.Attribute.Relation<'manyToOne', 'api::profile.profile'>;
     description: Schema.Attribute.Text;
     isDefault: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isHidden: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isPremium: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    kind: Schema.Attribute.Enumeration<['certificate', 'badge']> &
+      Schema.Attribute.DefaultTo<'certificate'>;
     layoutConfig: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -608,8 +791,13 @@ export interface ApiDesignTemplateDesignTemplate
       'manyToOne',
       'api::organization.organization'
     >;
+    orientation: Schema.Attribute.Enumeration<['landscape', 'portrait']> &
+      Schema.Attribute.DefaultTo<'landscape'>;
     previewImage: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
+    schemaVersion: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    slug: Schema.Attribute.String & Schema.Attribute.Unique;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     type: Schema.Attribute.Enumeration<
       [
         'certificate',
@@ -984,6 +1172,7 @@ export interface ApiOrganizationOrganization
     verificationDomain: Schema.Attribute.String;
     verificationDomainProven: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
+    verificationMessage: Schema.Attribute.Text & Schema.Attribute.Private;
     verificationNote: Schema.Attribute.Text & Schema.Attribute.Private;
     verificationRequestedAt: Schema.Attribute.DateTime;
     verificationStatus: Schema.Attribute.Enumeration<
@@ -1223,7 +1412,7 @@ export interface ApiSolutionPageSolutionPage extends Struct.SingleTypeSchema {
 export interface ApiTierSettingsTierSettings extends Struct.SingleTypeSchema {
   collectionName: 'tier_settings';
   info: {
-    description: "Single admin-editable record holding per-tier (free/pro/enterprise) usage limits, replacing config/tiers.ts so limits can be changed from the admin panel without a redeploy. No controller/route/service is defined for this content type - it has no REST endpoint by design; it is admin-panel-only, read from server-side code via strapi.documents('api::tier-settings.tier-settings').";
+    description: "Single admin-editable record holding per-tier (free/pro/enterprise) usage limits, replacing config/tiers.ts so limits can be changed from the admin panel without a redeploy. No controller/route/service is defined for this content type - it has no REST endpoint by design; it is admin-panel-only, read from server-side code via strapi.documents('api::tier-settings.tier-settings'). The 'trial' column applies to Design Studio limits (saved designs, premium templates) while an organization is trialing (subscriptionStatus = trialing), whatever tier the trial runs on.";
     displayName: 'Tier Settings';
     pluralName: 'tier-settings-list';
     singularName: 'tier-settings';
@@ -1245,6 +1434,7 @@ export interface ApiTierSettingsTierSettings extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     pro: Schema.Attribute.Component<'settings.usage-limits', false>;
     publishedAt: Schema.Attribute.DateTime;
+    trial: Schema.Attribute.Component<'settings.usage-limits', false>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1293,6 +1483,56 @@ export interface ApiTrustReport extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiTrustVerificationDocument
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'verification_documents';
+  info: {
+    description: 'Evidence an organisation uploads to become a verified issuer. Kept in the database, never in the public upload bucket; only platform admins can read it (api::trust.verification-documents).';
+    displayName: 'Verification document';
+    pluralName: 'verification-documents';
+    singularName: 'verification-document';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    data: Schema.Attribute.Text & Schema.Attribute.Private;
+    fileName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 200;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::trust.verification-document'
+    > &
+      Schema.Attribute.Private;
+    mimeType: Schema.Attribute.String & Schema.Attribute.Required;
+    organizationDocumentId: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    purgeAfter: Schema.Attribute.DateTime;
+    sha256: Schema.Attribute.String;
+    size: Schema.Attribute.Integer & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    uploadedByEmail: Schema.Attribute.String;
+    uploadedById: Schema.Attribute.Integer;
   };
 }
 
@@ -1840,7 +2080,11 @@ declare module '@strapi/strapi' {
       'api::achievement.achievement': ApiAchievementAchievement;
       'api::audit-log-entry.audit-log-entry': ApiAuditLogEntryAuditLogEntry;
       'api::billing-settings.billing-settings': ApiBillingSettingsBillingSettings;
+      'api::brand-kit.brand-kit': ApiBrandKitBrandKit;
       'api::credential.credential': ApiCredentialCredential;
+      'api::custom-attribute.custom-attribute': ApiCustomAttributeCustomAttribute;
+      'api::design-asset.design-asset': ApiDesignAssetDesignAsset;
+      'api::design-category.design-category': ApiDesignCategoryDesignCategory;
       'api::design-template.design-template': ApiDesignTemplateDesignTemplate;
       'api::endorsement.endorsement': ApiEndorsementEndorsement;
       'api::event.event': ApiEventEvent;
@@ -1857,6 +2101,7 @@ declare module '@strapi/strapi' {
       'api::solution-page.solution-page': ApiSolutionPageSolutionPage;
       'api::tier-settings.tier-settings': ApiTierSettingsTierSettings;
       'api::trust.report': ApiTrustReport;
+      'api::trust.verification-document': ApiTrustVerificationDocument;
       'api::webhook-subscription.webhook-subscription': ApiWebhookSubscriptionWebhookSubscription;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

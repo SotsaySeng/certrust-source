@@ -20,6 +20,11 @@
       "type": "integer",
       "min": 0,
       "description": "Max achievements (credential templates) an organization on this tier may create. Null = unlimited."
+    },
+    "premiumTemplates": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether organizations on this tier may use Premium system templates in the Design Studio."
     }
   }
 }

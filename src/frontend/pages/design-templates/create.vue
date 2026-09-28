@@ -1,248 +1,307 @@
 <script setup lang="ts">
+/**
+ * Quick-start wizard: certificate or badge -> template (or blank) ->
+ * brand kit (skippable) -> name. Lands in the editor with the brand
+ * applied; first-timers get the tour.
+ */
+import type { BrandKitInfo } from '~/api/api-client'
 import { apiClient } from '~/api/api-client'
-import { getTemplateTypeChipClass, getTemplateTypeIcon, TEMPLATE_TYPES } from '~/constants/templateTypes'
+import { blankDesign } from '~/lib/design-core'
+
+definePageMeta({ middleware: ['auth'] })
 
 const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
+const resources = useStudioResourcesStore()
+useHead({ title: computed(() => `${t('designStudio.wizard.title')} · ${t('designStudio.title')}`) })
 
-definePageMeta({
-  middleware: ['auth']
-})
+const step = ref(route.query.kind ? 2 : 1)
+const kind = ref<'certificate' | 'badge'>(route.query.kind === 'badge' ? 'badge' : 'certificate')
+const orientation = ref<'landscape' | 'portrait'>('landscape')
+const categoryId = ref<number | null>(null)
+const library = ref<any[]>([])
+const loading = ref(true)
+const selected = ref<any | 'blank'>('blank')
+const brand = ref<BrandKitInfo>({ logo: null, primary: null, secondary: null, accent: null, headingFont: null, bodyFont: null, signers: [] })
+const name = ref('')
+const creating = ref(false)
+const error = ref<string | null>(null)
+const upgradeReason = ref<null | 'limit' | 'premium'>(null)
 
-const pageDescription = ref('Start a new design template from scratch or duplicate an existing one.')
-
-useSeoMeta({
-  description: pageDescription.value,
-  ogDescription: pageDescription.value
-})
-
-useHead({
-  title: t('designTemplates.createTitle'),
-  link: [
-    { rel: 'canonical', href: `${WEBSITE_URL}/design-templates/create` }
-  ]
-})
-
-function getTemplateTypeLabel(type: string): string {
-  return t(`issue.templateTypes.${type}`)
-}
-
-function goToTemplate(created: any) {
-  const documentId = created?.data?.documentId ?? created?.data?.id
-  if (documentId) {
-    router.push(`/design-templates/${documentId}`)
+onMounted(async () => {
+  try {
+    const [sys] = await Promise.all([apiClient.listDesignTemplates('system'), resources.loadAll(true)])
+    library.value = sys
+    if (resources.brand) {
+      brand.value = JSON.parse(JSON.stringify(resources.brand))
+    }
   }
-  else {
-    router.push('/design-templates')
+  finally {
+    loading.value = false
   }
+})
+
+const templates = computed(() => library.value.filter(tpl =>
+  (tpl.kind || tpl.type) === kind.value
+  && (kind.value === 'badge' || (tpl.orientation || 'landscape') === orientation.value)
+  && (!categoryId.value || tpl.category?.id === categoryId.value)))
+
+const hasBrand = computed(() => !!(resources.brand?.exists && (resources.brand.logo || resources.brand.primary)))
+const STEPS = ['kind', 'template', 'brand', 'name'] as const
+
+function chooseKind(k: 'certificate' | 'badge') {
+  kind.value = k
+  selected.value = 'blank'
+  step.value = 2
 }
 
-// Step 1: pick a type. Step 2 (below): name it and create - a small
-// 2-step flow rather than creating a blank template on the first click,
-// so exploring the type cards doesn't silently burn the org's
-// design-template tier-limit quota on empty "Untitled" rows.
-const selectedType = ref<string | null>(null)
-const newTemplateName = ref('')
-const isCreating = ref(false)
-const createError = ref<string | null>(null)
-
-function selectType(type: string) {
-  selectedType.value = type
-  newTemplateName.value = ''
-  createError.value = null
-}
-
-async function handleCreate() {
-  if (!selectedType.value || !newTemplateName.value.trim()) {
+function chooseTemplate(tpl: any) {
+  if (tpl.locked) {
+    upgradeReason.value = 'premium'
     return
   }
+  selected.value = tpl
+}
 
-  isCreating.value = true
-  createError.value = null
+function toName() {
+  if (!name.value) {
+    name.value = selected.value === 'blank'
+      ? (kind.value === 'badge' ? t('designStudio.wizard.defaultBadgeName') : t('designStudio.wizard.defaultCertificateName'))
+      : selected.value.name
+  }
+  step.value = 4
+}
 
+async function saveBrandAndContinue() {
+  error.value = null
   try {
-    const created = await apiClient.createDesignTemplate({
-      name: newTemplateName.value.trim(),
-      type: selectedType.value,
-      description: '',
-      layoutConfig: {},
-      isDefault: false,
-      creator: authStore.profile?.id,
-      organization: authStore.profile?.organization?.id
-    })
-    goToTemplate(created)
+    await resources.saveBrand(brand.value)
+    toName()
   }
   catch (err) {
-    console.error('Error creating design template:', err)
-    // Surfaces the backend's own tier-limit message verbatim (e.g. `This
-    // organization has reached its "free" tier limit of 50 design
-    // templates...`) - same pattern issue.vue already uses for the
-    // credential-issuance limit error, not a re-worded client-side copy.
-    createError.value = err instanceof Error ? err.message : 'Failed to create design template'
-  }
-  finally {
-    isCreating.value = false
+    error.value = (err as Error).message
   }
 }
 
-// Or: start from an existing template (duplicate)
-const existingTemplates = ref<any[]>([])
-const isLoadingExisting = ref(false)
-const duplicatingId = ref<number | string | null>(null)
-const duplicateError = ref<string | null>(null)
-
-async function loadExistingTemplates() {
-  isLoadingExisting.value = true
-  try {
-    const response = await apiClient.getDesignTemplates()
-    existingTemplates.value = response.data || []
+async function create() {
+  if (resources.atLimit && !resources.isPlatformAdmin) {
+    upgradeReason.value = 'limit'
+    return
   }
-  catch (err) {
-    console.error('Error loading existing design templates:', err)
+  creating.value = true
+  error.value = null
+  try {
+    const res = selected.value === 'blank'
+      ? await apiClient.createDesignTemplate({ name: name.value.trim() || t('designStudio.untitled'), layoutConfig: blankDesign(kind.value, orientation.value) })
+      : await apiClient.useDesignTemplate(selected.value.documentId, name.value.trim())
+    let tour = false
+    try {
+      tour = !localStorage.getItem('ds-tour-seen')
+    }
+    catch {}
+    router.push({ path: `/design-templates/${res.data.documentId}`, query: tour ? { tour: '1' } : {} })
+  }
+  catch (err: any) {
+    const code = err?.data?.error?.details?.code
+    if (code === 'DESIGN_LIMIT_REACHED') {
+      upgradeReason.value = 'limit'
+    }
+    else if (code === 'PREMIUM_REQUIRED') {
+      upgradeReason.value = 'premium'
+    }
+    else {
+      error.value = err.message
+    }
   }
   finally {
-    isLoadingExisting.value = false
+    creating.value = false
   }
 }
-
-async function handleDuplicate(id: number | string) {
-  duplicatingId.value = id
-  duplicateError.value = null
-  try {
-    const created = await apiClient.duplicateDesignTemplate(id)
-    goToTemplate(created)
-  }
-  catch (err) {
-    console.error('Error duplicating design template:', err)
-    duplicateError.value = err instanceof Error ? err.message : 'Failed to duplicate design template'
-  }
-  finally {
-    duplicatingId.value = null
-  }
-}
-
-onMounted(() => {
-  loadExistingTemplates()
-})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-white to-[#D9F2DE]/20 py-8">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="mb-8">
-        <NuxtLink to="/design-templates" class="inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-4">
-          <div class="i-heroicons-arrow-left w-4 h-4 mr-1" />
-          {{ t('designTemplates.backToGallery') }}
+  <div class="min-h-screen py-8">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6">
+      <NuxtLink to="/design-templates" class="mb-4 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+        <div class="i-heroicons-arrow-left h-4 w-4" />{{ t('designStudio.backToDesigns') }}
+      </NuxtLink>
+      <h1 class="text-3xl font-bold text-text-primary">
+        {{ t('designStudio.wizard.title') }}
+      </h1>
+
+      <!-- Stepper -->
+      <ol class="mb-8 mt-5 flex items-center gap-2 text-sm" :aria-label="t('designStudio.wizard.progress')">
+        <li v-for="(s, i) in STEPS" :key="s" class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-2 rounded-full px-3 py-1.5"
+            :class="step === i + 1 ? 'bg-[#28A745] font-semibold text-black' : step > i + 1 ? 'bg-[#28A745]/15 text-[#1B7A34]' : 'bg-gray-100 text-gray-500'"
+            :disabled="i + 1 > step"
+            :aria-current="step === i + 1 ? 'step' : undefined"
+            @click="step = i + 1"
+          >
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/70 text-xs">
+              <span v-if="step > i + 1" class="i-heroicons-check h-3.5 w-3.5" /><span v-else>{{ i + 1 }}</span>
+            </span>
+            {{ t(`designStudio.wizard.steps.${s}`) }}
+          </button>
+          <div v-if="i < STEPS.length - 1" class="h-px w-6 bg-gray-300" />
+        </li>
+      </ol>
+
+      <div v-if="resources.atLimit && !resources.isPlatformAdmin" class="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div class="i-heroicons-exclamation-triangle h-5 w-5" />
+        {{ t('designStudio.gallery.atLimit') }}
+        <NuxtLink to="/billing" class="ml-auto font-semibold underline">
+          {{ t('designStudio.upgrade.cta') }}
         </NuxtLink>
-        <h1 class="text-4xl font-bold text-text-primary">
-          {{ t('designTemplates.createTitle') }}
-        </h1>
-        <p class="mt-2 text-text-secondary">
-          {{ t('designTemplates.createSubtitle') }}
-        </p>
       </div>
 
-      <!-- Step 1 + 2: choose a type, then name it -->
-      <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-lg mb-8">
-        <h2 class="text-lg font-medium text-text-primary mb-4">
-          {{ t('designTemplates.chooseType') }}
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <button
-            v-for="type in TEMPLATE_TYPES"
-            :key="type"
-            type="button"
-            class="flex flex-col items-center gap-2 p-4 border rounded-lg transition-all"
-            :class="selectedType === type ? 'border-[#28A745] bg-[#28A745]/5' : 'border-gray-200 hover:border-[#28A745]/50'"
-            @click="selectType(type)"
-          >
-            <span
-              class="w-10 h-10 rounded-full flex items-center justify-center"
-              :class="getTemplateTypeChipClass(type)"
-            >
-              <span class="w-5 h-5" :class="getTemplateTypeIcon(type)" />
-            </span>
-            <span class="text-sm font-medium text-text-primary">{{ getTemplateTypeLabel(type) }}</span>
+      <!-- 1. Kind -->
+      <section v-if="step === 1" class="grid gap-5 sm:grid-cols-2">
+        <button class="group rounded-2xl border-2 border-gray-200 bg-white p-6 text-left transition hover:border-[#28A745] hover:shadow-md" data-testid="wizard-certificate" @click="chooseKind('certificate')">
+          <div class="mb-4 flex aspect-[4/3] items-center justify-center rounded-xl bg-gradient-to-br from-[#f5f0e6] to-white">
+            <div class="flex aspect-[1.414] w-3/4 flex-col items-center justify-center gap-1 rounded border-4 border-double border-[#b08d3c] bg-white shadow">
+              <div class="h-2 w-1/2 rounded bg-[#1e3a8a]" /><div class="h-1.5 w-1/3 rounded bg-gray-300" /><div class="mt-1 h-2.5 w-2/5 rounded bg-[#b08d3c]/70" />
+            </div>
+          </div>
+          <h2 class="text-lg font-semibold">
+            {{ t('designStudio.wizard.certificate') }}
+          </h2>
+          <p class="mt-1 text-sm text-gray-600">
+            {{ t('designStudio.wizard.certificateHint') }}
+          </p>
+        </button>
+        <button class="group rounded-2xl border-2 border-gray-200 bg-white p-6 text-left transition hover:border-[#28A745] hover:shadow-md" data-testid="wizard-badge" @click="chooseKind('badge')">
+          <div class="mb-4 flex aspect-[4/3] items-center justify-center rounded-xl bg-gradient-to-br from-[#eef2ff] to-white">
+            <div class="flex h-32 w-32 items-center justify-center rounded-full border-8 border-[#b08d3c] bg-[#1e3a8a] shadow">
+              <div class="i-heroicons-star-solid h-12 w-12 text-amber-300" />
+            </div>
+          </div>
+          <h2 class="text-lg font-semibold">
+            {{ t('designStudio.wizard.badge') }}
+          </h2>
+          <p class="mt-1 text-sm text-gray-600">
+            {{ t('designStudio.wizard.badgeHint') }}
+          </p>
+        </button>
+      </section>
+
+      <!-- 2. Template -->
+      <section v-else-if="step === 2">
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+          <div v-if="kind === 'certificate'" class="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 text-sm">
+            <button v-for="o in (['landscape', 'portrait'] as const)" :key="o" class="rounded-md px-3 py-1.5" :class="orientation === o ? 'bg-white font-medium shadow-sm' : 'text-gray-600'" @click="orientation = o">
+              {{ t(`designStudio.inspector.${o}`) }}
+            </button>
+          </div>
+          <button class="rounded-full border px-3 py-1.5 text-sm" :class="categoryId === null ? 'border-[#28A745] bg-[#28A745]/10 text-[#1B7A34]' : 'border-gray-200'" @click="categoryId = null">
+            {{ t('designStudio.templates.allCategories') }}
+          </button>
+          <button v-for="c in resources.categories" :key="c.id" class="rounded-full border px-3 py-1.5 text-sm" :class="categoryId === c.id ? 'border-[#28A745] bg-[#28A745]/10 text-[#1B7A34]' : 'border-gray-200'" @click="categoryId = c.id">
+            {{ c.name }}
           </button>
         </div>
-
-        <div v-if="selectedType" class="mt-6 pt-6 border-t border-gray-100">
-          <label for="newTemplateName" class="block text-sm font-medium text-text-primary mb-2">
-            {{ t('designTemplates.nameLabel') }}
-          </label>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input
-              id="newTemplateName"
-              v-model="newTemplateName"
-              type="text"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
-              :placeholder="t('designTemplates.namePlaceholder')"
-              @keyup.enter="handleCreate"
-            >
-            <button
-              type="button"
-              :disabled="!newTemplateName.trim() || isCreating"
-              class="px-6 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              @click="handleCreate"
-            >
-              <span v-if="!isCreating">{{ t('designTemplates.createAction') }}</span>
-              <div v-else class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
-            </button>
-          </div>
-          <div v-if="createError" class="mt-3 rounded-lg bg-red-50 p-3">
-            <p class="text-sm text-red-800">
-              {{ createError }}
-            </p>
-          </div>
+        <div v-if="loading" class="flex justify-center py-12">
+          <div class="h-8 w-8 animate-spin rounded-full border-4 border-[#28A745] border-t-transparent" />
         </div>
-      </div>
+        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <button
+            class="flex flex-col overflow-hidden rounded-xl border-2 bg-white text-left"
+            :class="selected === 'blank' ? 'border-[#28A745] ring-2 ring-[#28A745]/30' : 'border-gray-200 hover:border-gray-300'"
+            data-testid="wizard-blank"
+            @click="selected = 'blank'"
+          >
+            <div class="flex items-center justify-center bg-gray-50" :class="kind === 'badge' ? 'aspect-square' : orientation === 'portrait' ? 'aspect-[3/4]' : 'aspect-[4/3]'">
+              <div class="i-heroicons-document-plus h-10 w-10 text-gray-300" />
+            </div>
+            <span class="p-3 text-sm font-medium">{{ t('designStudio.templates.blank') }}</span>
+          </button>
+          <button
+            v-for="tpl in templates"
+            :key="tpl.id"
+            class="relative flex flex-col overflow-hidden rounded-xl border-2 bg-white text-left"
+            :class="selected !== 'blank' && selected?.documentId === tpl.documentId ? 'border-[#28A745] ring-2 ring-[#28A745]/30' : 'border-gray-200 hover:border-gray-300'"
+            @click="chooseTemplate(tpl)"
+          >
+            <div class="flex items-center justify-center bg-[#eef0f3] p-2" :class="kind === 'badge' ? 'aspect-square' : orientation === 'portrait' ? 'aspect-[3/4]' : 'aspect-[4/3]'">
+              <img v-if="tpl.previewImage?.url" :src="designAssetUrl(tpl.previewImage.url)" :alt="tpl.name" class="max-h-full max-w-full object-contain" loading="lazy">
+            </div>
+            <span class="truncate p-3 text-sm font-medium">{{ tpl.name }}</span>
+            <span v-if="tpl.isPremium" class="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-amber-950 shadow">
+              <div :class="tpl.locked ? 'i-heroicons-lock-closed' : 'i-heroicons-sparkles'" class="h-3.5 w-3.5" />{{ t('designStudio.premium') }}
+            </span>
+          </button>
+        </div>
+        <p v-if="!loading && !templates.length" class="mt-4 text-sm text-gray-500">
+          {{ t('designStudio.templates.none') }}
+        </p>
+        <div class="mt-8 flex justify-between">
+          <button class="rounded-full border border-gray-300 px-5 py-2 text-sm" @click="step = 1">
+            {{ t('common.back') }}
+          </button>
+          <button class="rounded-full bg-[#28A745] px-6 py-2 text-sm font-semibold text-black" data-testid="wizard-next" @click="step = 3">
+            {{ t('designStudio.tour.next') }}
+          </button>
+        </div>
+      </section>
 
-      <!-- Or start from an existing template -->
-      <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
-        <h2 class="text-lg font-medium text-text-primary mb-4">
-          {{ t('designTemplates.startFromExisting') }}
-        </h2>
-
-        <div v-if="duplicateError" class="mb-4 rounded-lg bg-red-50 p-3">
-          <p class="text-sm text-red-800">
-            {{ duplicateError }}
+      <!-- 3. Brand -->
+      <section v-else-if="step === 3" class="grid gap-8 lg:grid-cols-[1fr_280px]">
+        <div class="rounded-2xl border border-gray-200 bg-white p-6">
+          <h2 class="text-lg font-semibold">
+            {{ hasBrand ? t('designStudio.wizard.brandExistingTitle') : t('designStudio.wizard.brandTitle') }}
+          </h2>
+          <p class="mb-5 mt-1 text-sm text-gray-600">
+            {{ t('designStudio.wizard.brandBody') }}
+          </p>
+          <DesignStudioBrandKitForm v-model="brand" />
+          <p v-if="error" class="mt-4 text-sm text-red-600">
+            {{ error }}
           </p>
         </div>
-
-        <div v-if="isLoadingExisting" class="text-center py-8">
-          <div class="w-8 h-8 border-4 border-[#28A745] border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
-        <p v-else-if="existingTemplates.length === 0" class="text-text-secondary text-sm">
-          {{ t('designTemplates.noExisting') }}
-        </p>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="template in existingTemplates"
-            :key="template.id"
-            class="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-3"
-          >
-            <div class="flex items-center gap-3 min-w-0">
-              <span
-                class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                :class="getTemplateTypeChipClass(template.type)"
-              >
-                <span class="w-4 h-4" :class="getTemplateTypeIcon(template.type)" />
-              </span>
-              <span class="text-sm font-medium text-text-primary truncate">{{ template.name }}</span>
-            </div>
-            <button
-              type="button"
-              :disabled="duplicatingId === (template.documentId || template.id)"
-              class="text-sm font-medium text-[#28A745] hover:text-[#28A745]/80 disabled:opacity-50 flex-shrink-0"
-              @click="handleDuplicate(template.documentId || template.id)"
-            >
-              <span v-if="duplicatingId === (template.documentId || template.id)">{{ t('common.loading') }}</span>
-              <span v-else>{{ t('designTemplates.duplicate') }}</span>
+        <aside class="space-y-3 text-sm text-gray-600">
+          <div class="rounded-xl bg-[#28A745]/5 p-4">
+            <div class="i-heroicons-light-bulb mb-2 h-6 w-6 text-[#1B7A34]" />
+            {{ t('designStudio.wizard.brandTip') }}
+          </div>
+        </aside>
+        <div class="flex justify-between lg:col-span-2">
+          <button class="rounded-full border border-gray-300 px-5 py-2 text-sm" @click="step = 2">
+            {{ t('common.back') }}
+          </button>
+          <div class="flex gap-2">
+            <button class="rounded-full px-5 py-2 text-sm text-gray-600 underline" data-testid="wizard-skip-brand" @click="toName">
+              {{ t('designStudio.wizard.skip') }}
+            </button>
+            <button class="rounded-full bg-[#28A745] px-6 py-2 text-sm font-semibold text-black" data-testid="wizard-save-brand" @click="saveBrandAndContinue">
+              {{ t('designStudio.wizard.saveBrand') }}
             </button>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- 4. Name -->
+      <section v-else class="max-w-lg rounded-2xl border border-gray-200 bg-white p-6">
+        <label class="block text-sm font-medium" for="design-name">{{ t('designStudio.wizard.nameLabel') }}</label>
+        <input id="design-name" v-model="name" class="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2" maxlength="120" autofocus @keydown.enter="create">
+        <p class="mt-2 text-xs text-gray-500">
+          {{ t('designStudio.wizard.nameHint') }}
+        </p>
+        <p v-if="error" class="mt-3 text-sm text-red-600">
+          {{ error }}
+        </p>
+        <div class="mt-6 flex justify-between">
+          <button class="rounded-full border border-gray-300 px-5 py-2 text-sm" @click="step = 3">
+            {{ t('common.back') }}
+          </button>
+          <button class="flex items-center gap-2 rounded-full bg-[#28A745] px-6 py-2 text-sm font-semibold text-black disabled:opacity-60" :disabled="creating" data-testid="wizard-create" @click="create">
+            <div v-if="creating" class="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+            {{ t('designStudio.wizard.create') }}
+          </button>
+        </div>
+      </section>
     </div>
+    <DesignStudioUpgradeDialog v-if="upgradeReason" :reason="upgradeReason" @close="upgradeReason = null" />
   </div>
 </template>

@@ -116,4 +116,47 @@ describe('Organization Usage Service', () => {
       expect(result).toBe(5)
     })
   })
+
+  describe('getDesignLimits', () => {
+    const settings = {
+      free: { designTemplateLimit: 3, premiumTemplates: false },
+      pro: { designTemplateLimit: 50, premiumTemplates: true },
+      enterprise: { designTemplateLimit: null, premiumTemplates: true },
+      trial: { designTemplateLimit: 10, premiumTemplates: false },
+    }
+    const withSettings = (value: any) => {
+      global.strapi = { documents: () => ({ findFirst: jest.fn().mockResolvedValue(value) }) } as any
+      return usageFactory()
+    }
+
+    it('uses the trial column while trialing, whatever the tier', async () => {
+      const s = withSettings(settings)
+      expect(await s.getDesignLimits({ tier: 'pro', subscriptionStatus: 'trialing' })).toEqual({ source: 'trial', designTemplateLimit: 10, premiumTemplates: false })
+      expect(await s.getDesignLimits({ tier: 'enterprise', subscriptionStatus: 'trialing' })).toEqual({ source: 'trial', designTemplateLimit: 10, premiumTemplates: false })
+    })
+
+    it('uses the tier column when active, and free after a trial lapses', async () => {
+      const s = withSettings(settings)
+      expect(await s.getDesignLimits({ tier: 'pro', subscriptionStatus: 'active' })).toEqual({ source: 'pro', designTemplateLimit: 50, premiumTemplates: true })
+      expect(await s.getDesignLimits({ tier: 'enterprise', subscriptionStatus: 'active' })).toEqual({ source: 'enterprise', designTemplateLimit: null, premiumTemplates: true })
+      expect(await s.getDesignLimits({ tier: 'free', subscriptionStatus: 'none' })).toEqual({ source: 'free', designTemplateLimit: 3, premiumTemplates: false })
+    })
+
+    it('falls back to the tier when no trial column is configured', async () => {
+      const { trial, ...noTrial } = settings
+      const s = withSettings(noTrial)
+      expect((await s.getDesignLimits({ tier: 'pro', subscriptionStatus: 'trialing' })).source).toBe('pro')
+    })
+
+    it('defaults premiumTemplates by tier when the flag was never set', async () => {
+      const s = withSettings({ free: { designTemplateLimit: 50 }, pro: { designTemplateLimit: 1000 } })
+      expect((await s.getDesignLimits({ tier: 'free' })).premiumTemplates).toBe(false)
+      expect((await s.getDesignLimits({ tier: 'pro' })).premiumTemplates).toBe(true)
+    })
+
+    it('fails open (unlimited) without a settings record', async () => {
+      const s = withSettings(null)
+      expect(await s.getDesignLimits({ tier: 'free' })).toEqual({ source: 'free', designTemplateLimit: null, premiumTemplates: false })
+    })
+  })
 })

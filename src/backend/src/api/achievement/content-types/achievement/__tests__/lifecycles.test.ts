@@ -142,5 +142,39 @@ describe('Achievement lifecycles', () => {
       const event = makeEvent({ tags: [], creator: { id: 5 } })
       await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(errors.ApplicationError)
     })
+
+    it('does not count a republish of an existing achievement (saving an edit) against the limit', async () => {
+      const findOne = jest.fn().mockResolvedValue({ id: 5, organization: { id: 42, tier: 'free' } })
+      const getTierLimit = jest.fn().mockResolvedValue(50)
+      const countOrganizationAchievements = jest.fn().mockResolvedValue(51)
+      const count = jest.fn().mockResolvedValue(1)
+      global.strapi = {
+        entityService: { findOne },
+        db: { query: () => ({ count }) },
+        service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationAchievements }),
+      } as any
+
+      const event = makeEvent({ tags: '', creator: { id: 5 }, documentId: 'abc123' })
+      await expect(lifecycles.beforeCreate(event as any)).resolves.toBeUndefined()
+      expect(count).toHaveBeenCalledWith({ where: { documentId: 'abc123' } })
+      expect(getTierLimit).not.toHaveBeenCalled()
+      // Tag sanitisation still runs for republishes.
+      expect(event.params.data.tags).toEqual([])
+    })
+
+    it('still enforces the limit for a new document that already has its documentId assigned', async () => {
+      const findOne = jest.fn().mockResolvedValue({ id: 5, organization: { id: 42, tier: 'free' } })
+      const getTierLimit = jest.fn().mockResolvedValue(50)
+      const countOrganizationAchievements = jest.fn().mockResolvedValue(50)
+      const count = jest.fn().mockResolvedValue(0)
+      global.strapi = {
+        entityService: { findOne },
+        db: { query: () => ({ count }) },
+        service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationAchievements }),
+      } as any
+
+      const event = makeEvent({ tags: [], creator: { id: 5 }, documentId: 'new123' })
+      await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(errors.ApplicationError)
+    })
   })
 })

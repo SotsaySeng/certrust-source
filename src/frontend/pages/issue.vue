@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Recipient } from '~/composables/useApiClient'
+import Papa from 'papaparse'
+import { apiClient as api } from '~/api/api-client'
 import { getTemplateTypeChipClass, getTemplateTypeIcon } from '~/constants/templateTypes'
 
 const { t } = useI18n()
@@ -24,6 +26,9 @@ definePageMeta({
 
 interface Template {
   id: string
+  documentId?: string
+  certificateDesignId?: string | null
+  badgeDesignId?: string | null
   title: string
   description: string
   image?: {
@@ -60,7 +65,19 @@ const authStore = useAuthStore()
 const apiClient = useApiClient()
 const templates = ref<Template[]>([])
 const selectedTemplate = ref<Template | null>(null)
-const recipients = ref<Recipient[]>([{ name: '', email: '', expirationDate: '' }])
+const recipients = ref<Recipient[]>([{ name: '', email: '', expirationDate: '', customFields: {} }])
+
+// Design Studio: which certificate/badge design this issuance uses (the
+// achievement's defaults unless changed here) and the organization's
+// custom attributes (form fields / CSV columns).
+const resources = useStudioResourcesStore()
+const certificateDesignId = ref<string | null>(null)
+const badgeDesignId = ref<string | null>(null)
+const saveDesignsAsDefault = ref(false)
+const designsChanged = computed(() => !!selectedTemplate.value
+  && (certificateDesignId.value !== (selectedTemplate.value.certificateDesignId ?? null)
+    || badgeDesignId.value !== (selectedTemplate.value.badgeDesignId ?? null)))
+const csvColumns = ref<{ matched: string[], missingRequired: string[] }>({ matched: [], missingRequired: [] })
 // Credentials are dated when they are issued (the backend stamps "now"), so
 // this is display-only. Local date, not the UTC one toISOString() gives.
 const issueDate = ref(new Date().toLocaleDateString('en-CA'))
@@ -125,6 +142,9 @@ async function loadTemplates() {
       templates.value = response.data.map((badge: any) => {
         return {
           id: String(badge.id),
+          documentId: badge.documentId,
+          certificateDesignId: badge.certificateDesignId ?? null,
+          badgeDesignId: badge.badgeDesignId ?? null,
           title: badge.name || '',
           description: badge.description || '',
           image: {
@@ -183,11 +203,33 @@ async function loadTemplates() {
 }
 
 onMounted(async () => {
+  resources.loadAttributes()
   await loadTemplates()
 })
 
 function selectTemplate(template: Template) {
   selectedTemplate.value = template
+  certificateDesignId.value = template.certificateDesignId ?? null
+  badgeDesignId.value = template.badgeDesignId ?? null
+  saveDesignsAsDefault.value = false
+}
+
+/** Header normalisation for CSV column matching: "Training Date" == "training_date". */
+function normHeader(h: string) {
+  return h.toLowerCase().replace(/[^a-z0-9\u0E80-\u0EFF]/g, '')
+}
+
+/** CSV template with this organization's custom attribute columns. */
+function downloadCsvTemplate() {
+  const attrs = resources.customAttributes
+  const header = ['name', 'email', 'expirationDate', 'minor', ...attrs.map(a => a.key)]
+  const example = ['Alex Morgan', 'alex@example.com', '', 'no', ...attrs.map(a => (a.type === 'date' ? '2026-08-19' : a.type === 'number' ? '1' : a.label))]
+  const csv = Papa.unparse([header, example])
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }))
+  a.download = 'recipients-template.csv'
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000)
 }
 
 // Per-type icon and chip tint so the template grid visually distinguishes
@@ -247,30 +289,41 @@ function handleFileUpload(event: Event) {
   reader.onload = () => {
     try {
       const content = reader.result as string
-      const lines = content.split(/\r?\n/)
-      if (lines.length < 2) {
-        throw new Error('CSV file is empty or invalid.')
-      }
-      const header = lines[0].split(',').map(h => h.trim().toLowerCase())
-      const nameIdx = header.indexOf('name')
-      const emailIdx = header.indexOf('email')
-      const orgIdx = header.indexOf('organization')
-      const expIdx = header.indexOf('expirationdate')
+      // papaparse: quoted fields may contain commas (full names, addresses).
+      const parsed = Papa.parse<Record<string, string>>(content.replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true, transformHeader: h => h.trim() })
+      const headers = parsed.meta.fields ?? []
+      const find = (...names: string[]) => headers.find(h => names.includes(normHeader(h)))
+      const nameCol = find('name', 'fullname', 'recipientname')
+      const emailCol = find('email', 'emailaddress')
+      const orgCol = find('organization', 'organisation')
+      const expCol = find('expirationdate', 'expires', 'expiry')
       // Optional "minor" column (yes/no): recipients under 16 get a private
       // credential by default.
-      const minorIdx = header.findIndex(h => h === 'minor' || h === 'issuedtominor')
+      const minorCol = find('minor', 'issuedtominor')
+      if (!nameCol || !emailCol) {
+        throw new Error('The CSV needs "name" and "email" columns.')
+      }
+      // Custom attributes: a column named after the attribute's key or label.
+      const attrCols = resources.customAttributes
+        .map(a => ({ a, col: headers.find(h => normHeader(h) === normHeader(a.key) || normHeader(h) === normHeader(a.label)) }))
+      csvColumns.value = {
+        matched: attrCols.filter(x => x.col).map(x => x.a.label),
+        missingRequired: attrCols.filter(x => !x.col && x.a.required).map(x => x.a.label),
+      }
 
       const parsedRecipients: Recipient[] = []
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) {
-          continue
+      for (const row of parsed.data) {
+        const name = row[nameCol]?.trim()
+        const email = row[emailCol]?.trim()
+        const organization = orgCol ? row[orgCol]?.trim() : ''
+        const expirationDate = expCol ? row[expCol]?.trim() : ''
+        const issuedToMinor = !!minorCol && ['yes', 'y', 'true', '1'].includes((row[minorCol] || '').trim().toLowerCase())
+        const customFields: Record<string, string> = {}
+        for (const { a, col } of attrCols) {
+          if (col && row[col]?.trim()) {
+            customFields[a.key] = row[col].trim()
+          }
         }
-        const row = lines[i].split(',')
-        const name = row[nameIdx]?.trim()
-        const email = row[emailIdx]?.trim()
-        const organization = orgIdx !== -1 ? row[orgIdx]?.trim() : ''
-        const expirationDate = expIdx !== -1 ? row[expIdx]?.trim() : ''
-        const issuedToMinor = minorIdx !== -1 && ['yes', 'y', 'true', '1'].includes((row[minorIdx] || '').trim().toLowerCase())
         if (name && email) {
           parsedRecipients.push({
             name,
@@ -278,6 +331,7 @@ function handleFileUpload(event: Event) {
             organization,
             expirationDate,
             issuedToMinor,
+            customFields,
           })
         }
       }
@@ -291,7 +345,7 @@ function handleFileUpload(event: Event) {
     catch (err) {
       console.error('Error parsing CSV:', err)
       error.value = err instanceof Error ? err.message : 'Failed to parse CSV file'
-      recipients.value = [{ name: '', email: '', expirationDate: '' }]
+      recipients.value = [{ name: '', email: '', expirationDate: '', customFields: {} }]
       csvUploaded.value = false
     }
   }
@@ -304,8 +358,9 @@ function handleFileUpload(event: Event) {
 }
 
 function clearCsvRecipients() {
-  recipients.value = [{ name: '', email: '', expirationDate: '' }]
+  recipients.value = [{ name: '', email: '', expirationDate: '', customFields: {} }]
   csvUploaded.value = false
+  csvColumns.value = { matched: [], missingRequired: [] }
 }
 
 async function handleIssue() {
@@ -326,9 +381,18 @@ async function handleIssue() {
   batchResults.value = []
 
   try {
+    // Remember the chosen designs as the achievement's defaults if asked.
+    if (saveDesignsAsDefault.value && designsChanged.value && selectedTemplate.value.documentId) {
+      await api.put(`/api/achievements/${encodeURIComponent(selectedTemplate.value.documentId)}`, {
+        data: { certificateDesignId: certificateDesignId.value, badgeDesignId: badgeDesignId.value },
+      })
+      selectedTemplate.value.certificateDesignId = certificateDesignId.value
+      selectedTemplate.value.badgeDesignId = badgeDesignId.value
+    }
     const response = await apiClient.batchIssueBadges(
       selectedTemplate.value.id,
-      recipients.value
+      recipients.value,
+      { certificateDesignId: certificateDesignId.value, badgeDesignId: badgeDesignId.value }
     )
     if (response && Array.isArray(response.results)) {
       batchResults.value = response.results
@@ -369,8 +433,9 @@ async function handleIssue() {
  */
 function clearForm() {
   selectedTemplate.value = null
-  recipients.value = [{ name: '', email: '', expirationDate: '' }]
+  recipients.value = [{ name: '', email: '', expirationDate: '', customFields: {} }]
   csvUploaded.value = false
+  csvColumns.value = { matched: [], missingRequired: [] }
   error.value = null
 }
 
@@ -515,6 +580,34 @@ function formatDate(date: string) {
                 </div>
               </div>
 
+              <!-- Design (Design Studio) -->
+              <div v-if="selectedTemplate" class="rounded-xl border border-gray-200 bg-gray-50/60 p-4" data-testid="issue-design-section">
+                <div class="mb-3 flex items-center justify-between">
+                  <label class="block text-sm font-medium text-text-primary">{{ t('designStudio.issue.designTitle') }}</label>
+                  <NuxtLink to="/design-templates" class="text-xs text-[#1B7A34] hover:underline">
+                    {{ t('designStudio.issue.openStudio') }}
+                  </NuxtLink>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p class="mb-1 text-xs font-medium text-text-secondary">
+                      {{ t('designStudio.issue.certificate') }}
+                    </p>
+                    <DesignStudioDesignPicker v-model="certificateDesignId" kind="certificate" />
+                  </div>
+                  <div>
+                    <p class="mb-1 text-xs font-medium text-text-secondary">
+                      {{ t('designStudio.issue.badge') }}
+                    </p>
+                    <DesignStudioDesignPicker v-model="badgeDesignId" kind="badge" />
+                  </div>
+                </div>
+                <label v-if="designsChanged" class="mt-3 flex items-center gap-2 text-sm text-text-secondary">
+                  <input v-model="saveDesignsAsDefault" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#28A745] focus:ring-[#28A745]">
+                  {{ t('designStudio.issue.saveDefault', { name: selectedTemplate.title }) }}
+                </label>
+              </div>
+
               <!-- Recipients -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-2">
@@ -548,7 +641,10 @@ function formatDate(date: string) {
                         </p>
                       </div>
                       <p class="text-xs text-text-secondary mt-2">
-                        Download our <a href="/recipients-template.csv" download class="text-[#28A745] hover:text-[#28A745]/80">CSV template</a>
+                        Download our <button type="button" class="text-[#28A745] hover:text-[#28A745]/80" @click="downloadCsvTemplate">
+                          CSV template
+                        </button>
+                        <span v-if="resources.customAttributes.length" class="mt-0.5 block">{{ t('designStudio.issue.csvCustomHint') }}</span>
                       </p>
                     </div>
                   </div>
@@ -557,10 +653,14 @@ function formatDate(date: string) {
                   <div v-if="csvUploaded" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
                     <div class="flex items-center justify-between mb-2">
                       <span class="font-medium text-text-primary">{{ recipients.length }} recipients loaded from CSV</span>
+                      <span v-if="csvColumns.matched.length" class="text-xs text-[#1B7A34]">{{ t('designStudio.issue.csvMatched', { list: csvColumns.matched.join(', ') }) }}</span>
                       <button type="button" class="text-red-500 hover:text-red-600 text-sm" @click="clearCsvRecipients">
                         Clear
                       </button>
                     </div>
+                    <p v-if="csvColumns.missingRequired.length" class="mb-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                      {{ t('designStudio.issue.csvMissingRequired', { list: csvColumns.missingRequired.join(', ') }) }}
+                    </p>
                     <ul class="max-h-32 overflow-y-auto text-xs text-gray-600">
                       <li v-for="(recipient, i) in recipients" :key="i">
                         {{ recipient.name }} &lt;{{ recipient.email }}&gt;
@@ -607,6 +707,12 @@ function formatDate(date: string) {
                       >
                     </div>
                   </div>
+                  <DesignStudioCustomFieldInputs
+                    v-if="!csvUploaded && resources.customAttributes.length"
+                    v-model="recipients[0].customFields"
+                    :attributes="resources.customAttributes"
+                    id-prefix="recipient0"
+                  />
                 </div>
               </div>
 

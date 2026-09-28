@@ -5,7 +5,7 @@
     "singularName": "design-template",
     "pluralName": "design-templates",
     "displayName": "Design Template",
-    "description": "Reusable visual layout (colors, background, fonts) for rendering a badge or certificate."
+    "description": "A certificate or badge design made in the Design Studio. layoutConfig holds the design document (see src/shared/design-core/types.ts). organization null = platform/system template."
   },
   "options": {
     "draftAndPublish": true
@@ -21,14 +21,23 @@
     },
     "type": {
       "type": "enumeration",
-      "enum": ["certificate", "badge", "transcript", "training_record", "assessment", "letter"],
+      "enum": [
+        "certificate",
+        "badge",
+        "transcript",
+        "training_record",
+        "assessment",
+        "letter"
+      ],
       "default": "badge",
       "required": true
     },
     "previewImage": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "layoutConfig": {
       "type": "json",
@@ -48,6 +57,49 @@
       "relation": "manyToOne",
       "target": "api::organization.organization",
       "inversedBy": "designTemplates"
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "certificate",
+        "badge"
+      ],
+      "default": "certificate"
+    },
+    "orientation": {
+      "type": "enumeration",
+      "enum": [
+        "landscape",
+        "portrait"
+      ],
+      "default": "landscape"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::design-category.design-category",
+      "inversedBy": "designTemplates"
+    },
+    "isPremium": {
+      "type": "boolean",
+      "default": false
+    },
+    "isHidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "System templates only: hidden from the gallery (Admin > Design library) without unpublishing, so achievements already using it keep issuing."
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "slug": {
+      "type": "string",
+      "unique": true
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "default": 1
     }
   }
 }

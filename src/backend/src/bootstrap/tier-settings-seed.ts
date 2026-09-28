@@ -9,21 +9,51 @@
  */
 
 const DEFAULT_TIER_SETTINGS = {
-  free: { credentialLimit: 50, designTemplateLimit: 50, achievementLimit: 50 },
-  pro: { credentialLimit: 1000, designTemplateLimit: 1000, achievementLimit: 1000 },
-  enterprise: { credentialLimit: null, designTemplateLimit: null, achievementLimit: null },
+  free: { credentialLimit: 50, designTemplateLimit: 3, achievementLimit: 50, premiumTemplates: false },
+  pro: { credentialLimit: 1000, designTemplateLimit: 50, achievementLimit: 1000, premiumTemplates: true },
+  enterprise: { credentialLimit: null, designTemplateLimit: null, achievementLimit: null, premiumTemplates: true },
+  // Design Studio limits while an organization is trialing (only the design
+  // dimensions are read from this column - see usage.getDesignLimits).
+  trial: { credentialLimit: null, designTemplateLimit: 10, achievementLimit: null, premiumTemplates: false },
 };
+
+/**
+ * Records seeded before the Design Studio have no trial column and no
+ * premiumTemplates flags. Add those - and only those - so every limit an
+ * admin already set stays exactly as it was.
+ */
+async function addDesignStudioDefaults(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::tier-settings.tier-settings').findFirst({
+    populate: ['free', 'pro', 'enterprise', 'trial'],
+  } as any);
+  if (!full) return;
+  const patch: any = {};
+  for (const tier of ['free', 'pro', 'enterprise'] as const) {
+    const col = full[tier];
+    if (col && typeof col.premiumTemplates !== 'boolean') {
+      const { id, ...rest } = col;
+      patch[tier] = { ...rest, premiumTemplates: DEFAULT_TIER_SETTINGS[tier].premiumTemplates };
+    }
+  }
+  if (!full.trial) patch.trial = DEFAULT_TIER_SETTINGS.trial;
+  if (!Object.keys(patch).length) return;
+  await strapi.documents('api::tier-settings.tier-settings').update({
+    documentId: existing.documentId,
+    data: patch,
+  } as any);
+  strapi.log.info(`[Seed] Tier settings: added Design Studio defaults (${Object.keys(patch).join(', ')}).`);
+}
 
 export async function seedTierSettings(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::tier-settings.tier-settings').findFirst();
 
     if (existing) {
-      strapi.log.info('[Seed] Tier settings already seeded, skipping...');
+      await addDesignStudioDefaults(strapi, existing);
       return;
     }
 
-    strapi.log.info('[Seed] Seeding default tier settings (free: 50, pro: 1000, enterprise: unlimited)...');
+    strapi.log.info('[Seed] Seeding default tier settings...');
 
     await strapi.documents('api::tier-settings.tier-settings').create({
       data: DEFAULT_TIER_SETTINGS,

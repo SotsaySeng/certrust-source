@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "design_categories",
+  "info": {
+    "singularName": "design-category",
+    "pluralName": "design-categories",
+    "displayName": "Design Category",
+    "description": "Admin-managed categories for the Design Studio template gallery (Education, Corporate, Events...)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "designTemplates": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::design-template.design-template",
+      "mappedBy": "category"
+    }
+  }
+}

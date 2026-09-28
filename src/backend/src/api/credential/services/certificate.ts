@@ -3,8 +3,20 @@
  */
 
 import sharp from 'sharp'
+import { PDFDocument } from 'pdf-lib'
+import type { Design } from '../../../utils/design-core'
+import { validateDesign } from '../../../utils/design-core'
+import { renderDesignPdf, renderDesignPng, renderDesignSvg } from '../../../utils/design-render'
+import { credentialPlaceholderData, orgCustomAttributes } from '../../../utils/issue-design'
 import { generateCertificateSvg } from '../../../utils/certificate-template'
 import { issuerDisplayName } from '../../../utils/issuer-display-name'
+
+/** A credential's frozen design (if it was issued with one), validated. */
+function snapshotOf(value: unknown): Design | null {
+  if (!value || typeof value !== 'object') return null
+  const r = validateDesign(value)
+  return r.ok ? (r.design as Design) : null
+}
 
 // Link-preview image size recommended by Facebook (1.91:1); WhatsApp,
 // LinkedIn and X use the same og:image.
@@ -35,6 +47,28 @@ async function fetchAsDataUri(url: string): Promise<string | null> {
 
 export default ({ strapi }) => ({
   /**
+   * Everything a Design Studio render needs: the credential with its
+   * snapshots and relations, and its placeholder values. `certificate` /
+   * `badge` are null for credentials issued before the Design Studio (or
+   * without a design) - callers fall back to the classic template.
+   */
+  async loadDesignContext(credentialId: number | string) {
+    const credential: any = await strapi.entityService.findOne('api::credential.credential', credentialId, {
+      status: 'published',
+      populate: ['achievement', 'issuer', 'issuer.organization', 'recipient'],
+    } as any)
+    if (!credential) throw new Error('Credential not found')
+    const certificate = snapshotOf(credential.certificateDesignSnapshot)
+    const badge = snapshotOf(credential.badgeDesignSnapshot)
+    // Placeholder data is only needed for a Design Studio render; legacy
+    // credentials skip the custom-attribute lookup.
+    const data = certificate || badge
+      ? credentialPlaceholderData(credential, await orgCustomAttributes(credential.issuer?.organization?.id ?? null))
+      : {}
+    return { credential, data, certificate, badge }
+  },
+
+  /**
    * Generate a certificate for a credential
    * @param {number|string} credentialId - The ID of the credential
    * @param {object} [options.inlineImages] - embed the badge image as a data
@@ -46,6 +80,11 @@ export default ({ strapi }) => ({
     options: { inlineImages?: boolean } = {}
   ): Promise<string> {
     try {
+      const ctx = await this.loadDesignContext(credentialId)
+      if (ctx.certificate) {
+        return (await renderDesignSvg(ctx.certificate, { data: ctx.data })).svg
+      }
+
       // Get the credential with all necessary relationships
       const credential = await strapi.entityService.findOne(
         'api::credential.credential',
@@ -117,18 +156,35 @@ export default ({ strapi }) => ({
    * @returns {Buffer} JPEG bytes
    */
   async generateShareImage(credentialId: number | string): Promise<Buffer> {
-    const svg = await this.generateCertificate(credentialId, { inlineImages: true })
-
-    // Rasterise at 2x, crop to the certificate, then scale down so text
-    // stays crisp after resampling.
-    const scale = 2
-    const certHeight = SHARE_HEIGHT - 60
-    const certWidth = Math.round(certHeight * CERT_WIDTH / CERT_HEIGHT)
-    const certificate = await sharp(Buffer.from(svg), { density: 72 * scale })
-      .extract({ left: 0, top: 0, width: CERT_WIDTH * scale, height: CERT_HEIGHT * scale })
-      .resize(certWidth, certHeight)
-      .png()
-      .toBuffer()
+    const ctx = await this.loadDesignContext(credentialId)
+    let certificate: Buffer
+    let certWidth: number
+    let certHeight: number
+    if (ctx.certificate) {
+      // Fit the design (any size/orientation) inside the preview's margins.
+      const maxW = SHARE_WIDTH - 60
+      const maxH = SHARE_HEIGHT - 60
+      const s = Math.min(maxW / ctx.certificate.page.width, maxH / ctx.certificate.page.height)
+      certWidth = Math.round(ctx.certificate.page.width * s)
+      certHeight = Math.round(ctx.certificate.page.height * s)
+      certificate = await sharp(await renderDesignPng(ctx.certificate, { data: ctx.data, width: certWidth * 2 }))
+        .resize(certWidth, certHeight)
+        .png()
+        .toBuffer()
+    }
+    else {
+      const svg = await this.generateCertificate(credentialId, { inlineImages: true })
+      // Rasterise at 2x, crop to the certificate, then scale down so text
+      // stays crisp after resampling.
+      const scale = 2
+      certHeight = SHARE_HEIGHT - 60
+      certWidth = Math.round(certHeight * CERT_WIDTH / CERT_HEIGHT)
+      certificate = await sharp(Buffer.from(svg), { density: 72 * scale })
+        .extract({ left: 0, top: 0, width: CERT_WIDTH * scale, height: CERT_HEIGHT * scale })
+        .resize(certWidth, certHeight)
+        .png()
+        .toBuffer()
+    }
 
     return sharp({
       create: { width: SHARE_WIDTH, height: SHARE_HEIGHT, channels: 3, background: '#eef1ef' },
@@ -151,12 +207,51 @@ export default ({ strapi }) => ({
    * @returns {Buffer} PNG bytes (1600x1200)
    */
   async generateCertificatePng(credentialId: number | string): Promise<Buffer> {
+    const ctx = await this.loadDesignContext(credentialId)
+    if (ctx.certificate) {
+      // ~200 DPI for A4/Letter: sharp enough to print from the PNG too.
+      return renderDesignPng(ctx.certificate, { data: ctx.data, width: Math.round(ctx.certificate.page.width * 2) })
+    }
     const svg = await this.generateCertificate(credentialId, { inlineImages: true })
     const scale = 2
     return sharp(Buffer.from(svg), { density: 72 * scale })
       .extract({ left: 0, top: 0, width: CERT_WIDTH * scale, height: CERT_HEIGHT * scale })
       .png()
       .toBuffer()
+  },
+
+  /**
+   * Print PDF: Design Studio certificates get an exact A4/US Letter page at
+   * 300 DPI; classic certificates are placed on an A4 landscape page.
+   */
+  async generateCertificatePdf(credentialId: number | string): Promise<Buffer> {
+    const ctx = await this.loadDesignContext(credentialId)
+    if (ctx.certificate) return renderDesignPdf(ctx.certificate, { data: ctx.data })
+    const png = await this.generateCertificatePng(credentialId)
+    const pdf = await PDFDocument.create()
+    pdf.setProducer('Certrust')
+    const [pw, ph] = [841.89, 595.28]
+    const page = pdf.addPage([pw, ph])
+    const img = await pdf.embedPng(png)
+    const s = Math.min((pw - 48) / img.width, (ph - 48) / img.height)
+    page.drawImage(img, { x: (pw - img.width * s) / 2, y: (ph - img.height * s) / 2, width: img.width * s, height: img.height * s })
+    return Buffer.from(await pdf.save())
+  },
+
+  /**
+   * The credential's badge as a PNG (Design Studio badge design), or null
+   * when it was issued without one.
+   */
+  async generateBadgePng(credentialId: number | string, width = 600): Promise<Buffer | null> {
+    const ctx = await this.loadDesignContext(credentialId)
+    if (!ctx.badge) return null
+    return renderDesignPng(ctx.badge, { data: ctx.data, width, transparent: true })
+  },
+
+  async generateBadgeSvg(credentialId: number | string): Promise<string | null> {
+    const ctx = await this.loadDesignContext(credentialId)
+    if (!ctx.badge) return null
+    return (await renderDesignSvg(ctx.badge, { data: ctx.data })).svg
   },
 
   /**

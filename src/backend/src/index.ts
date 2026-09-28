@@ -4,6 +4,8 @@ import { setupPermissions } from './bootstrap/permissions-setup';
 import { warnIfDefaultAdminCredentials } from './bootstrap/default-credentials-warning';
 import { seedOrgTypes } from './bootstrap/org-type-seed';
 import { seedTierSettings } from './bootstrap/tier-settings-seed';
+import { seedDesignCategories } from './bootstrap/design-category-seed';
+import { seedDesignLibrary } from './bootstrap/design-library/seed';
 import { seedBillingSettings } from './bootstrap/billing-settings-seed';
 import { seedGlobalSettings } from './bootstrap/global-settings-seed';
 import { seedHomepage } from './bootstrap/homepage-seed';
@@ -56,6 +58,9 @@ export default {
     // the tier-limit lifecycle hooks need tier-settings to exist).
     await seedOrgTypes(strapi);
     await seedTierSettings(strapi);
+    await seedDesignCategories(strapi);
+    // Starter templates + elements; needs the categories above.
+    await seedDesignLibrary(strapi);
     await seedBillingSettings(strapi);
 
     // First-boot content for the admin-editable homepage/footer CMS -

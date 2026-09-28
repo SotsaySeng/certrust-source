@@ -234,6 +234,8 @@ export interface SettingsUsageLimits extends Struct.ComponentSchema {
         },
         number
       >;
+    premiumTemplates: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
   };
 }
 

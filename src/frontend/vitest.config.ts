@@ -19,6 +19,7 @@ export default defineVitestConfig({
       'components/__tests__/**/*.nuxt.spec.ts',
       'middleware/__tests__/**/*.spec.ts',
       'api/__tests__/**/*.spec.ts',
+      'lib/__tests__/**/*.spec.ts',
     ]
   }
 })

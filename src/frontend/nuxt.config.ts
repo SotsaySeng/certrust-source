@@ -109,10 +109,18 @@ export default defineNuxtConfig({
     define: {
       'import.meta.env.NUXT_PUBLIC_WEBSITE_URL': JSON.stringify(websiteUrl),
     },
+    // harfbuzzjs (Design Studio text shaping) finds its .wasm next to its own
+    // module via import.meta.url; Vite's dependency pre-bundling would move
+    // the module away from the .wasm file, so serve it unbundled.
+    optimizeDeps: {
+      exclude: ['harfbuzzjs'],
+    },
   },
   // Verification pages: never indexed, whatever a crawler makes of the meta tag.
   routeRules: {
     '/credentials/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Design Studio: signed-in, canvas-heavy editor - render in the browser only.
+    '/design-templates/**': { ssr: false },
   },
   runtimeConfig: {
     public: {

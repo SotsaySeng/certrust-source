@@ -26,13 +26,22 @@
     },
     "templateType": {
       "type": "enumeration",
-      "enum": ["certificate", "badge", "transcript", "training_record", "assessment", "letter"],
+      "enum": [
+        "certificate",
+        "badge",
+        "transcript",
+        "training_record",
+        "assessment",
+        "letter"
+      ],
       "default": "badge"
     },
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "criteria": {
       "type": "component",
@@ -69,6 +78,14 @@
       "relation": "oneToMany",
       "target": "api::credential.credential",
       "mappedBy": "achievement"
+    },
+    "certificateDesignId": {
+      "type": "string",
+      "description": "documentId of the default certificate design (design-template). A plain documentId, not a relation: a relation to a draftAndPublish type is orphaned whenever that template is edited (republish = new numeric id)."
+    },
+    "badgeDesignId": {
+      "type": "string",
+      "description": "documentId of the default badge design (design-template). See certificateDesignId."
     }
   }
-} 
+}

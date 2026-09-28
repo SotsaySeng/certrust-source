@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "design_assets",
+  "info": {
+    "singularName": "design-asset",
+    "pluralName": "design-assets",
+    "displayName": "Design Asset",
+    "description": "Images for the Design Studio: an organization's uploads (logos, signatures, seals) and, with organization empty, the platform's Elements library."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "file": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ],
+      "required": true
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "upload",
+        "element"
+      ],
+      "default": "upload",
+      "required": true
+    },
+    "elementCategory": {
+      "type": "enumeration",
+      "enum": [
+        "shapes",
+        "graphics",
+        "ribbons",
+        "bases",
+        "seals",
+        "frames",
+        "laurels",
+        "icons"
+      ]
+    },
+    "width": {
+      "type": "integer"
+    },
+    "height": {
+      "type": "integer"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    },
+    "creator": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::profile.profile"
+    }
+  }
+}

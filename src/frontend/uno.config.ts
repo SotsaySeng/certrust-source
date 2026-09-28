@@ -9,6 +9,8 @@ export default defineConfig({
       collections: {
         'simple-icons': () => import('@iconify-json/simple-icons/icons.json').then(i => i.default),
         'heroicons': () => import('@iconify-json/heroicons/icons.json').then(i => i.default),
+        // Design Studio editing icons (bold/italic/align/arrange).
+        'tabler': () => import('@iconify-json/tabler/icons.json').then(i => i.default),
       },
       extraProperties: {
         'display': 'inline-block',

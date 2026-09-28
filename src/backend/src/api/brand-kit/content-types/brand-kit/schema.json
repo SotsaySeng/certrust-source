@@ -1,0 +1,46 @@
+{
+  "kind": "collectionType",
+  "collectionName": "brand_kits",
+  "info": {
+    "singularName": "brand-kit",
+    "pluralName": "brand-kits",
+    "displayName": "Brand Kit",
+    "description": "An organization's logo, colours, fonts and signers. Applied to Design Studio templates in one click."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "logo": {
+      "type": "string"
+    },
+    "primary": {
+      "type": "string",
+      "regex": "^#[0-9a-fA-F]{6}$"
+    },
+    "secondary": {
+      "type": "string",
+      "regex": "^#[0-9a-fA-F]{6}$"
+    },
+    "accent": {
+      "type": "string",
+      "regex": "^#[0-9a-fA-F]{6}$"
+    },
+    "headingFont": {
+      "type": "string"
+    },
+    "bodyFont": {
+      "type": "string"
+    },
+    "signers": {
+      "type": "json",
+      "default": []
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

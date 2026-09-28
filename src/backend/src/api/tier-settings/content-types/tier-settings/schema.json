@@ -5,7 +5,7 @@
     "singularName": "tier-settings",
     "pluralName": "tier-settings-list",
     "displayName": "Tier Settings",
-    "description": "Single admin-editable record holding per-tier (free/pro/enterprise) usage limits, replacing config/tiers.ts so limits can be changed from the admin panel without a redeploy. No controller/route/service is defined for this content type - it has no REST endpoint by design; it is admin-panel-only, read from server-side code via strapi.documents('api::tier-settings.tier-settings')."
+    "description": "Single admin-editable record holding per-tier (free/pro/enterprise) usage limits, replacing config/tiers.ts so limits can be changed from the admin panel without a redeploy. No controller/route/service is defined for this content type - it has no REST endpoint by design; it is admin-panel-only, read from server-side code via strapi.documents('api::tier-settings.tier-settings'). The 'trial' column applies to Design Studio limits (saved designs, premium templates) while an organization is trialing (subscriptionStatus = trialing), whatever tier the trial runs on."
   },
   "options": {
     "draftAndPublish": false
@@ -23,6 +23,11 @@
       "component": "settings.usage-limits"
     },
     "enterprise": {
+      "type": "component",
+      "repeatable": false,
+      "component": "settings.usage-limits"
+    },
+    "trial": {
       "type": "component",
       "repeatable": false,
       "component": "settings.usage-limits"

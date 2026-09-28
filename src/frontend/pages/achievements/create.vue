@@ -30,6 +30,21 @@ const name = ref('')
 const description = ref('')
 const templateType = ref('certificate')
 const criteria = ref('')
+// Design Studio: default certificate/badge designs for this achievement.
+const certificateDesignId = ref<string | null>(null)
+const badgeDesignId = ref<string | null>(null)
+
+// Preselect the organization's most recently edited certificate design.
+onMounted(async () => {
+  try {
+    const mine = await apiClient.listDesignTemplates('mine')
+    const latest = mine.find(d => (d.kind || d.type) === 'certificate' && d.layoutConfig?.elements?.length)
+    if (latest && !certificateDesignId.value) {
+      certificateDesignId.value = latest.documentId
+    }
+  }
+  catch {}
+})
 
 const isCreating = ref(false)
 const createError = ref<string | null>(null)
@@ -87,6 +102,8 @@ async function handleCreate() {
       achievementId: makeAchievementId(name.value),
       ...(criteria.value.trim() ? { criteria: { narrative: criteria.value.trim() } } : {}),
       creator: authStore.profile.id,
+      certificateDesignId: certificateDesignId.value,
+      badgeDesignId: badgeDesignId.value,
       publishedAt: new Date().toISOString(),
     })
     const id = created?.data?.id
@@ -184,6 +201,29 @@ async function handleCreate() {
             <p class="mt-1 text-xs text-text-secondary">
               {{ t('achievements.criteriaHint') }}
             </p>
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+            <p class="mb-1 text-sm font-medium text-text-primary">
+              {{ t('designStudio.issue.designTitle') }}
+            </p>
+            <p class="mb-3 text-xs text-text-secondary">
+              {{ t('designStudio.issue.achievementHint') }}
+            </p>
+            <div class="grid gap-3 md:grid-cols-2">
+              <div>
+                <p class="mb-1 text-xs font-medium text-text-secondary">
+                  {{ t('designStudio.issue.certificate') }}
+                </p>
+                <DesignStudioDesignPicker v-model="certificateDesignId" kind="certificate" />
+              </div>
+              <div>
+                <p class="mb-1 text-xs font-medium text-text-secondary">
+                  {{ t('designStudio.issue.badge') }}
+                </p>
+                <DesignStudioDesignPicker v-model="badgeDesignId" kind="badge" />
+              </div>
+            </div>
           </div>
 
           <div v-if="createError" class="rounded-lg bg-red-50 p-4">

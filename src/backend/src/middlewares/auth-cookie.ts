@@ -39,6 +39,20 @@ const TOKEN_ROUTES: Array<[string, RegExp]> = [
   ['GET', /^\/api\/auth\/[^/]+\/callback$/],
 ]
 
+// Sign-in/sign-up routes run as the Public role. Attaching an existing
+// session cookie to them turns the request into an authenticated one, and
+// the Authenticated role has no auth.callback/register permission - so a
+// visitor who still had a valid cookie (switching accounts, a second tab)
+// was refused with a bare 403 "Forbidden". These routes never need the
+// cookie; they issue a fresh one.
+const SIGN_IN_ROUTES: Array<[string, RegExp]> = [
+  ['POST', /^\/api\/auth\/local$/],
+  ['POST', /^\/api\/auth\/local\/register$/],
+  ['POST', /^\/api\/auth\/reset-password$/],
+  ['POST', /^\/api\/auth\/forgot-password$/],
+  ['GET', /^\/api\/auth\/[^/]+\/callback$/],
+]
+
 type Config = { isAllowedOrigin?: (origin: string) => boolean }
 
 export default (config: Config, { strapi }: { strapi: any }) => {
@@ -84,7 +98,8 @@ export default (config: Config, { strapi }: { strapi: any }) => {
     }
 
     const token = ctx.cookies.get(SESSION_COOKIE)
-    if (token && !ctx.request.header.authorization) {
+    const isSignIn = SIGN_IN_ROUTES.some(([m, re]) => m === ctx.method && re.test(ctx.path))
+    if (token && !ctx.request.header.authorization && !isSignIn) {
       if (!SAFE_METHODS.has(ctx.method)) {
         const origin = ctx.get('origin')
         if (!origin || !isAllowedOrigin(origin)) {

@@ -18,6 +18,8 @@
  * below change.
  */
 
+import type { IssueDesigns } from '../../../utils/issue-design'
+import { resolveIssueDesigns } from '../../../utils/issue-design'
 import { randomUUID } from 'node:crypto'
 import { factories } from '@strapi/strapi'
 import { getNotificationProvider } from './notification-providers'
@@ -34,9 +36,18 @@ export default factories.createCoreService('api::credential.credential', ({ stra
    * @param {string} expirationDate - Optional expiration date for the credential
    * @param {number} [actorId] - The users-permissions user id of the caller, for the audit log
    */
-  async issue(achievement, recipient, evidence = [], expirationDate = undefined, actorId = undefined) {
+  /**
+   * @param opts.designs certificate/badge designs to snapshot onto the
+   *   credential (see utils/issue-design.ts). Omitted: the achievement's
+   *   default designs are used - so scheduled issuance gets them too; a
+   *   default that can't be used falls back to the classic certificate
+   *   rather than failing the issuance.
+   * @param opts.customFields cleaned custom attribute values.
+   */
+  async issue(achievement, recipient, evidence = [], expirationDate = undefined, actorId = undefined, opts: { designs?: IssueDesigns, customFields?: Record<string, string> } = {}) {
     try {
       // Covers every path that issues (API, CSV, scheduled issuance).
+      let organization: any = null
       if (achievement.creator?.id) {
         const creator: any = await strapi.db.query('api::profile.profile').findOne({
           where: { id: achievement.creator.id },
@@ -44,6 +55,18 @@ export default factories.createCoreService('api::credential.credential', ({ stra
         })
         if (creator?.organization?.suspendedAt) {
           throw new Error('This organisation is suspended pending review and cannot issue credentials')
+        }
+        organization = creator?.organization ?? null
+      }
+
+      let designs = opts.designs
+      if (!designs) {
+        try {
+          designs = await resolveIssueDesigns(achievement, organization)
+        }
+        catch (err) {
+          strapi.log.warn(`[credential.issue] Default design not used for achievement ${achievement.id}: ${(err as Error).message}`)
+          designs = { certificate: null, badge: null, templateId: null }
         }
       }
 
@@ -105,7 +128,12 @@ export default factories.createCoreService('api::credential.credential', ({ stra
           proof: [proof],
           statusList: { connect: [{ documentId: statusList.documentId }] },
           statusListIndex,
-          ...(expirationDate ? { expirationDate: new Date(expirationDate) } : {})
+          ...(expirationDate ? { expirationDate: new Date(expirationDate) } : {}),
+          // Design Studio: frozen copies of the designs + per-recipient values.
+          certificateDesignSnapshot: designs.certificate,
+          badgeDesignSnapshot: designs.badge,
+          designTemplateId: designs.templateId,
+          customFields: opts.customFields && Object.keys(opts.customFields).length ? opts.customFields : null,
         },
         status: 'published'
       })

@@ -55,6 +55,16 @@ describe('auth-cookie middleware', () => {
     expect(ctx.request.header.authorization).toBe('Bearer abc')
   })
 
+  it('does not attach an existing session cookie to sign-in requests', async () => {
+    for (const path of ['/api/auth/local', '/api/auth/local/register']) {
+      const { ctx } = makeCtx({ method: 'POST', path, cookie: 'abc', headers: { Origin: 'https://certrust.app' } })
+      const next = jest.fn(async () => {})
+      await mw(ctx, next)
+      expect(next).toHaveBeenCalled()
+      expect(ctx.request.header.authorization).toBeUndefined()
+    }
+  })
+
   it('moves the JWT from a web sign-in response into an HttpOnly cookie', async () => {
     const { ctx, set } = makeCtx({ method: 'POST', path: '/api/auth/local', headers: { 'X-Certrust-Client': 'web' } })
     await mw(ctx, async () => { ctx.body = { jwt: 'fresh', user: { id: 1 } } })

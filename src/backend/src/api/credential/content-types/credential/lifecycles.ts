@@ -76,6 +76,18 @@ export default {
   async beforeCreate(event) {
     const { data } = event.params;
 
+    // Strapi 5 saves an update to a draftAndPublish entry by re-creating its
+    // published row (same documentId), which runs this hook again. That is
+    // not a new credential - without this check an organization over its
+    // limit (e.g. after a downgrade) could not revoke, renew or otherwise
+    // update the credentials it already has.
+    if (data.documentId) {
+      const existing = await strapi.db.query('api::credential.credential').count({
+        where: { documentId: data.documentId },
+      } as any);
+      if (existing > 0) return;
+    }
+
     const issuerId = normalizeIssuerId(data.issuer);
     if (issuerId == null) {
       // No issuer given at all - nothing to scope a tier limit against.

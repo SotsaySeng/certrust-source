@@ -117,7 +117,9 @@ async function downloadCertificate(
   const url = apiClient.getCertificatePngUrl(row.credentialId)
   const name = [row.achievementName, row.recipientName].filter(Boolean).join(' - ') || 'certificate'
   try {
-    await (format === 'pdf' ? downloadPdfFile(url, name) : downloadImageFile(url, name))
+    await (format === 'pdf'
+      ? downloadServerFile(apiClient.getCertificatePdfUrl(row.credentialId), name, 'pdf')
+      : downloadImageFile(url, name))
   }
   catch (error) {
     console.error('Error downloading certificate:', error)

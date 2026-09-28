@@ -2,6 +2,7 @@
  * credential controller
  */
 
+import { cleanCustomFields, orgCustomAttributes, overridesFromBody, resolveIssueDesigns } from '../../../utils/issue-design'
 import { factories } from '@strapi/strapi'
 import crypto from 'crypto'
 import { credentialsRevokedTotal } from '../../../monitoring/metrics'
@@ -142,13 +143,20 @@ export default factories.createCoreController('api::credential.credential', ({ s
         recipientName: recipient.name
       })
 
+      // Design Studio: the achievement's designs (or the one picked on the
+      // issue page) and this recipient's custom attribute values.
+      const organization = (achievement as any).creator?.organization ?? null
+      const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
+      const customFields = cleanCustomFields(data.customFields ?? recipient.customFields, await orgCustomAttributes(organization?.id ?? null))
+
       // Create the credential
       const credential = await strapi.service('api::credential.credential').issue(
         achievement,
         recipient,
         evidence,
         expirationDate,
-        ctx.state.user?.id
+        ctx.state.user?.id,
+        { designs, customFields }
       )
 
       return credential
@@ -526,6 +534,13 @@ export default factories.createCoreController('api::credential.credential', ({ s
         ctx.body = await certificateService.generateCertificatePng(credential.id)
         return
       }
+      if (ctx.query?.format === 'pdf') {
+        ctx.type = 'application/pdf'
+        ctx.set('Cache-Control', 'private, no-store')
+        ctx.set('Content-Disposition', `inline; filename="certificate-${String(credential.credentialId).replace(/^urn:uuid:/, '').slice(0, 8)}.pdf"`)
+        ctx.body = await certificateService.generateCertificatePdf(credential.id)
+        return
+      }
 
       const svg = await certificateService.generateCertificate(credential.id)
       
@@ -564,6 +579,38 @@ export default factories.createCoreController('api::credential.credential', ({ s
   },
 
   /**
+   * GET /credentials/:id/badge[?format=svg] - the credential's badge,
+   * rendered from its Design Studio badge design (PNG by default). 404 when
+   * the credential was issued without a badge design. Same privacy rules
+   * as the certificate.
+   */
+  async getBadge(ctx) {
+    try {
+      const credential = await findPublicCredential(strapi, ctx.params.id)
+      if (!credential || (isCredentialPrivate(credential) && !(await canManageCredential(strapi, await optionalUser(strapi, ctx), credential)))) {
+        return ctx.notFound('Credential not found')
+      }
+      const certificateService = strapi.service('api::credential.certificate')
+      if (ctx.query?.format === 'svg') {
+        const svg = await certificateService.generateBadgeSvg(credential.id)
+        if (!svg) return ctx.notFound('This credential has no badge design')
+        ctx.type = 'image/svg+xml'
+        ctx.body = svg
+        return
+      }
+      const size = Math.min(1200, Math.max(64, Number(ctx.query?.size) || 600))
+      const png = await certificateService.generateBadgePng(credential.id, size)
+      if (!png) return ctx.notFound('This credential has no badge design')
+      ctx.type = 'image/png'
+      ctx.set('Cache-Control', isCredentialPrivate(credential) ? 'private, no-store' : 'public, max-age=3600')
+      ctx.body = png
+    } catch (error) {
+      console.error('Error generating badge:', error)
+      return ctx.internalServerError('Failed to generate badge')
+    }
+  },
+
+  /**
    * Direct certificate endpoint for /verify/:id
    * Returns the certificate image for a credential
    */
@@ -596,13 +643,13 @@ export default factories.createCoreController('api::credential.credential', ({ s
         return ctx.notFound('Credential not found');
       }
       
-      // Generate the certificate
+      // The certificate image. (This used to destructure { image,
+      // contentType } from generateCertificate, which returns an SVG
+      // string - every request here failed.)
       const certificateService = strapi.service('api::credential.certificate');
-      const { image, contentType } = await certificateService.generateCertificate(credential);
-      
-      // Set content type and send the image
-      ctx.type = contentType;
-      return image;
+      ctx.type = 'image/png';
+      ctx.set('Cache-Control', 'private, no-store');
+      ctx.body = await certificateService.generateCertificatePng(credential.id);
     } catch (error) {
       console.error('Error generating certificate:', error);
       return ctx.badRequest(error.message || 'Failed to generate certificate');
@@ -713,8 +760,15 @@ export default factories.createCoreController('api::credential.credential', ({ s
         return ctx.forbidden('Your organisation is suspended pending review and cannot issue credentials')
       }
 
+      // Resolved once for the whole batch (a design problem fails the
+      // request up front instead of every recipient separately).
+      const organization = (achievement as any).creator?.organization ?? null
+      const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
+      const attributeDefs = await orgCustomAttributes(organization?.id ?? null)
+
       const issuePromises = recipients.map(async (recipientData) => {
         try {
+          const customFields = cleanCustomFields(recipientData.customFields, attributeDefs)
           const recipient = { ...recipientData }
           const expirationDate = recipientData.expirationDate || undefined
           // An expiry that is not in the future issues an already-expired
@@ -733,7 +787,8 @@ export default factories.createCoreController('api::credential.credential', ({ s
             recipient,
             evidence,
             expirationDate,
-            ctx.state.user?.id
+            ctx.state.user?.id,
+            { designs, customFields }
           )
           return { success: true, recipient: recipientData.email, data: credential }
         } catch (error) {

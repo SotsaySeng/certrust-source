@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "custom_attributes",
+  "info": {
+    "singularName": "custom-attribute",
+    "pluralName": "custom-attributes",
+    "displayName": "Custom Attribute",
+    "description": "Per-organization recipient fields (e.g. location, training date) filled at issuance and printed on certificates as {{custom.<key>}}."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "regex": "^[a-z][a-z0-9_]{0,39}$"
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "text",
+        "date",
+        "number"
+      ],
+      "default": "text",
+      "required": true
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization",
+      "required": true
+    }
+  }
+}

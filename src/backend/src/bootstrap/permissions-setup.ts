@@ -45,6 +45,20 @@ const AUTHENTICATED_PERMISSIONS = [
   'api::design-template.design-template.create',
   'api::design-template.design-template.update',
   'api::design-template.design-template.delete',
+  'api::design-template.design-template.use',
+  'api::design-template.design-template.renderPreview',
+  'api::design-template.design-template.limits',
+  'api::design-asset.design-asset.list',
+  'api::design-asset.design-asset.upload',
+  'api::design-asset.design-asset.rename',
+  'api::design-asset.design-asset.remove',
+  'api::custom-attribute.custom-attribute.list',
+  'api::custom-attribute.custom-attribute.add',
+  'api::custom-attribute.custom-attribute.edit',
+  'api::custom-attribute.custom-attribute.remove',
+  'api::brand-kit.brand-kit.mine',
+  'api::brand-kit.brand-kit.save',
+  'api::brand-kit.brand-kit.suggestColors',
 
   // Event permissions
   'api::event.event.find',
@@ -150,6 +164,20 @@ const ISSUER_PERMISSIONS = [
   'api::design-template.design-template.create',
   'api::design-template.design-template.update',
   'api::design-template.design-template.delete',
+  'api::design-template.design-template.use',
+  'api::design-template.design-template.renderPreview',
+  'api::design-template.design-template.limits',
+  'api::design-asset.design-asset.list',
+  'api::design-asset.design-asset.upload',
+  'api::design-asset.design-asset.rename',
+  'api::design-asset.design-asset.remove',
+  'api::custom-attribute.custom-attribute.list',
+  'api::custom-attribute.custom-attribute.add',
+  'api::custom-attribute.custom-attribute.edit',
+  'api::custom-attribute.custom-attribute.remove',
+  'api::brand-kit.brand-kit.mine',
+  'api::brand-kit.brand-kit.save',
+  'api::brand-kit.brand-kit.suggestColors',
 
   // Organization permissions - see the equivalent comment in
   // AUTHENTICATED_PERMISSIONS above.
@@ -212,6 +240,11 @@ const PUBLIC_PERMISSIONS = [
   // suspenders alongside org-type's own router-level auth: false.
   'api::org-type.org-type.find',
   'api::org-type.org-type.findOne',
+
+  // Design Studio template gallery categories - read only (router-level
+  // auth: false too).
+  'api::design-category.design-category.find',
+  'api::design-category.design-category.findOne',
 
   // Homepage/footer CMS singleTypes - read only, public marketing content
   // rendered on every page load without authentication. Belt-and-suspenders

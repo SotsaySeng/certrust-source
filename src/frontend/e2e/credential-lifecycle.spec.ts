@@ -3,7 +3,7 @@
  *
  * Picks up where the new-organisation journey leaves off and covers the
  * work an organisation actually does day to day:
- *   design a certificate template -> design a badge template ->
+ *   design a certificate and a badge in the Design Studio ->
  *   issue to a CSV of recipients -> the recipients get an email with a
  *   link to their certificate -> a third party opens that link and sees a
  *   verified credential -> the credential is shareable (LinkedIn, native
@@ -72,63 +72,67 @@ test.describe('credential lifecycle', () => {
     expect(profile.organization?.name).toBe(ORG.organizationName)
   })
 
-  test('designs a certificate template and saves the design', async ({ page }) => {
+  test('designs a certificate in the Design Studio and saves the design', async ({ page }) => {
     await signIn(page, ORG.email, ORG.password)
     await gotoViaNav(page, 'Design Templates', /\/design-templates/)
 
-    await page.getByRole('link', { name: /Create Template/i }).first().click()
+    // Quick-start wizard: certificate -> library template -> skip brand -> name.
+    await page.getByTestId('new-design').click()
     await expect(page).toHaveURL(/\/design-templates\/create/)
+    await waitForHydration(page)
+    await page.getByTestId('wizard-certificate').click()
+    await page.getByRole('button', { name: 'Classic Guilloché' }).click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-skip-brand').click()
+    await fillField(page, '#design-name', CERTIFICATE_TEMPLATE)
+    await page.getByTestId('wizard-create').click()
 
-    await page.getByRole('button', { name: 'Certificate', exact: true }).click()
-    await fillField(page, '#newTemplateName', CERTIFICATE_TEMPLATE)
-    await page.getByRole('button', { name: 'Create', exact: true }).click()
-
-    // Lands in the designer for the new template.
-    await expect(page).toHaveURL(/\/design-templates\/[^/]+$/, { timeout: 20000 })
-    await expect(page.locator('#templateName')).toHaveValue(CERTIFICATE_TEMPLATE, { timeout: 20000 })
-
-    // Actually design it: description plus a real layout config.
-    await fillField(page, '#templateDescription', 'Formal completion certificate, landscape, gold seal.')
-    await fillField(
-      page,
-      '#templateLayoutConfig',
-      JSON.stringify({ orientation: 'landscape', accentColor: '#28A745', seal: 'gold', showQr: true }, null, 2)
-    )
-    await page.locator('button[type="submit"]').click()
-    await expect(page.getByText('Template saved successfully')).toBeVisible({ timeout: 20000 })
+    // Lands in the editor for the new design; actually edit it.
+    await expect(page).toHaveURL(/\/design-templates\/(?!create)[a-z0-9]+(?:\?|$)/, { timeout: 20000 })
+    await expect(page.getByText('Preparing fonts…')).toHaveCount(0, { timeout: 30000 })
+    const skipTour = page.getByRole('button', { name: 'Skip tour' })
+    if (await skipTour.isVisible().catch(() => false)) {
+      await skipTour.click()
+    }
+    const textPanel = page.getByRole('navigation', { name: 'Design tools' }).getByRole('button', { name: 'Text', exact: true })
+    if (await textPanel.getAttribute('aria-pressed') !== 'true') {
+      await textPanel.click()
+    }
+    await page.getByRole('button', { name: 'Add a heading' }).click()
+    await page.locator('[data-tour="save"]').click()
+    await expect(page.getByText('All changes saved')).toBeVisible({ timeout: 20000 })
 
     // A saved design is a persisted design.
     const saved = sql(`
-      select dt.type, dt.description
+      select dt.kind || '|' || (instr(dt.layout_config, 'Add a heading') > 0) || '|' || (instr(dt.layout_config, '{{recipient.name}}') > 0)
       from design_templates dt
       where dt.name='${CERTIFICATE_TEMPLATE}' and dt.published_at is not null;`)
-    expect(saved).toBe('certificate|Formal completion certificate, landscape, gold seal.')
+    expect(saved).toBe('certificate|1|1')
   })
 
-  test('designs a badge template and sees both designs in the gallery', async ({ page }) => {
+  test('designs a badge and sees both designs in the gallery', async ({ page }) => {
     await signIn(page, ORG.email, ORG.password)
     await gotoViaNav(page, 'Design Templates', /\/design-templates/)
 
-    await page.getByRole('link', { name: /Create Template/i }).first().click()
-    await page.getByRole('button', { name: 'Badge', exact: true }).click()
-    await fillField(page, '#newTemplateName', BADGE_TEMPLATE)
-    await page.getByRole('button', { name: 'Create', exact: true }).click()
+    await page.getByTestId('new-design').click()
+    await waitForHydration(page)
+    await page.getByTestId('wizard-badge').click()
+    await page.getByRole('button', { name: 'Classic Seal Badge' }).click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-skip-brand').click()
+    await fillField(page, '#design-name', BADGE_TEMPLATE)
+    await page.getByTestId('wizard-create').click()
+    await expect(page).toHaveURL(/\/design-templates\/(?!create)[a-z0-9]+(?:\?|$)/, { timeout: 20000 })
 
-    await expect(page).toHaveURL(/\/design-templates\/[^/]+$/, { timeout: 20000 })
-    await fillField(page, '#templateDescription', 'Circular skill badge, green ring, centred icon.')
-    await page.locator('button[type="submit"]').click()
-    await expect(page.getByText('Template saved successfully')).toBeVisible({ timeout: 20000 })
-
-    await page.getByRole('link', { name: 'Back to Design Templates' }).first().click()
-    await expect(page).toHaveURL(/\/design-templates$/, { timeout: 20000 })
+    await page.goto('/design-templates')
     await expect(page.getByText(CERTIFICATE_TEMPLATE, { exact: true }).first()).toBeVisible({ timeout: 20000 })
     await expect(page.getByText(BADGE_TEMPLATE, { exact: true }).first()).toBeVisible()
 
     const types = sql(`
-      select group_concat(type)
-      from (select type from design_templates
+      select group_concat(kind)
+      from (select kind from design_templates
             where name in ('${CERTIFICATE_TEMPLATE}', '${BADGE_TEMPLATE}')
-              and published_at is not null order by type);`)
+              and published_at is not null order by kind);`)
     expect(types).toBe('badge,certificate')
   })
 
@@ -145,7 +149,7 @@ test.describe('credential lifecycle', () => {
 
     await fillField(page, '#achievementName', ACHIEVEMENT_NAME)
     await fillField(page, '#achievementDescription', 'Awarded for completing the advanced TypeScript programme.')
-    await page.getByText('Certificate', { exact: true }).click()
+    await page.getByRole('radio', { name: 'Certificate' }).check()
     await fillField(page, '#achievementCriteria', 'Completed every module and the final project.')
     await page.getByRole('button', { name: 'Create achievement' }).click()
 

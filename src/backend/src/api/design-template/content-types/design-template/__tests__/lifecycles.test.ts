@@ -39,26 +39,26 @@ describe('Design Template lifecycles - beforeCreate tier-limit enforcement', () 
 
   it('allows creation when the tier has no design-template limit set (unlimited)', async () => {
     const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'enterprise' })
-    const getTierLimit = jest.fn().mockResolvedValue(null)
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'enterprise', designTemplateLimit: null, premiumTemplates: true })
     const countOrganizationDesignTemplates = jest.fn()
     global.strapi = {
       entityService: { findOne },
-      service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationDesignTemplates }),
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
     } as any
 
     const event = makeEvent({ name: 'Blank', organization: 42 })
     await expect(lifecycles.beforeCreate(event as any)).resolves.toBeUndefined()
-    expect(getTierLimit).toHaveBeenCalledWith('enterprise', 'designTemplate')
+    expect(getDesignLimits).toHaveBeenCalledWith({ id: 42, tier: 'enterprise' })
     expect(countOrganizationDesignTemplates).not.toHaveBeenCalled()
   })
 
   it('allows creation when the organization is under its design-template limit', async () => {
     const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'free' })
-    const getTierLimit = jest.fn().mockResolvedValue(50)
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'free', designTemplateLimit: 50, premiumTemplates: false })
     const countOrganizationDesignTemplates = jest.fn().mockResolvedValue(49)
     global.strapi = {
       entityService: { findOne },
-      service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationDesignTemplates }),
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
     } as any
 
     const event = makeEvent({ name: 'Blank', organization: 42 })
@@ -68,28 +68,58 @@ describe('Design Template lifecycles - beforeCreate tier-limit enforcement', () 
 
   it('throws ApplicationError when the organization is at its design-template limit', async () => {
     const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'free' })
-    const getTierLimit = jest.fn().mockResolvedValue(50)
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'free', designTemplateLimit: 50, premiumTemplates: false })
     const countOrganizationDesignTemplates = jest.fn().mockResolvedValue(50)
     global.strapi = {
       entityService: { findOne },
-      service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationDesignTemplates }),
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
     } as any
 
     const event = makeEvent({ name: 'Blank', organization: 42 })
     await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(errors.ApplicationError)
-    await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(/free.*50 design templates/)
+    await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(/"free" plan includes 50 saved designs/)
   })
 
   it('throws when the organization is over its design-template limit', async () => {
     const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'free' })
-    const getTierLimit = jest.fn().mockResolvedValue(50)
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'free', designTemplateLimit: 50, premiumTemplates: false })
     const countOrganizationDesignTemplates = jest.fn().mockResolvedValue(60)
     global.strapi = {
       entityService: { findOne },
-      service: jest.fn().mockReturnValue({ getTierLimit, countOrganizationDesignTemplates }),
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
     } as any
 
     const event = makeEvent({ name: 'Blank', organization: 42 })
     await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(errors.ApplicationError)
+  })
+
+  it('uses the trial column while the organization is trialing', async () => {
+    const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'pro', subscriptionStatus: 'trialing' })
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'trial', designTemplateLimit: 10, premiumTemplates: false })
+    const countOrganizationDesignTemplates = jest.fn().mockResolvedValue(10)
+    global.strapi = {
+      entityService: { findOne },
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
+    } as any
+
+    const event = makeEvent({ name: 'Blank', organization: 42 })
+    await expect(lifecycles.beforeCreate(event as any)).rejects.toThrow(/Your trial includes 10 saved designs/)
+  })
+
+  it('does not count a republish of an existing design (saving an edit) against the limit', async () => {
+    const findOne = jest.fn().mockResolvedValue({ id: 42, tier: 'free' })
+    const getDesignLimits = jest.fn().mockResolvedValue({ source: 'free', designTemplateLimit: 3, premiumTemplates: false })
+    const countOrganizationDesignTemplates = jest.fn().mockResolvedValue(3)
+    const count = jest.fn().mockResolvedValue(1)
+    global.strapi = {
+      entityService: { findOne },
+      db: { query: () => ({ count }) },
+      service: jest.fn().mockReturnValue({ getDesignLimits, countOrganizationDesignTemplates }),
+    } as any
+
+    const event = makeEvent({ name: 'Edited', organization: 42, documentId: 'abc123' })
+    await expect(lifecycles.beforeCreate(event as any)).resolves.toBeUndefined()
+    expect(count).toHaveBeenCalledWith({ where: { documentId: 'abc123' } })
+    expect(getDesignLimits).not.toHaveBeenCalled()
   })
 })

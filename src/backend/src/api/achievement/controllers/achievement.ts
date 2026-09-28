@@ -4,6 +4,7 @@
 
 import { factories } from '@strapi/strapi'
 import { achievementsCreatedTotal } from '../../../monitoring/metrics'
+import { validateAchievementDesigns } from '../../../utils/issue-design'
 
 interface Achievement {
   id: any
@@ -26,6 +27,7 @@ export default factories.createCoreController('api::achievement.achievement', ({
       if (data.tags === '' || data.tags === undefined || data.tags === null) {
         data.tags = [];
       }
+      await validateAchievementDesigns(data, ctx.state.user?.id)
       
       // Bypass permission checks by using entityService directly
       const entity = await strapi.entityService.create('api::achievement.achievement', {
@@ -50,6 +52,22 @@ export default factories.createCoreController('api::achievement.achievement', ({
     }
   },
   
+  /**
+   * Update: same as the core action, plus Design Studio checks on the
+   * default certificate/badge designs (organization access, Premium,
+   * right kind). Organization ownership is enforced by the route policy.
+   */
+  async update(ctx) {
+    const data = (ctx.request.body as any)?.data
+    try {
+      await validateAchievementDesigns(data, ctx.state.user?.id)
+    }
+    catch (error) {
+      return ctx.badRequest(error.message)
+    }
+    return super.update(ctx)
+  },
+
   // Custom method for public creation of achievements
   async createAchievement(ctx) {
     try {
@@ -60,6 +78,7 @@ export default factories.createCoreController('api::achievement.achievement', ({
       if (data.tags === '' || data.tags === undefined || data.tags === null) {
         data.tags = [];
       }
+      await validateAchievementDesigns(data, ctx.state.user?.id)
       
       // Create the achievement using the entity service directly
       const achievement = await strapi.entityService.create('api::achievement.achievement', {

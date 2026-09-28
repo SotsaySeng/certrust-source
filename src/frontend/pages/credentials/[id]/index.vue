@@ -334,6 +334,21 @@ const displayImageUrl = computed(() => {
   return imageUrlOptions.value[currentImageIndex.value]
 })
 
+// Design Studio badge (only shown when the credential was issued with one).
+const badgeAvailable = ref(true)
+const badgeUrl = computed(() => (credential.value?.id ? apiClient.getBadgePngUrl(credential.value.id, 480) : null))
+async function downloadBadge() {
+  if (!credential.value) {
+    return
+  }
+  try {
+    await downloadServerFile(apiClient.getBadgePngUrl(credential.value.id, 1200), `${credential.value.name || 'badge'} - badge`, 'png')
+  }
+  catch (err) {
+    console.error('Error downloading badge:', err)
+  }
+}
+
 // Handle image error by trying the next URL in the options
 function handleImageError() {
   if (currentImageIndex.value < imageUrlOptions.value.length - 1) {
@@ -396,6 +411,11 @@ async function downloadCredential(format: 'image' | 'pdf' = 'image') {
     // The certificate endpoint serves SVG: converted to a real PNG (or a
     // one-page PDF) here.
     const name = credential.value?.name || 'credential'
+    if (format === 'pdf' && displayImageUrl.value === certificateUrl) {
+      // Rendered by the server at the certificate's real paper size.
+      await downloadServerFile(apiClient.getCertificatePdfUrl(credential.value.id), name, 'pdf')
+      return
+    }
     await (format === 'pdf' ? downloadPdfFile(imageUrl, name) : downloadImageFile(imageUrl, name))
   }
   catch (err) {
@@ -841,6 +861,22 @@ async function submitRenewal() {
               <div class="i-lucide-share w-5 h-5" />
             </button>
           </div>
+        </div>
+
+        <!-- Badge (Design Studio) -->
+        <div v-if="badgeUrl && badgeAvailable" class="flex items-center gap-4 border-b border-gray-100 px-6 py-4" data-testid="credential-badge">
+          <img :src="badgeUrl" :alt="t('designStudio.credential.badgeAlt', { name: credential.name })" class="h-24 w-24 object-contain" @error="badgeAvailable = false">
+          <div class="flex-1">
+            <p class="font-medium text-text-primary">
+              {{ t('designStudio.credential.badgeTitle') }}
+            </p>
+            <p class="text-sm text-text-secondary">
+              {{ t('designStudio.credential.badgeBody') }}
+            </p>
+          </div>
+          <button class="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50" @click="downloadBadge">
+            <div class="i-lucide-image-down h-5 w-5" />PNG
+          </button>
         </div>
 
         <!-- Credential Details -->

@@ -50,8 +50,11 @@ const EVENT_NAME = `PW Graduation Ceremony ${RUN_ID}`
 /** Templates/events belonging to OTHER organisations - must never leak into this org's UI. */
 const FOREIGN_TEMPLATE_NAMES = ['Course Completion Badge', 'Python Fundamentals Badge', 'Meridian Certificate of Completion']
 const FOREIGN_EVENT_NAME = 'Python Fundamentals — Cohort Graduation Ceremony'
-/** Platform-curated global templates (organization: null) - every org is meant to see these. */
-const GLOBAL_TEMPLATE_NAMES = ['Classic Certificate', 'Achievement Medal']
+/**
+ * Platform-curated system templates (organization: null) - every org is
+ * meant to see these. Seeded at boot (backend bootstrap/design-library).
+ */
+const GLOBAL_TEMPLATE_NAMES = ['Classic Guilloché', 'Classic Seal Badge']
 
 /** Token used by the JWT-scoped API isolation checks. */
 let jwt = ''
@@ -198,27 +201,36 @@ test.describe('new organisation: using the system', () => {
     // the bottom of this file.
     await gotoViaNav(page, 'Design Templates', /\/design-templates/)
 
-    // Platform-curated templates are visible to every org...
+    // A new organisation has no designs of its own yet...
+    await expect(page.getByText('Create your first design')).toBeVisible({ timeout: 20000 })
+    // ...no other organisation's designs leak in...
+    for (const name of FOREIGN_TEMPLATE_NAMES) {
+      await expect(page.getByText(name, { exact: true })).toHaveCount(0)
+    }
+    // ...and the platform-curated library is there for everyone.
+    await page.getByRole('tab', { name: /Template library/ }).click()
     for (const name of GLOBAL_TEMPLATE_NAMES) {
       await expect(page.getByText(name, { exact: true }).first()).toBeVisible({ timeout: 20000 })
     }
-    // ...but no other organisation's templates are.
     for (const name of FOREIGN_TEMPLATE_NAMES) {
       await expect(page.getByText(name, { exact: true })).toHaveCount(0)
     }
 
-    await page.getByRole('link', { name: /Create Template/i }).first().click()
+    // Quick-start wizard: certificate -> blank page -> skip brand -> name.
+    await page.getByTestId('new-design').click()
     await expect(page).toHaveURL(/\/design-templates\/create/)
+    await waitForHydration(page)
+    await page.getByTestId('wizard-certificate').click()
+    await page.getByTestId('wizard-blank').click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-skip-brand').click()
+    await fillField(page, '#design-name', TEMPLATE_NAME)
+    await page.getByTestId('wizard-create').click()
 
-    await page.getByRole('button', { name: 'Certificate', exact: true }).click()
-    await fillField(page, '#newTemplateName', TEMPLATE_NAME)
-    await page.getByRole('button', { name: 'Create', exact: true }).click()
+    // Lands in the editor for the new design.
+    await expect(page).toHaveURL(/\/design-templates\/(?!create)[a-z0-9]+(?:\?|$)/, { timeout: 20000 })
 
-    // Lands in the editor for the new template.
-    await expect(page).toHaveURL(/\/design-templates\/[^/]+$/, { timeout: 20000 })
-
-    await page.getByRole('link', { name: 'Back to Design Templates' }).first().click()
-    await expect(page).toHaveURL(/\/design-templates$/, { timeout: 20000 })
+    await page.goto('/design-templates')
     await expect(page.getByText(TEMPLATE_NAME, { exact: true }).first()).toBeVisible({ timeout: 20000 })
 
     // Persisted against this org, not global and not another org's.
@@ -291,7 +303,7 @@ test.describe('new organisation: using the system', () => {
 
     await page.goto('/design-templates')
     await expect(page).toHaveURL(/\/design-templates/, { timeout: 20000 })
-    await expect(page.getByRole('heading', { name: 'Design Templates' }).first()).toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('heading', { name: 'Design Studio' }).first()).toBeVisible({ timeout: 20000 })
 
     await page.reload()
     await expect(page).toHaveURL(/\/design-templates/, { timeout: 20000 })
@@ -329,7 +341,7 @@ test.describe('new organisation: using the system', () => {
     expect(eventNames).not.toContain(FOREIGN_EVENT_NAME)
 
     const usage = await (await request.get(`${API}/api/organizations/usage`, { headers: auth })).json()
-    expect(usage.data?.tier).toBe('free')
+    expect(usage.data?.tier).toBe(EXPECTED_TIER)
   })
 })
 

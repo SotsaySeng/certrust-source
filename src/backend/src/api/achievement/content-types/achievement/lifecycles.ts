@@ -61,6 +61,18 @@ export default {
       data.tags = [];
     }
 
+    // Strapi 5 saves an update to a draftAndPublish entry by re-creating its
+    // published row (same documentId), which runs this hook again. That is
+    // not a new achievement - without this check an organization over its
+    // limit (e.g. after a downgrade) could not edit the achievements it
+    // already has. Tag sanitisation above still applies to republishes.
+    if (data.documentId) {
+      const existing = await strapi.db.query('api::achievement.achievement').count({
+        where: { documentId: data.documentId },
+      } as any);
+      if (existing > 0) return;
+    }
+
     // Tier-limit enforcement (credential-template / achievement creation
     // cap) - see header comment.
     const creatorId = normalizeCreatorId(data.creator);

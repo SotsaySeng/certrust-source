@@ -47,6 +47,17 @@ export default {
   async beforeCreate(event) {
     const { data } = event.params;
 
+    // Strapi 5 saves an edit to a draftAndPublish entry by re-creating its
+    // published row (same documentId), which runs this hook again. That is
+    // not a new design - without this check an organization at its limit
+    // could not save changes to designs it already has.
+    if (data.documentId) {
+      const existing = await strapi.db.query('api::design-template.design-template').count({
+        where: { documentId: data.documentId },
+      } as any);
+      if (existing > 0) return;
+    }
+
     const organizationId = normalizeOrganizationId(data.organization);
     if (organizationId == null) {
       // No organization given at all (e.g. a system/global template) -
@@ -72,10 +83,12 @@ export default {
       return;
     }
 
-    const tier = organization.tier;
-
+    // Trial-aware: a trialing organization is held to Tier Settings' "trial"
+    // column for saved designs, whatever tier the trial runs on (see
+    // organization/services/usage.ts getDesignLimits).
     const usage = strapi.service('api::organization.usage');
-    const limit = await usage.getTierLimit(tier, 'designTemplate');
+    const limits = await usage.getDesignLimits(organization);
+    const limit = limits.designTemplateLimit;
 
     // null = unlimited (enterprise, or an unrecognized tier/dimension -
     // fail open rather than block creation over a config problem).
@@ -85,8 +98,10 @@ export default {
 
     const currentCount = await usage.countOrganizationDesignTemplates(organizationId);
     if (currentCount >= limit) {
+      const plan = limits.source === 'trial' ? 'trial' : `"${organization.tier}" plan`;
       throw new errors.ApplicationError(
-        `This organization has reached its "${tier}" tier limit of ${limit} design templates. Upgrade the organization's tier to create more.`
+        `Your ${plan} includes ${limit} saved designs and you have used them all. Upgrade your plan to save more designs.`,
+        { code: 'DESIGN_LIMIT_REACHED', limit, source: limits.source }
       );
     }
   },

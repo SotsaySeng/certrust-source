@@ -8,6 +8,69 @@ import type {
 /**
  * API client for interacting with the Strapi backend
  */
+export interface DesignLimitsInfo {
+  used: number
+  limit: number | null
+  premiumTemplates: boolean
+  source: string | null
+  trialing: boolean
+  trialEndsAt?: string | null
+  tier: string | null
+  isPlatformAdmin: boolean
+}
+
+export interface DesignAsset {
+  id: number
+  documentId: string
+  name: string
+  kind: 'upload' | 'element'
+  elementCategory: string | null
+  width: number | null
+  height: number | null
+  url: string
+  mime: string | null
+  system: boolean
+  sortOrder: number
+}
+
+export interface SystemLibraryTemplate {
+  documentId: string
+  name: string
+  description: string | null
+  slug: string | null
+  kind: 'certificate' | 'badge'
+  orientation: 'landscape' | 'portrait'
+  isPremium: boolean
+  isHidden: boolean
+  sortOrder: number
+  published: boolean
+  category: { documentId: string, name: string } | null
+  previewImage: { url: string } | null
+  usedByAchievements: number
+  updatedAt: string
+}
+
+export interface CustomAttribute {
+  id: number
+  documentId: string
+  key: string
+  label: string
+  type: 'text' | 'date' | 'number'
+  required: boolean
+  sortOrder: number
+}
+
+export interface BrandKitInfo {
+  logo: string | null
+  primary: string | null
+  secondary: string | null
+  accent: string | null
+  headingFont: string | null
+  bodyFont: string | null
+  signers: Array<{ name: string | null, title: string | null, signature: string | null }>
+  exists?: boolean
+}
+
 export class ApiClient {
   private baseUrl: string
   private token: string | null
@@ -505,6 +568,16 @@ export class ApiClient {
     return `${this.getCertificateUrl(id)}?format=png`
   }
 
+  /** Server-rendered print PDF of the certificate (exact paper size, 300 DPI). */
+  getCertificatePdfUrl(id: number | string): string {
+    return `${this.getCertificateUrl(id)}?format=pdf`
+  }
+
+  /** The credential's Design Studio badge as a PNG (404 if it has none). */
+  getBadgePngUrl(id: number | string, size = 600): string {
+    return `${this.baseUrl}/api/credentials/${encodeURIComponent(id)}/badge?size=${size}`
+  }
+
   /**
    * Get certificate by ID
    */
@@ -706,30 +779,146 @@ export class ApiClient {
    * was marked default, so duplicating never silently creates a second
    * "default" template.
    */
-  async duplicateDesignTemplate(id: number | string) {
-    const existing = await this.getDesignTemplate(id)
-    const source = existing?.data
-    if (!source) {
-      throw new Error('Design template not found')
-    }
-    return this.createDesignTemplate({
-      name: `${source.name} (Copy)`,
-      description: source.description,
-      type: source.type,
-      layoutConfig: source.layoutConfig,
-      isDefault: false,
-      previewImage: source.previewImage?.id,
-      creator: source.creator?.id,
-      organization: source.organization?.id,
-    })
+  /**
+   * Duplicate through the server's "use" action: it copies the design,
+   * applies the organization's brand kit, renders the thumbnail, and
+   * enforces the Premium gate and saved-design limit.
+   */
+  async duplicateDesignTemplate(id: number | string, name?: string) {
+    return this.useDesignTemplate(String(id), name)
   }
 
-  /**
-   * Get the caller's organization's events. Same publishedAt-not-null
-   * filter as getDesignTemplates() and same reasoning - a draftAndPublish
-   * content type otherwise surfaces a transient draft row alongside its
-   * published one.
-   */
+  // --- Design Studio -------------------------------------------------------
+
+  /** Saved-design usage and Premium access for the caller's organization. */
+  async getDesignLimits() {
+    return this.get<{ data: DesignLimitsInfo }>('/api/design-templates/limits')
+  }
+
+  /** Gallery listing: `scope` mine = the organization's designs, system = the template library. */
+  async listDesignTemplates(scope: 'mine' | 'system' | 'all' = 'all', extra: Record<string, string> = {}) {
+    const params: Record<string, string> = {
+      'populate[0]': 'previewImage',
+      'populate[1]': 'category',
+      'populate[2]': 'organization',
+      'pagination[pageSize]': '200',
+      'sort[0]': 'sortOrder:asc',
+      'sort[1]': 'updatedAt:desc',
+      ...extra,
+    }
+    if (scope === 'system') {
+      params['filters[organization][id][$null]'] = 'true'
+    }
+    if (scope === 'mine') {
+      params['filters[organization][id][$notNull]'] = 'true'
+    }
+    const response = await this.get<StrapiResponse<any>>('/api/design-templates', params)
+    return Array.isArray(response.data) ? response.data : []
+  }
+
+  /** Copy a template (system or own) into a new organization design, brand kit applied. */
+  async useDesignTemplate(id: string, name?: string) {
+    return this.post<any>(`/api/design-templates/${encodeURIComponent(id)}/use`, { name })
+  }
+
+  /** Server render of an unsaved design with sample data (png or pdf). */
+  async renderDesignPreview(layoutConfig: any, opts: { format?: 'png' | 'pdf', width?: number, recipientName?: string, custom?: Record<string, string> } = {}): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/api/design-templates/render-preview`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ layoutConfig, ...opts }),
+    })
+    if (!response.ok) {
+      let message = `Preview failed (${response.status})`
+      try {
+        message = (await response.json())?.error?.message || message
+      }
+      catch {}
+      throw new Error(message)
+    }
+    return response.blob()
+  }
+
+  async getDesignCategories() {
+    const response = await this.get<StrapiResponse<any>>('/api/design-categories', { 'sort': 'sortOrder:asc', 'pagination[pageSize]': '100' })
+    return Array.isArray(response.data) ? response.data : []
+  }
+
+  async listDesignAssets(kind: 'upload' | 'element') {
+    return (await this.get<{ data: DesignAsset[] }>('/api/design-assets', { kind })).data
+  }
+
+  async uploadDesignAsset(file: File, opts: { system?: boolean, elementCategory?: string, name?: string } = {}) {
+    const form = new FormData()
+    form.append('file', file)
+    if (opts.name) {
+      form.append('name', opts.name)
+    }
+    if (opts.system) {
+      form.append('system', 'true')
+    }
+    if (opts.elementCategory) {
+      form.append('elementCategory', opts.elementCategory)
+    }
+    return (await this.postForm<{ data: DesignAsset }>('/api/design-assets/upload', form)).data
+  }
+
+  async renameDesignAsset(id: string, name: string) {
+    return this.updateDesignAsset(id, { name })
+  }
+
+  /** Platform Admins may also move a system element (elementCategory, sortOrder). */
+  async updateDesignAsset(id: string, data: { name?: string, elementCategory?: string, sortOrder?: number }) {
+    return (await this.put<{ data: DesignAsset }>(`/api/design-assets/${encodeURIComponent(id)}`, { data })).data
+  }
+
+  // Admin > Design library (Platform Admins only)
+
+  async listSystemLibrary() {
+    return (await this.get<{ data: SystemLibraryTemplate[] }>('/api/design-templates/admin/library')).data
+  }
+
+  async updateSystemTemplate(id: string, data: { name?: string, description?: string, category?: string | null, isPremium?: boolean, isHidden?: boolean }) {
+    return (await this.put<{ data: any }>(`/api/design-templates/admin/${encodeURIComponent(id)}`, { data })).data
+  }
+
+  async reorderSystemTemplates(ids: string[]) {
+    return (await this.put<{ data: { updated: number } }>('/api/design-templates/admin/order', { data: { ids } })).data
+  }
+
+  async deleteDesignAsset(id: string) {
+    return this.delete<any>(`/api/design-assets/${encodeURIComponent(id)}`)
+  }
+
+  async listCustomAttributes() {
+    return (await this.get<{ data: CustomAttribute[] }>('/api/custom-attributes')).data
+  }
+
+  async createCustomAttribute(data: { label: string, type?: string, required?: boolean, key?: string }) {
+    return (await this.post<{ data: CustomAttribute }>('/api/custom-attributes', { data })).data
+  }
+
+  async updateCustomAttribute(id: string, data: Partial<CustomAttribute>) {
+    return (await this.put<{ data: CustomAttribute }>(`/api/custom-attributes/${encodeURIComponent(id)}`, { data })).data
+  }
+
+  async deleteCustomAttribute(id: string) {
+    return this.delete<any>(`/api/custom-attributes/${encodeURIComponent(id)}`)
+  }
+
+  async getBrandKit() {
+    return (await this.get<{ data: BrandKitInfo }>('/api/brand-kit')).data
+  }
+
+  async saveBrandKit(data: Partial<BrandKitInfo>) {
+    return (await this.put<{ data: BrandKitInfo }>('/api/brand-kit', { data })).data
+  }
+
+  async suggestBrandColors(src: string) {
+    return (await this.post<{ data: { colors: string[] } }>('/api/brand-kit/suggest-colors', { src })).data.colors
+  }
+
   async getEvents() {
     try {
       const response = await this.get<StrapiResponse<any>>('/api/events', {

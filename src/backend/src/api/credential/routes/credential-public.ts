@@ -105,6 +105,18 @@ export default {
       },
     },
 
+    // Design Studio badge image (PNG, or ?format=svg)
+    {
+      method: 'GET',
+      path: '/credentials/:id/badge',
+      handler: 'credential.getBadge',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+
     // Short-form direct certificate URL (/verify/<id>)
     {
       method: 'GET',

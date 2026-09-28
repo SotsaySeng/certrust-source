@@ -194,3 +194,15 @@ export async function downloadPdfFile(url: string, baseName: string): Promise<vo
   const name = safeFileName(baseName)
   saveBlob(buildPdf(jpeg, canvas.width, canvas.height, baseName), `${name}.pdf`)
 }
+
+/**
+ * Downloads a file the server already rendered (the certificate PDF: an
+ * exact A4/US Letter page at 300 DPI) as `<baseName>.<ext>`.
+ */
+export async function downloadServerFile(url: string, baseName: string, ext: string): Promise<void> {
+  const res = await fetch(url, { credentials: 'include' })
+  if (!res.ok) {
+    throw new Error(`Download failed (${res.status})`)
+  }
+  saveBlob(await res.blob(), `${safeFileName(baseName)}.${ext}`)
+}
