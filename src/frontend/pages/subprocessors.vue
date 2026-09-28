@@ -29,6 +29,12 @@ const subprocessors = [
     data: 'Emails and attachments people send us; for analytics, pseudonymous usage data.',
     location: 'United States and other Google locations.',
   },
+  {
+    name: LEGAL.consultant,
+    purpose: 'Our technology consultant: designs, develops and maintains the Service, provides technical support and incident response, and administers the platform (including the billing dashboard).',
+    data: 'Any Service data, accessed only when needed for maintenance, support or incident response; account, organisation and billing details shown to platform administrators.',
+    location: `${LEGAL.consultantAddress}.`,
+  },
 ]
 
 const legal = LEGAL

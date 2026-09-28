@@ -3,14 +3,15 @@ const L = LEGAL
 export function usePrivacyContent() {
   const privacyContent: LegalDocument = {
     title: 'Privacy Policy',
-    summary: `How ${L.company} collects, uses, shares and protects personal data when you use ${L.product}, and the rights you have wherever you live.`,
+    summary: `How ${L.operator} collects, uses, shares and protects personal data when you use ${L.product}, and the rights you have wherever you live.`,
     lastUpdated: L.effectiveDate,
     sections: [
       {
         id: 'who-we-are',
         title: '1. Who we are and our role',
         paragraphs: [
-          `${L.product} is operated by <strong>${L.company}</strong>, ${L.address} ("<strong>we</strong>", "<strong>us</strong>"). You can contact our Data Protection Officer at ${mailto(L.privacyEmail)}.`,
+          `${L.product} is operated by <strong>${L.operator}</strong>, ${L.operatorType} based in ${L.address} ("<strong>we</strong>", "<strong>us</strong>"). You can contact our Data Protection Officer, who is also our privacy officer under the New Zealand Privacy Act 2020, at ${mailto(L.privacyEmail)}.`,
+          `The platform is designed, developed, maintained and supported for us by our technology consultant, ${L.consultant} (${L.consultantAddress}). ${L.consultantShort} acts only on our instructions, as our sub-processor (see section 6).`,
           'Our role depends on whose data it is:',
         ],
         items: [
@@ -75,7 +76,7 @@ export function usePrivacyContent() {
         id: 'sharing',
         title: '6. Who we share personal data with',
         items: [
-          `<strong>Service providers (sub-processors)</strong> who host and run the Service for us under contracts that protect the data: Cloudflare (hosting, content delivery, file storage, email sending and routing), Neon (database, Singapore region), Stripe (payments), and Google (our support mailbox, and website analytics only if enabled with your consent). The current list, with locations, is on our ${link('/subprocessors', 'sub-processors page')}.`,
+          `<strong>Service providers (sub-processors)</strong> who host and run the Service for us under contracts that protect the data: Cloudflare (hosting, content delivery, file storage, email sending and routing), Neon (database, Singapore region), Stripe (payments), Google (our support mailbox, and website analytics only if enabled with your consent), and our technology consultant ${L.consultantShort} (development, maintenance, technical support and platform administration, from Laos). The current list, with locations, is on our ${link('/subprocessors', 'sub-processors page')}.`,
           '<strong>The Issuer</strong>, for credentials it issued, and <strong>anyone the credential\'s holder shares it with</strong>.',
           '<strong>Authorities</strong>, if the law requires it, or to protect the rights, safety or property of people or of the Service. We push back on requests that are not legally valid.',
           '<strong>A successor</strong>, if our business or assets are merged, sold or transferred; we will notify you and this policy will continue to apply.',
@@ -102,7 +103,7 @@ export function usePrivacyContent() {
         id: 'international-transfers',
         title: '8. Where your data is stored, and international transfers',
         paragraphs: [
-          'Our database is hosted in <strong>Singapore</strong>. Our application and files are served through Cloudflare\'s global network, so data may be processed in the country nearest to you. We are based in Laos, and our service providers are based in the United States and elsewhere. So your data will usually be transferred outside your country.',
+          'Our database is hosted in <strong>Singapore</strong>. Our application and files are served through Cloudflare\'s global network, so data may be processed in the country nearest to you. We are based in New Zealand, our technology consultant is based in Laos, and our other service providers are based in the United States and elsewhere. So your data will usually be transferred outside your country.',
           'Where the law requires safeguards for such transfers, we use them: for the EU and UK, the European Commission\'s Standard Contractual Clauses and the UK International Data Transfer Addendum, or an adequacy decision; for Singapore, Thailand, Vietnam, Australia and New Zealand, contractual protections comparable to those laws, and any assessments or filings those laws require.',
           '<strong>New Zealand (IPP 12):</strong> we disclose personal information to our service providers overseas only where they are required to protect it in a way that, overall, provides comparable safeguards to the New Zealand Privacy Act 2020, or with your authorisation after telling you that it may not be protected in that way.',
         ],
@@ -155,7 +156,7 @@ export function usePrivacyContent() {
           '<strong>Thailand (PDPA):</strong> you have the rights in section 11. You may complain to the Personal Data Protection Committee.',
           '<strong>Vietnam:</strong> we handle personal data in line with the Law on Personal Data Protection (No. 91/2025/QH15) and Decree 356/2025/ND-CP, including their requirements for cross-border transfers and impact assessments.',
           '<strong>Australia:</strong> we handle personal information in line with the Australian Privacy Principles. You may complain to us first, and then to the Office of the Australian Information Commissioner.',
-          '<strong>New Zealand:</strong> we comply with the Privacy Act 2020, including the Information Privacy Principles. You may complain to us first, and then to the Office of the Privacy Commissioner.',
+          '<strong>New Zealand:</strong> we are based in New Zealand, so the Privacy Act 2020, including the Information Privacy Principles, applies to all personal information we handle. You may complain to us first, and then to the Office of the Privacy Commissioner.',
         ],
       },
       {
@@ -176,7 +177,7 @@ export function usePrivacyContent() {
         id: 'contact',
         title: '15. Contact',
         paragraphs: [
-          `Data Protection Officer, ${L.company}, ${L.address}.<br>Email: ${mailto(L.privacyEmail)}`,
+          `Data Protection Officer, ${L.operator}, ${L.address}.<br>Email: ${mailto(L.privacyEmail)}`,
         ],
       },
     ],

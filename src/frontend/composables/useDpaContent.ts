@@ -3,14 +3,14 @@ const L = LEGAL
 export function useDpaContent() {
   const dpaContent: LegalDocument = {
     title: 'Data Processing Agreement',
-    summary: `This Data Processing Agreement ("DPA") forms part of the ${L.product} Terms and Conditions between the Customer (the "Issuer") and ${L.company}. It applies automatically to every Customer and covers the personal data we process for the Customer. A countersigned copy is available on request from ${L.privacyEmail}.`,
+    summary: `This Data Processing Agreement ("DPA") forms part of the ${L.product} Terms and Conditions between the Customer (the "Issuer") and ${L.operator}. It applies automatically to every Customer and covers the personal data we process for the Customer. A countersigned copy is available on request from ${L.privacyEmail}.`,
     lastUpdated: L.effectiveDate,
     sections: [
       {
         id: 'scope',
         title: '1. Scope, roles and definitions',
         items: [
-          `The Customer is the <strong>controller</strong> (or, where it acts for another controller, a processor), and ${L.company} ("<strong>Processor</strong>") is the <strong>processor</strong> (or sub-processor) of the personal data described in Annex I ("<strong>Customer Personal Data</strong>").`,
+          `The Customer is the <strong>controller</strong> (or, where it acts for another controller, a processor), and ${L.operator} ("<strong>Processor</strong>") is the <strong>processor</strong> (or sub-processor) of the personal data described in Annex I ("<strong>Customer Personal Data</strong>").`,
           '"<strong>Data Protection Law</strong>" means all data-protection laws that apply to the processing, including, as applicable: the EU GDPR and UK GDPR; the Singapore Personal Data Protection Act 2012; the Lao Law on Electronic Data Protection (2017); the Thailand Personal Data Protection Act B.E. 2562; the Vietnam Law on Personal Data Protection No. 91/2025/QH15 and Decree 356/2025/ND-CP; the Australian Privacy Act 1988; the New Zealand Privacy Act 2020; and US state privacy laws such as the CCPA. Terms such as "personal data", "processing", "controller", "processor", "data subject" and "personal data breach" have the meanings given in the GDPR, or the equivalent terms in other Data Protection Law.',
           'For the CCPA and similar US laws, the Processor is a "service provider" or "processor". It will not sell or share Customer Personal Data, or retain, use or disclose it for any purpose other than providing the Service, or outside the direct business relationship with the Customer.',
         ],
@@ -115,7 +115,7 @@ export function useDpaContent() {
         id: 'annex-1',
         title: 'Annex I: Description of the processing',
         items: [
-          `<strong>Parties:</strong> Data exporter: the Customer (controller or processor), whose contact details are its account details. Data importer: ${L.company}, ${L.address}, contact ${mailto(L.privacyEmail)} (processor).`,
+          `<strong>Parties:</strong> Data exporter: the Customer (controller or processor), whose contact details are its account details. Data importer: ${L.operator}, ${L.address}, contact ${mailto(L.privacyEmail)} (processor).`,
           '<strong>Data subjects:</strong> Recipients of credentials; the Customer\'s staff and authorised users; people named in evidence the Customer uploads.',
           '<strong>Categories of personal data:</strong> name; email address; credential content (achievement, criteria, issue and expiry dates, description, evidence, revocation status and reason); whether a credential was issued to a minor; visibility settings; account and log data for the Customer\'s users.',
           '<strong>Sensitive data:</strong> none intended. The Customer must not include special-category data unless it is necessary and lawful.',

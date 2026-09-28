@@ -6,18 +6,27 @@
  * changes, so also email customers before publishing.
  */
 export const LEGAL = {
-  effectiveDate: '2026-09-25',
-  company: 'Zettabyte Lab & Consulting Sole Co., Ltd.',
-  companyShort: 'Zettabyte Lab',
-  // TODO(legal): replace with the registered street address in Vientiane.
-  address: 'Vientiane, Lao PDR',
+  effectiveDate: '2026-09-28',
+  // The contracting party: a New Zealand sole trader (IRD-registered),
+  // the same legal name as on the Stripe account that receives payments.
+  operator: 'Sotsay Sengvong, trading as Certrust',
+  operatorType: 'a sole trader',
+  // Published contact address. City and country only, to keep the
+  // operator's home address private.
+  address: 'Auckland, New Zealand',
+  // Technology consultant that designs, develops, maintains and supports
+  // the platform. Not a party to the Terms; a sub-processor, because its
+  // staff administer the live system.
+  consultant: 'Zettabyte Lab & Consulting Sole Co., Ltd.',
+  consultantShort: 'Zettabyte Lab',
+  consultantAddress: 'Vientiane, Lao PDR',
   product: 'Certrust',
   website: 'https://certrust.app',
   supportEmail: 'support@certrust.app',
   privacyEmail: 'privacy@certrust.app',
   sourceCodeUrl: 'https://github.com/SotsaySeng/certrust-source',
   upstreamUrl: 'https://github.com/schroedinger-hat/certo',
-  governingLaw: 'the Republic of Singapore',
+  governingLaw: 'New Zealand',
   breachNoticeHours: 48,
   backupRetentionDays: 90,
   noticeDays: 30,

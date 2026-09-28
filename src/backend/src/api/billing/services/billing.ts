@@ -309,9 +309,13 @@ export default ({ strapi }: { strapi: any }) => ({
   async createPortal(org: any): Promise<string> {
     if (!isStripeConfigured()) throw new ApplicationError('Online payments are not set up yet.')
     if (!org.stripeCustomerId) throw new ApplicationError('This organization has no billing account yet.')
+    // An explicit configuration (created by API with the exact plans the
+    // portal may switch between) wins over the dashboard default.
+    const configuration = process.env.STRIPE_PORTAL_CONFIGURATION || undefined
     const session = await getStripe().billingPortal.sessions.create({
       customer: org.stripeCustomerId,
       return_url: `${this.frontendUrl()}/billing`,
+      ...(configuration ? { configuration } : {}),
     })
     return session.url
   },

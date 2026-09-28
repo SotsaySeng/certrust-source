@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { termsContent } = useTermsContent()
 
-const pageDescription = `The terms that apply when you use ${LEGAL.product}, operated by ${LEGAL.company}.`
+const pageDescription = `The terms that apply when you use ${LEGAL.product}, operated by ${LEGAL.operator}.`
 
 useSeoMeta({
   title: termsContent.title,

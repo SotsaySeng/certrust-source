@@ -1,8 +1,9 @@
 <script setup lang="ts">
 const { globalSettings } = useGlobalSettings()
 const sourceCodeUrl = LEGAL.sourceCodeUrl
+const { operator, operatorType, address } = LEGAL
 
-const pageDescription = ref('Certrust was built by Zettabyte Lab & Consulting Sole Co., Ltd. to solve a certification problem we had in our own training programs — now available to any organization, free for education.')
+const pageDescription = ref('Certrust grew out of a certification problem in Zettabyte Lab & Consulting Sole Co., Ltd.\'s own training programs. Zettabyte Lab remains its technology consultant, and it is now available to any organization, free for education.')
 
 function handleEducationInquiryClick() {
   const subject = encodeURIComponent('Education Access Request — Certrust')
@@ -123,6 +124,9 @@ useHead({
               </p>
               <p class="text-lg text-gray-600 leading-relaxed">
                 We built Certrust to fix that for our own participants first, in production, before it was ever a product. Once it worked for us, it was clear it belonged in the hands of every organization running training, workshops, or certification programs — not just ours.
+              </p>
+              <p class="text-lg text-gray-600 leading-relaxed">
+                Today Certrust is operated by {{ operator }}, {{ operatorType }} based in {{ address }}. Zettabyte Lab is the platform's technology consultant: it designs, develops, maintains and supports Certrust.
               </p>
               <p class="text-lg text-gray-600 leading-relaxed">
                 Certrust is built on <a href="https://github.com/schroedinger-hat/certo" target="_blank" rel="noopener" class="text-[#1f7a34] underline">Certo</a>, an open-source project by Schrödinger Hat, and stays open source under the GNU AGPL-3.0: the
