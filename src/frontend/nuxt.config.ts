@@ -115,6 +115,12 @@ export default defineNuxtConfig({
     optimizeDeps: {
       exclude: ['harfbuzzjs'],
     },
+    // harfbuzzjs uses top-level await, which the default es2020 build
+    // target rejects (production builds fail; dev never transpiles it).
+    // ES2022 = Chrome/Edge 89+, Firefox 89+, Safari 15+.
+    build: {
+      target: 'es2022',
+    },
   },
   // Verification pages: never indexed, whatever a crawler makes of the meta tag.
   routeRules: {
