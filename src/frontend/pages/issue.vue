@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Recipient } from '~/composables/useApiClient'
-import Papa from 'papaparse'
 import { apiClient as api } from '~/api/api-client'
 import { getTemplateTypeChipClass, getTemplateTypeIcon } from '~/constants/templateTypes'
 
@@ -219,8 +218,21 @@ function normHeader(h: string) {
   return h.toLowerCase().replace(/[^a-z0-9\u0E80-\u0EFF]/g, '')
 }
 
+/**
+ * papaparse, loaded in the browser only. The ternary is a literal `false`
+ * in the server build, so the import is dropped there: the Cloudflare
+ * Workers build rewrites `typeof window` inside papaparse's own worker
+ * source string and fails to parse it.
+ */
+function loadPapa() {
+  return import.meta.client
+    ? import('papaparse').then(m => m.default)
+    : Promise.reject(new Error('CSV files are read in the browser.'))
+}
+
 /** CSV template with this organization's custom attribute columns. */
-function downloadCsvTemplate() {
+async function downloadCsvTemplate() {
+  const Papa = await loadPapa()
   const attrs = resources.customAttributes
   const header = ['name', 'email', 'expirationDate', 'minor', ...attrs.map(a => a.key)]
   const example = ['Alex Morgan', 'alex@example.com', '', 'no', ...attrs.map(a => (a.type === 'date' ? '2026-08-19' : a.type === 'number' ? '1' : a.label))]
@@ -286,10 +298,11 @@ function handleFileUpload(event: Event) {
 
   const file = input.files[0]
   const reader = new FileReader()
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const content = reader.result as string
       // papaparse: quoted fields may contain commas (full names, addresses).
+      const Papa = await loadPapa()
       const parsed = Papa.parse<Record<string, string>>(content.replace(/^\uFEFF/, ''), { header: true, skipEmptyLines: true, transformHeader: h => h.trim() })
       const headers = parsed.meta.fields ?? []
       const find = (...names: string[]) => headers.find(h => names.includes(normHeader(h)))

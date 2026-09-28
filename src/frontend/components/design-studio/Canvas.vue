@@ -6,7 +6,6 @@
  * element's SVG group directly (smooth) and re-render once on release.
  */
 import type { BrandKit, DesignElement, PlaceholderData, RenderIssue, TextElement } from '~/lib/design-core'
-import Moveable from 'vue3-moveable'
 import { fromEditable, toEditable } from '~/lib/design-studio/text-tokens'
 
 const props = defineProps<{
@@ -19,6 +18,13 @@ const emit = defineEmits<{
   issues: [issues: RenderIssue[]]
   dropped: [payload: { kind: string, value: string, x: number, y: number }]
 }>()
+
+// Browser-only: the editor never renders on the server (ssr: false), and
+// vue3-moveable cannot be bundled for the Cloudflare Workers server build.
+// The ternary is a literal `false` there, so the import is dropped.
+const Moveable = defineAsyncComponent(() => import.meta.client
+  ? import('vue3-moveable').then(m => m.default)
+  : Promise.resolve({ render: () => null }))
 
 const store = useDesignStudioStore()
 const { t } = useI18n()
