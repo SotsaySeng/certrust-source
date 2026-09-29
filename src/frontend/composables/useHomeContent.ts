@@ -22,10 +22,32 @@ export interface AudienceSegment {
   description: string
 }
 
+export interface AudienceStatItem {
+  key: 'organizations' | 'achievements' | 'events' | 'credentials'
+  label: string
+  value: number
+}
+
+export interface AudienceStats {
+  heading: string
+  items: AudienceStatItem[]
+}
+
 export interface AudienceContent {
   header: string
   subheader: string
   segments: AudienceSegment[]
+  /**
+   * Live platform counts, or null whenever the backend's threshold gate is
+   * shut - too few records yet, or an admin switched the strip off. The gate
+   * is decided server-side and the numbers are simply absent from the payload
+   * when it is shut, so there is nothing to read out of the SSR page source
+   * either; see src/backend/src/api/homepage/controllers/homepage.ts.
+   *
+   * Arrives on the response's `meta`, not `data`: these are computed, not
+   * attributes of the homepage singleType.
+   */
+  stats: AudienceStats | null
 }
 
 interface HomeContent {
@@ -58,7 +80,7 @@ const DEFAULT_HOME_CONTENT: HomeContent = {
   howItWorksHeader: '',
   howItWorksSubheader: '',
   sections: [],
-  audience: { header: '', subheader: '', segments: [] },
+  audience: { header: '', subheader: '', segments: [], stats: null },
   closingHeader: '',
   closingSubheader: '',
   closingButtonLabel: '',
@@ -121,7 +143,7 @@ export default async function useHomeContent(): Promise<HomeContent> {
         'populate[audienceSegments]': 'true',
       }).toString()
 
-      const result = await $fetch<{ data: any }>(`${apiUrl}/api/homepage?${query}`)
+      const result = await $fetch<{ data: any, meta?: any }>(`${apiUrl}/api/homepage?${query}`)
       const raw = result?.data
       if (!raw) {
         return DEFAULT_HOME_CONTENT
@@ -141,6 +163,9 @@ export default async function useHomeContent(): Promise<HomeContent> {
           title: s.title,
           description: s.description,
         })),
+        // meta, not data - the counts are computed per request by the backend
+        // rather than stored on the singleType. null means the gate is shut.
+        stats: result?.meta?.stats ?? null,
       }
 
       return {

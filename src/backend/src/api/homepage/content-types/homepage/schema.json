@@ -5,7 +5,7 @@
     "singularName": "homepage",
     "pluralName": "homepages",
     "displayName": "Homepage",
-    "description": "Content for the public marketing homepage (/): hero, feature grid, how-it-works walkthrough, audience segments, and the closing CTA. Publicly readable (find only, auth: false) - see routes/homepage.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Pricing content lives on the separate solution-page singleType (its own /solution route); the header/footer logo lives on global-settings (shown on every page, not just this one)."
+    "description": "Content for the public marketing homepage (/): hero, feature grid, how-it-works walkthrough, audience segments, and the closing CTA. Publicly readable (find only, auth: false) - see routes/homepage.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Pricing content lives on the separate solution-page singleType (its own /solution route); the header/footer logo lives on global-settings (shown on every page, not just this one). The stats* fields configure the live platform-counts strip rendered between the audience heading and the audience segments; the counts themselves are not stored here - they are computed per request by services/homepage.ts and returned on the response's `meta.stats`, not in `data`."
   },
   "options": {
     "draftAndPublish": false
@@ -40,6 +40,38 @@
       "type": "component",
       "repeatable": true,
       "component": "marketing.audience-segment"
+    },
+    "statsEnabled": {
+      "type": "boolean",
+      "default": true,
+      "private": true,
+      "description": "Master switch for the live platform-stats strip rendered under the audience heading. `private` so the switch state never reaches the browser - controllers/homepage.ts reads it through the Document Service, which does not sanitize. Records created before this field existed hold NULL (a schema default only fires for rows created after the column was added), and NULL is deliberately treated as OFF, so a failed back-fill leaves the homepage exactly as it was rather than publishing unlabelled numbers. bootstrap/homepage-seed.ts's addPlatformStatsDefaults() sets it."
+    },
+    "statsMinimumCount": {
+      "type": "integer",
+      "default": 5,
+      "private": true,
+      "description": "Every one of the four counts must reach this number or the whole strip is omitted and the page renders exactly as it did before the strip existed. All-four rather than any-one: a strip showing 3 of 4 metrics looks broken. `private` for the same reason as statsEnabled - publishing the threshold would let anyone bound the real counts from below. Note the strip can therefore disappear on its own if a count later drops back under this number (hard deletes, a cleanup script) - that is intended, not a bug. No schema-level `min` on purpose: validation on a row whose column is still NULL can reject an unrelated patch, so the >= 1 clamp lives in controllers/homepage.ts instead."
+    },
+    "statsHeading": {
+      "type": "string",
+      "description": "Optional mono eyebrow above the four numbers (e.g. 'Live on Certrust today'). Blank hides just that line; the numbers still render."
+    },
+    "statsOrganizationsLabel": {
+      "type": "string",
+      "description": "Label under the organizations count. A blank label hides the ENTIRE strip (see controllers/homepage.ts) rather than shipping a number with nothing naming it - which is also what makes an install whose back-fill never ran fail closed."
+    },
+    "statsAchievementsLabel": {
+      "type": "string",
+      "description": "Label under the achievements count. Blank hides the entire strip - see statsOrganizationsLabel."
+    },
+    "statsEventsLabel": {
+      "type": "string",
+      "description": "Label under the events count. Blank hides the entire strip - see statsOrganizationsLabel."
+    },
+    "statsCredentialsLabel": {
+      "type": "string",
+      "description": "Label under the credentials-issued count. Blank hides the entire strip - see statsOrganizationsLabel."
     },
     "howItWorksHeader": { "type": "string" },
     "howItWorksSubheader": { "type": "text" },

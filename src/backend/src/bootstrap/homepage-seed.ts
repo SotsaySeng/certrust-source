@@ -9,11 +9,85 @@
 
 import { uploadSeedImage } from './seed-image-upload';
 
+/**
+ * Defaults for the live platform-stats strip. Kept in one place because they
+ * are written from two directions: into the create() below for a fresh
+ * install, and by addPlatformStatsDefaults() into an install that predates
+ * these fields.
+ */
+const STATS_DEFAULTS = {
+  statsEnabled: true,
+  statsMinimumCount: 5,
+  statsHeading: 'Live on Certrust today',
+  statsOrganizationsLabel: 'Organizations',
+  statsAchievementsLabel: 'Achievements',
+  statsEventsLabel: 'Events',
+  statsCredentialsLabel: 'Credentials issued',
+} as const;
+
+const STATS_LABEL_KEYS = [
+  'statsHeading',
+  'statsOrganizationsLabel',
+  'statsAchievementsLabel',
+  'statsEventsLabel',
+  'statsCredentialsLabel',
+] as const;
+
+/**
+ * Records seeded before the platform-stats strip existed hold NULL in every
+ * stats column - a schema `default` only applies to rows created after the
+ * column was added - and controllers/homepage.ts treats a NULL statsEnabled as
+ * OFF. Without this back-fill the strip would stay invisible forever on every
+ * already-installed instance, with no error to explain why.
+ *
+ * Adds the missing fields and ONLY the missing fields, so any copy or
+ * threshold an admin has already changed survives every subsequent boot.
+ * Same shape as tier-settings-seed.ts's addDesignStudioDefaults().
+ */
+export async function addPlatformStatsDefaults(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::homepage.homepage').findFirst();
+  if (!full) return;
+
+  const patch: any = {};
+
+  // typeof, not truthiness: `false` is a deliberate admin choice to switch the
+  // strip off, and `if (!full.statsEnabled)` would silently turn it back on
+  // every boot.
+  if (typeof full.statsEnabled !== 'boolean') {
+    patch.statsEnabled = STATS_DEFAULTS.statsEnabled;
+  }
+  // typeof again, because typeof 0 === 'number': an admin who lowered the
+  // threshold to 0 keeps it (the controller clamps to >= 1 at read time). A
+  // truthiness check would reset them to 25 on every boot.
+  if (typeof full.statsMinimumCount !== 'number') {
+    patch.statsMinimumCount = STATS_DEFAULTS.statsMinimumCount;
+  }
+  for (const key of STATS_LABEL_KEYS) {
+    // `== null` catches null and undefined only, never ''. An admin who
+    // cleared statsHeading to blank meant it, and re-filling it every boot
+    // would be an un-undoable bug.
+    if (full[key] == null) {
+      patch[key] = STATS_DEFAULTS[key];
+    }
+  }
+
+  if (!Object.keys(patch).length) return;
+
+  await strapi.documents('api::homepage.homepage').update({
+    documentId: existing.documentId,
+    data: patch,
+  } as any);
+  strapi.log.info(`[Seed] Homepage: added platform-stats defaults (${Object.keys(patch).join(', ')}).`);
+}
+
 export async function seedHomepage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::homepage.homepage').findFirst();
 
     if (existing) {
+      // Not a plain early return: fields added after this record was first
+      // seeded still need back-filling on every existing install.
+      await addPlatformStatsDefaults(strapi, existing);
       strapi.log.info('[Seed] Homepage already seeded, skipping...');
       return;
     }
@@ -80,6 +154,11 @@ export async function seedHomepage(strapi: any): Promise<void> {
             icon: 'heart',
           },
         ],
+
+        // Rendered between the audience heading and the audience segments
+        // above. A fresh install starts below the default threshold, so the
+        // strip stays hidden until the platform has something worth showing.
+        ...STATS_DEFAULTS,
 
         howItWorksHeader: 'How it works',
         howItWorksSubheader: 'From blank template to a credential your recipients can prove, in three steps.',

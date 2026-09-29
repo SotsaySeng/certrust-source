@@ -985,7 +985,7 @@ export interface ApiGlobalSettingsGlobalSettings
 export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   collectionName: 'homepages';
   info: {
-    description: "Content for the public marketing homepage (/): hero, feature grid, how-it-works walkthrough, audience segments, and the closing CTA. Publicly readable (find only, auth: false) - see routes/homepage.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Pricing content lives on the separate solution-page singleType (its own /solution route); the header/footer logo lives on global-settings (shown on every page, not just this one).";
+    description: "Content for the public marketing homepage (/): hero, feature grid, how-it-works walkthrough, audience segments, and the closing CTA. Publicly readable (find only, auth: false) - see routes/homepage.ts and bootstrap/permissions-setup.ts's PUBLIC_PERMISSIONS. Pricing content lives on the separate solution-page singleType (its own /solution route); the header/footer logo lives on global-settings (shown on every page, not just this one). The stats* fields configure the live platform-counts strip rendered between the audience heading and the audience segments; the counts themselves are not stored here - they are computed per request by services/homepage.ts and returned on the response's `meta.stats`, not in `data`.";
     displayName: 'Homepage';
     pluralName: 'homepages';
     singularName: 'homepage';
@@ -1035,6 +1035,17 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
       'marketing.how-it-works-section',
       false
     >;
+    statsAchievementsLabel: Schema.Attribute.String;
+    statsCredentialsLabel: Schema.Attribute.String;
+    statsEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.Private &
+      Schema.Attribute.DefaultTo<true>;
+    statsEventsLabel: Schema.Attribute.String;
+    statsHeading: Schema.Attribute.String;
+    statsMinimumCount: Schema.Attribute.Integer &
+      Schema.Attribute.Private &
+      Schema.Attribute.DefaultTo<5>;
+    statsOrganizationsLabel: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

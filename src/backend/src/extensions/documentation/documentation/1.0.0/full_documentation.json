@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-09-28T11:51:38.255Z"
+    "x-generation-date": "2026-09-29T08:50:51.058Z"
   },
   "openapi": "3.0.0",
   "x-strapi-config": {
@@ -24,7 +24,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:1351/api",
+      "url": "http://localhost:1337/api",
       "description": "Development server"
     }
   ],
@@ -38862,6 +38862,27 @@
                   "$ref": "#/components/schemas/MarketingAudienceSegmentComponent"
                 }
               },
+              "statsEnabled": {
+                "type": "boolean"
+              },
+              "statsMinimumCount": {
+                "type": "integer"
+              },
+              "statsHeading": {
+                "type": "string"
+              },
+              "statsOrganizationsLabel": {
+                "type": "string"
+              },
+              "statsAchievementsLabel": {
+                "type": "string"
+              },
+              "statsEventsLabel": {
+                "type": "string"
+              },
+              "statsCredentialsLabel": {
+                "type": "string"
+              },
               "howItWorksHeader": {
                 "type": "string"
               },
@@ -38993,6 +39014,27 @@
               "$ref": "#/components/schemas/MarketingAudienceSegmentComponent"
             }
           },
+          "statsEnabled": {
+            "type": "boolean"
+          },
+          "statsMinimumCount": {
+            "type": "integer"
+          },
+          "statsHeading": {
+            "type": "string"
+          },
+          "statsOrganizationsLabel": {
+            "type": "string"
+          },
+          "statsAchievementsLabel": {
+            "type": "string"
+          },
+          "statsEventsLabel": {
+            "type": "string"
+          },
+          "statsCredentialsLabel": {
+            "type": "string"
+          },
           "howItWorksHeader": {
             "type": "string"
           },
@@ -39103,6 +39145,27 @@
                   "items": {
                     "$ref": "#/components/schemas/MarketingAudienceSegmentComponent"
                   }
+                },
+                "statsEnabled": {
+                  "type": "boolean"
+                },
+                "statsMinimumCount": {
+                  "type": "integer"
+                },
+                "statsHeading": {
+                  "type": "string"
+                },
+                "statsOrganizationsLabel": {
+                  "type": "string"
+                },
+                "statsAchievementsLabel": {
+                  "type": "string"
+                },
+                "statsEventsLabel": {
+                  "type": "string"
+                },
+                "statsCredentialsLabel": {
+                  "type": "string"
                 },
                 "howItWorksHeader": {
                   "type": "string"

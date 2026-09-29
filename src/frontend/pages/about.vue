@@ -1,25 +1,8 @@
 <script setup lang="ts">
-const { globalSettings } = useGlobalSettings()
 const sourceCodeUrl = LEGAL.sourceCodeUrl
 const { operator, operatorType, address } = LEGAL
 
-const pageDescription = ref('Certrust grew out of a certification problem in Zettabyte Lab & Consulting Sole Co., Ltd.\'s own training programs. Zettabyte Lab remains its technology consultant, and it is now available to any organization, free for education.')
-
-function handleEducationInquiryClick() {
-  const subject = encodeURIComponent('Education Access Request — Certrust')
-  const body = encodeURIComponent(
-    'Hello,\n\n'
-    + 'We are an education organization interested in free access to Certrust for issuing and verifying credentials.\n\n'
-    + 'Organization name:\n'
-    + 'Program / course details:\n'
-    + 'Approximate number of participants:\n\n'
-    + 'Best regards'
-  )
-  const email = globalSettings.value.contactEmail
-  if (email) {
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`
-  }
-}
+const pageDescription = ref('Certrust grew out of a certification problem in Zettabyte Lab & Consulting Sole Co., Ltd.\'s own training programs. Zettabyte Lab remains its technology consultant, and it is now available to any organization running training, workshops or certification programs.')
 
 useSeoMeta({
   description: pageDescription.value,
@@ -151,9 +134,9 @@ useHead({
           </p>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div class="max-w-2xl mx-auto">
           <!-- Pricing pointer -->
-          <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 flex flex-col justify-between">
+          <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
             <h3 class="text-2xl font-bold mb-4">
               Looking for plans &amp; pricing?
             </h3>
@@ -166,51 +149,12 @@ useHead({
                 <span>Full Open Badges 3.0 issuance, on every plan</span>
               </li>
             </ul>
-            <div class="flex-grow-1 flex items-end">
-              <NuxtLink
-                to="/solution"
-                class="block w-full py-3 px-4 text-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-              >
-                View Plans &amp; Pricing
-              </NuxtLink>
-            </div>
-          </div>
-
-          <!-- Education Organizations -->
-          <div class="bg-gradient-to-br from-[#28A745]/10 to-[#28A745]/10 rounded-2xl p-8 shadow-lg border border-[#28A745]/20 relative overflow-hidden flex flex-col justify-between">
-            <div class="absolute top-3 right-3 px-3 py-1 bg-[#28A745] text-black text-sm rounded-full">
-              Free for Education
-            </div>
-            <h3 class="text-2xl font-bold mb-4">
-              Education Organizations
-            </h3>
-            <div class="text-3xl font-bold mb-6">
-              $0
-              <span class="text-text-secondary text-lg font-normal">for schools &amp; training programs</span>
-            </div>
-            <p class="text-text-secondary mb-8">
-              Schools, universities, bootcamps, and nonprofit training programs can issue and verify credentials on Certrust at no cost — because certifying learners shouldn't come down to budget.
-            </p>
-            <ul class="space-y-4 mb-8">
-              <li class="flex items-center gap-3">
-                <div class="i-lucide-check w-5 h-5 text-[#28A745]" />
-                <span>All core issuing &amp; verification features</span>
-              </li>
-              <li class="flex items-center gap-3">
-                <div class="i-lucide-check w-5 h-5 text-[#28A745]" />
-                <span>No credit card, no time limit</span>
-              </li>
-              <li class="flex items-center gap-3">
-                <div class="i-lucide-check w-5 h-5 text-[#28A745]" />
-                <span>Support as your program grows</span>
-              </li>
-            </ul>
-            <button
-              class="w-full py-3 px-6 rounded-full bg-gradient-to-r from-[#1E7B33] to-[#28A745] text-white font-semibold hover:opacity-90 transition-opacity"
-              @click="handleEducationInquiryClick"
+            <NuxtLink
+              to="/solution"
+              class="block w-full py-3 px-4 text-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors"
             >
-              Request Education Access
-            </button>
+              View Plans &amp; Pricing
+            </NuxtLink>
           </div>
         </div>
       </div>

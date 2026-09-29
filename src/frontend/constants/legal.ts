@@ -6,7 +6,7 @@
  * changes, so also email customers before publishing.
  */
 export const LEGAL = {
-  effectiveDate: '2026-09-28',
+  effectiveDate: '2026-09-29',
   // The contracting party: a New Zealand sole trader (IRD-registered),
   // the same legal name as on the Stripe account that receives payments.
   operator: 'Sotsay Sengvong, trading as Certrust',

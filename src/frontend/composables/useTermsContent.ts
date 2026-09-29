@@ -128,10 +128,10 @@ export function useTermsContent() {
       },
       {
         id: 'free-and-education',
-        title: '12. Free plan, education access and beta features',
+        title: '12. Free plan, granted access and beta features',
         items: [
-          'The free plan, free education access and any beta or preview features are provided without any service commitment and may have usage limits.',
-          `We may change or end free education access with at least ${L.noticeDays} days' notice. You will have at least that long to export your data, and credentials already issued keep verifying.`,
+          'The free plan, any plan we grant free of charge or at a discount, and any beta or preview features are provided without any service commitment and may have usage limits.',
+          `We may change or end any plan granted free of charge or at a discount with at least ${L.noticeDays} days' notice. You will have at least that long to export your data, and credentials already issued keep verifying.`,
           'Beta features may change or be withdrawn at any time.',
         ],
       },
