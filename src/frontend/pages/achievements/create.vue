@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { AchievementFormValues } from '~/components/AchievementForm.vue'
 import { apiClient } from '~/api/api-client'
-import { getTemplateTypeIcon, TEMPLATE_TYPES } from '~/constants/templateTypes'
+import { ACHIEVEMENT_TYPE_NAMES } from '~/constants/templateTypes'
 
 /**
  * Create an achievement: the thing a credential is issued FOR (e.g.
@@ -26,21 +27,23 @@ useHead({
   ]
 })
 
-const name = ref('')
-const description = ref('')
-const templateType = ref('certificate')
-const criteria = ref('')
-// Design Studio: default certificate/badge designs for this achievement.
-const certificateDesignId = ref<string | null>(null)
-const badgeDesignId = ref<string | null>(null)
+const form = ref<AchievementFormValues>({
+  name: '',
+  description: '',
+  templateType: 'certificate',
+  criteria: '',
+  // Design Studio: default certificate/badge designs for this achievement.
+  certificateDesignId: null,
+  badgeDesignId: null,
+})
 
 // Preselect the organization's most recently edited certificate design.
 onMounted(async () => {
   try {
     const mine = await apiClient.listDesignTemplates('mine')
     const latest = mine.find(d => (d.kind || d.type) === 'certificate' && d.layoutConfig?.elements?.length)
-    if (latest && !certificateDesignId.value) {
-      certificateDesignId.value = latest.documentId
+    if (latest && !form.value.certificateDesignId) {
+      form.value.certificateDesignId = latest.documentId
     }
   }
   catch {}
@@ -48,21 +51,6 @@ onMounted(async () => {
 
 const isCreating = ref(false)
 const createError = ref<string | null>(null)
-
-// English, independent of the UI language: stored as the Open Badge
-// achievementType, which recipients' wallets and LinkedIn read.
-const ACHIEVEMENT_TYPE_NAMES: Record<string, string> = {
-  certificate: 'Certificate',
-  badge: 'Badge',
-  transcript: 'Transcript',
-  training_record: 'Training Record',
-  assessment: 'Assessment',
-  letter: 'Letter',
-}
-
-function getTemplateTypeLabel(type: string): string {
-  return t(`issue.templateTypes.${type}`)
-}
 
 /** Unique, URL-safe id derived from the name (the schema's required uid). */
 function makeAchievementId(value: string): string {
@@ -77,11 +65,12 @@ function makeAchievementId(value: string): string {
 }
 
 async function handleCreate() {
-  if (!name.value.trim()) {
+  const f = form.value
+  if (!f.name.trim()) {
     createError.value = t('achievements.nameRequired')
     return
   }
-  if (!description.value.trim()) {
+  if (!f.description.trim()) {
     createError.value = t('achievements.descriptionRequired')
     return
   }
@@ -95,15 +84,15 @@ async function handleCreate() {
 
   try {
     const created = await apiClient.createBadge({
-      name: name.value.trim(),
-      description: description.value.trim(),
-      templateType: templateType.value,
-      achievementType: ACHIEVEMENT_TYPE_NAMES[templateType.value] ?? 'Certificate',
-      achievementId: makeAchievementId(name.value),
-      ...(criteria.value.trim() ? { criteria: { narrative: criteria.value.trim() } } : {}),
+      name: f.name.trim(),
+      description: f.description.trim(),
+      templateType: f.templateType,
+      achievementType: ACHIEVEMENT_TYPE_NAMES[f.templateType as keyof typeof ACHIEVEMENT_TYPE_NAMES] ?? 'Certificate',
+      achievementId: makeAchievementId(f.name),
+      ...(f.criteria.trim() ? { criteria: { narrative: f.criteria.trim() } } : {}),
       creator: authStore.profile.id,
-      certificateDesignId: certificateDesignId.value,
-      badgeDesignId: badgeDesignId.value,
+      certificateDesignId: f.certificateDesignId,
+      badgeDesignId: f.badgeDesignId,
       publishedAt: new Date().toISOString(),
     })
     const id = created?.data?.id
@@ -136,113 +125,13 @@ async function handleCreate() {
       </div>
 
       <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
-        <form class="space-y-6" @submit.prevent="handleCreate">
-          <div>
-            <label for="achievementName" class="block text-sm font-medium text-text-primary mb-1">
-              {{ t('achievements.nameLabel') }}
-            </label>
-            <input
-              id="achievementName"
-              v-model="name"
-              type="text"
-              required
-              maxlength="200"
-              :placeholder="t('achievements.namePlaceholder')"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
-            >
-          </div>
-
-          <div>
-            <label for="achievementDescription" class="block text-sm font-medium text-text-primary mb-1">
-              {{ t('achievements.descriptionLabel') }}
-            </label>
-            <textarea
-              id="achievementDescription"
-              v-model="description"
-              rows="3"
-              required
-              :placeholder="t('achievements.descriptionPlaceholder')"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
-            />
-            <p class="mt-1 text-xs text-text-secondary">
-              {{ t('achievements.descriptionHint') }}
-            </p>
-          </div>
-
-          <div>
-            <span class="block text-sm font-medium text-text-primary mb-2">
-              {{ t('achievements.typeLabel') }}
-            </span>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <label
-                v-for="type in TEMPLATE_TYPES"
-                :key="type"
-                class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors"
-                :class="templateType === type ? 'border-[#28A745] bg-[#28A745]/5' : 'border-gray-200 hover:border-[#28A745]/50'"
-              >
-                <input v-model="templateType" type="radio" name="templateType" :value="type" class="sr-only">
-                <span class="w-4 h-4 text-[#28A745]" :class="getTemplateTypeIcon(type)" />
-                {{ getTemplateTypeLabel(type) }}
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label for="achievementCriteria" class="block text-sm font-medium text-text-primary mb-1">
-              {{ t('achievements.criteriaLabel') }}
-            </label>
-            <textarea
-              id="achievementCriteria"
-              v-model="criteria"
-              rows="3"
-              :placeholder="t('achievements.criteriaPlaceholder')"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#28A745] focus:border-transparent"
-            />
-            <p class="mt-1 text-xs text-text-secondary">
-              {{ t('achievements.criteriaHint') }}
-            </p>
-          </div>
-
-          <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-            <p class="mb-1 text-sm font-medium text-text-primary">
-              {{ t('designStudio.issue.designTitle') }}
-            </p>
-            <p class="mb-3 text-xs text-text-secondary">
-              {{ t('designStudio.issue.achievementHint') }}
-            </p>
-            <div class="grid gap-3 md:grid-cols-2">
-              <div>
-                <p class="mb-1 text-xs font-medium text-text-secondary">
-                  {{ t('designStudio.issue.certificate') }}
-                </p>
-                <DesignStudioDesignPicker v-model="certificateDesignId" kind="certificate" />
-              </div>
-              <div>
-                <p class="mb-1 text-xs font-medium text-text-secondary">
-                  {{ t('designStudio.issue.badge') }}
-                </p>
-                <DesignStudioDesignPicker v-model="badgeDesignId" kind="badge" />
-              </div>
-            </div>
-          </div>
-
-          <div v-if="createError" class="rounded-lg bg-red-50 p-4">
-            <p class="text-sm text-red-800">
-              {{ createError }}
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <button
-              type="submit"
-              :disabled="isCreating"
-              class="px-6 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors disabled:opacity-50"
-            >
-              <span v-if="!isCreating">{{ t('achievements.createAction') }}</span>
-              <div v-else class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
-            </button>
-          </div>
-        </form>
+        <AchievementForm
+          v-model="form"
+          :submit-label="t('achievements.createAction')"
+          :busy="isCreating"
+          :error="createError"
+          @submit="handleCreate"
+        />
       </div>
     </div>
   </div>

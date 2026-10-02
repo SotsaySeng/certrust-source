@@ -54,32 +54,7 @@
     "organization": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::organization.organization",
-      "inversedBy": "profiles"
-    },
-    "createdAchievements": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::achievement.achievement",
-      "mappedBy": "creator"
-    },
-    "issuedCredentials": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::credential.credential",
-      "mappedBy": "issuer"
-    },
-    "receivedCredentials": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::credential.credential",
-      "mappedBy": "recipient"
-    },
-    "revocationLists": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::revocation-list.revocation-list",
-      "mappedBy": "issuer"
+      "target": "api::organization.organization"
     }
   }
 } 

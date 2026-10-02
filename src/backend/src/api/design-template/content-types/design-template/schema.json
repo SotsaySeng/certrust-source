@@ -55,8 +55,7 @@
     "organization": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::organization.organization",
-      "inversedBy": "designTemplates"
+      "target": "api::organization.organization"
     },
     "kind": {
       "type": "enumeration",

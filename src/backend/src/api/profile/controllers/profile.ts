@@ -7,15 +7,6 @@ import { errors } from '@strapi/utils'
 import { issuerDisplayName } from '../../../utils/issuer-display-name'
 const { ApplicationError } = errors
 
-// Define interface for profile
-interface ProfileWithCredentials {
-  id: any
-  name: string
-  email?: string
-  issuedCredentials?: any[]
-  receivedCredentials?: any[]
-}
-
 // Define interface for profile with public keys
 interface ProfileWithPublicKeys {
   id: any
@@ -180,23 +171,19 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
       
       const profile = await strapi.entityService.findOne('api::profile.profile', id, {
         status: 'published',
-        populate: {
-          issuedCredentials: {
-            populate: {
-              achievement: {
-                populate: ['image']
-              },
-              recipient: true
-            }
-          }
-        }
-      }) as ProfileWithCredentials
+      } as any)
       
       if (!profile) {
         return ctx.notFound('Profile not found')
       }
+
+      const credentials = await strapi.entityService.findMany('api::credential.credential', {
+        filters: { issuer: { id: profile.id } },
+        status: 'published',
+        populate: { achievement: { populate: ['image'] }, recipient: true },
+      }) as any[]
       
-      return { data: profile.issuedCredentials || [] }
+      return { data: credentials }
     } catch (err) {
       ctx.badRequest('Error fetching issued credentials', { error: err })
     }
@@ -214,25 +201,19 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
       
       const profile = await strapi.entityService.findOne('api::profile.profile', id, {
         status: 'published',
-        populate: {
-          receivedCredentials: {
-            populate: {
-              achievement: {
-                populate: ['image']
-              },
-              issuer: true
-            }
-          }
-        }
-      }) as ProfileWithCredentials
+      } as any)
       
       if (!profile) {
         return ctx.notFound('Profile not found')
       }
-      
-      strapi.log.debug(`[profile.findReceivedCredentials] Found ${profile.receivedCredentials?.length || 0} credentials for profile ${id}`)
 
-      return { data: profile.receivedCredentials || [] }
+      const credentials = await strapi.entityService.findMany('api::credential.credential', {
+        filters: { recipient: { id: profile.id } },
+        status: 'published',
+        populate: { achievement: { populate: ['image'] }, issuer: true },
+      }) as any[]
+      
+      return { data: credentials }
     } catch (err) {
       ctx.badRequest('Error fetching received credentials', { error: err })
     }

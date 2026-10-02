@@ -19,6 +19,7 @@
  */
 
 import type { IssueDesigns } from '../../../utils/issue-design'
+import { attachEvidence } from '../../../utils/credential-evidence'
 import { resolveIssueDesigns } from '../../../utils/issue-design'
 import { randomUUID } from 'node:crypto'
 import { factories } from '@strapi/strapi'
@@ -138,22 +139,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
         status: 'published'
       })
 
-      // Explicitly connect the credential to the recipient's profile.
-      // This ensures the bidirectional relationship is updated. Uses the
-      // Document Service (not entityService.update with a manual
-      // publishedAt) for the same reason as the credential creation above.
-      if (recipientEntity && recipientEntity.id && credential && credential.id) {
-        await strapi.documents('api::profile.profile').update({
-          documentId: recipientEntity.documentId,
-          data: {
-            receivedCredentials: {
-              connect: [{ id: credential.id }],
-            },
-          },
-          status: 'published',
-        })
-      }
-
       // Add evidence if provided. Uses the Document Service (not
       // entityService.create with a manual publishedAt) for the same
       // reason as the credential creation above.
@@ -182,11 +167,11 @@ export default factories.createCoreService('api::credential.credential', ({ stra
             'achievement',
             'issuer',
             'recipient',
-            'evidence',
             'proof'
           ],
         }
       )
+      await attachEvidence(strapi, [populatedCredential as any])
 
       // Convert to Open Badge format
       const openBadgeService = strapi.service('api::credential.open-badge')

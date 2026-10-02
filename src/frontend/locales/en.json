@@ -281,7 +281,8 @@
     },
     "newAchievement": "New achievement",
     "noAchievements": "You haven't created anything to issue yet",
-    "noAchievementsHint": "Create an achievement first: the certificate or badge your recipients will receive, such as \"Workshop Completion Certificate\"."
+    "noAchievementsHint": "Create an achievement first: the certificate or badge your recipients will receive, such as \"Workshop Completion Certificate\".",
+    "editAchievement": "Edit"
   },
   "achievements": {
     "createTitle": "New achievement",
@@ -300,7 +301,13 @@
     "nameRequired": "Please enter a name.",
     "descriptionRequired": "Please enter a description.",
     "noProfile": "Your issuer profile has not loaded yet. Please reload the page and try again.",
-    "createFailed": "Failed to create the achievement."
+    "createFailed": "Failed to create the achievement.",
+    "editTitle": "Edit achievement",
+    "editSubtitle": "Credentials you issue from now on use these details. Credentials you have already issued keep their own name and design.",
+    "saveAction": "Save changes",
+    "saveFailed": "Failed to save the achievement.",
+    "notFound": "This achievement could not be found, or it was created by another account.",
+    "cancel": "Cancel"
   },
   "designTemplates": {
     "title": "Design Templates",

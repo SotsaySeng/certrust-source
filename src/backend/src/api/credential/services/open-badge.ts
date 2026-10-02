@@ -3,6 +3,7 @@
  */
 
 import { issuerDisplayName } from '../../../utils/issuer-display-name';
+import { attachEvidence } from '../../../utils/credential-evidence'
 import { hashedEmailIdentifier } from '../../../utils/public-credential';
 
 export default ({ strapi }) => ({
@@ -169,7 +170,6 @@ export default ({ strapi }) => ({
           'issuer.image',
           'issuer.organization',
           'recipient',
-          'evidence',
           'proof',
           'statusList'
         ],
@@ -178,6 +178,7 @@ export default ({ strapi }) => ({
       if (!credential) {
         throw new Error('Credential not found')
       }
+      await attachEvidence(strapi, [credential])
       if (!credential.achievement.creator) {
         throw new Error('Credential is missing an associated achievement creator')
       }

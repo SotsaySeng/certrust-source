@@ -8,6 +8,8 @@
  * instance under that same profile.
  */
 
+import { attachEvidence } from '../../../utils/credential-evidence'
+
 interface ExportBundle {
   profile: Record<string, any>;
   achievementsCreated: Record<string, any>[];
@@ -35,15 +37,16 @@ export default ({ strapi }: { strapi: any }) => ({
       strapi.entityService.findMany('api::credential.credential', {
         filters: { issuer: profile.id },
         status: 'published',
-        populate: ['achievement', 'recipient', 'proof', 'evidence'],
+        populate: ['achievement', 'recipient', 'proof'],
       }),
       strapi.entityService.findMany('api::credential.credential', {
         filters: { recipient: profile.id },
         status: 'published',
-        populate: ['achievement', 'issuer', 'proof', 'evidence'],
+        populate: ['achievement', 'issuer', 'proof'],
       }),
     ]);
 
+    await attachEvidence(strapi, [...(credentialsIssued as any[]), ...(credentialsReceived as any[])]);
     const evidence = (credentialsIssued as any[]).flatMap((credential) => credential.evidence || []);
 
     return {

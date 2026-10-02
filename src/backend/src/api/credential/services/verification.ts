@@ -3,6 +3,7 @@
  */
 
 import { errors } from '@strapi/utils';
+import { attachEvidence } from '../../../utils/credential-evidence'
 import { credentialsVerifiedTotal } from '../../../monitoring/metrics';
 import { toPublicCredential, isCredentialPrivate, privateOpenBadgeStub } from '../../../utils/public-credential';
 const { ApplicationError } = errors;
@@ -54,7 +55,6 @@ export default {
           'issuer.organization',
           'issuer.publicKey',
           'recipient',
-          'evidence',
           'proof',
           'statusList'
         ],
@@ -64,6 +64,7 @@ export default {
         throw new ApplicationError('Credential not found');
       }
 
+      await attachEvidence(strapi, credentials as any[]);
       return await this.processCredentialResult(credentials[0] as CredentialWithRelations, { fullView });
     } catch (error) {
       console.error('Error verifying credential:', error);

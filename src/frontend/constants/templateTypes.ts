@@ -35,6 +35,17 @@ export const TEMPLATE_TYPE_CHIP_CLASSES: Record<TemplateType, string> = {
   letter: 'bg-rose-50 text-rose-700',
 }
 
+// English, independent of the UI language: stored as an achievement's Open
+// Badge achievementType, which recipients' wallets and LinkedIn read.
+export const ACHIEVEMENT_TYPE_NAMES: Record<TemplateType, string> = {
+  certificate: 'Certificate',
+  badge: 'Badge',
+  transcript: 'Transcript',
+  training_record: 'Training Record',
+  assessment: 'Assessment',
+  letter: 'Letter',
+}
+
 export function getTemplateTypeIcon(type: string): string {
   return TEMPLATE_TYPE_ICONS[type as TemplateType] || TEMPLATE_TYPE_ICONS.badge
 }

@@ -38,24 +38,6 @@
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user"
     },
-    "profiles": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::profile.profile",
-      "mappedBy": "organization"
-    },
-    "designTemplates": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::design-template.design-template",
-      "mappedBy": "organization"
-    },
-    "events": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::event.event",
-      "mappedBy": "organization"
-    },
     "type": {
       "type": "relation",
       "relation": "manyToOne",

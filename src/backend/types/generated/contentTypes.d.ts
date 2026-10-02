@@ -395,10 +395,6 @@ export interface ApiAchievementAchievement extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     creator: Schema.Attribute.Relation<'manyToOne', 'api::profile.profile'>;
-    credentials: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::credential.credential'
-    >;
     criteria: Schema.Attribute.Component<'badge.criteria', false>;
     description: Schema.Attribute.Text & Schema.Attribute.Required;
     image: Schema.Attribute.Media<'images'>;
@@ -586,7 +582,6 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
     customFields: Schema.Attribute.JSON;
     description: Schema.Attribute.Text;
     designTemplateId: Schema.Attribute.String;
-    evidence: Schema.Attribute.Relation<'oneToMany', 'api::evidence.evidence'>;
     expirationDate: Schema.Attribute.DateTime;
     image: Schema.Attribute.Media<'images'>;
     issuanceDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
@@ -1143,11 +1138,6 @@ export interface ApiOrganizationOrganization
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     currentPeriodEnd: Schema.Attribute.DateTime;
-    designTemplates: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::design-template.design-template'
-    >;
-    events: Schema.Attribute.Relation<'oneToMany', 'api::event.event'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1160,7 +1150,6 @@ export interface ApiOrganizationOrganization
     >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     pastDueSince: Schema.Attribute.DateTime;
-    profiles: Schema.Attribute.Relation<'oneToMany', 'api::profile.profile'>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'name'>;
     stripeCustomerId: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1249,10 +1238,6 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    createdAchievements: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::achievement.achievement'
-    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1260,10 +1245,6 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
     did: Schema.Attribute.String;
     email: Schema.Attribute.Email;
     image: Schema.Attribute.Media<'images'>;
-    issuedCredentials: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::credential.credential'
-    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1283,14 +1264,6 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'Both'>;
     publicKey: Schema.Attribute.Component<'badge.public-key', true>;
     publishedAt: Schema.Attribute.DateTime;
-    receivedCredentials: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::credential.credential'
-    >;
-    revocationLists: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::revocation-list.revocation-list'
-    >;
     telephone: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

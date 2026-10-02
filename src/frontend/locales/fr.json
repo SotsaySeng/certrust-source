@@ -281,7 +281,8 @@
     },
     "newAchievement": "Nouvelle réalisation",
     "noAchievements": "Vous n'avez encore rien créé à délivrer",
-    "noAchievementsHint": "Créez d'abord une réalisation : le certificat ou le badge que recevront vos destinataires, par exemple « Certificat de participation à l'atelier »."
+    "noAchievementsHint": "Créez d'abord une réalisation : le certificat ou le badge que recevront vos destinataires, par exemple « Certificat de participation à l'atelier ».",
+    "editAchievement": "Modifier"
   },
   "achievements": {
     "createTitle": "Nouvelle réalisation",
@@ -300,7 +301,13 @@
     "nameRequired": "Veuillez saisir un nom.",
     "descriptionRequired": "Veuillez saisir une description.",
     "noProfile": "Votre profil d'émetteur n'est pas encore chargé. Rechargez la page et réessayez.",
-    "createFailed": "Impossible de créer la réalisation."
+    "createFailed": "Impossible de créer la réalisation.",
+    "editTitle": "Modifier la réalisation",
+    "editSubtitle": "Les titres que vous émettez désormais utilisent ces informations. Les titres déjà émis conservent leur nom et leur design.",
+    "saveAction": "Enregistrer les modifications",
+    "saveFailed": "Impossible d'enregistrer la réalisation.",
+    "notFound": "Cette réalisation est introuvable ou a été créée par un autre compte.",
+    "cancel": "Annuler"
   },
   "designTemplates": {
     "title": "Modèles de Design",

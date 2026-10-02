@@ -281,7 +281,8 @@
     },
     "newAchievement": "Nova conquista",
     "noAchievements": "Ainda não criou nada para emitir",
-    "noAchievementsHint": "Crie primeiro uma conquista: o certificado ou o selo que os destinatários vão receber, por exemplo «Certificado de conclusão do workshop»."
+    "noAchievementsHint": "Crie primeiro uma conquista: o certificado ou o selo que os destinatários vão receber, por exemplo «Certificado de conclusão do workshop».",
+    "editAchievement": "Editar"
   },
   "achievements": {
     "createTitle": "Nova conquista",
@@ -300,7 +301,13 @@
     "nameRequired": "Introduza um nome.",
     "descriptionRequired": "Introduza uma descrição.",
     "noProfile": "O seu perfil de emissor ainda não carregou. Recarregue a página e tente novamente.",
-    "createFailed": "Não foi possível criar a conquista."
+    "createFailed": "Não foi possível criar a conquista.",
+    "editTitle": "Editar conquista",
+    "editSubtitle": "As credenciais que emitir a partir de agora usam estes dados. As credenciais já emitidas mantêm o seu nome e design.",
+    "saveAction": "Guardar alterações",
+    "saveFailed": "Não foi possível guardar a conquista.",
+    "notFound": "Esta conquista não foi encontrada ou foi criada por outra conta.",
+    "cancel": "Cancelar"
   },
   "designTemplates": {
     "title": "Modelos de Design",

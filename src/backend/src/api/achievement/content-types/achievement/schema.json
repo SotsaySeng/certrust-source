@@ -65,19 +65,12 @@
     "creator": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::profile.profile",
-      "inversedBy": "createdAchievements"
+      "target": "api::profile.profile"
     },
     "skills": {
       "type": "component",
       "repeatable": true,
       "component": "badge.skill"
-    },
-    "credentials": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::credential.credential",
-      "mappedBy": "achievement"
     },
     "certificateDesignId": {
       "type": "string",

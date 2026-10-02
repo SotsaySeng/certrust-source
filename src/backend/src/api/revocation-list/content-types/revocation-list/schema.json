@@ -36,8 +36,7 @@
     "issuer": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::profile.profile",
-      "inversedBy": "revocationLists"
+      "target": "api::profile.profile"
     }
   }
 } 

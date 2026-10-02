@@ -38,8 +38,7 @@
     "credential": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::credential.credential",
-      "inversedBy": "evidence"
+      "target": "api::credential.credential"
     },
     "image": {
       "type": "media",

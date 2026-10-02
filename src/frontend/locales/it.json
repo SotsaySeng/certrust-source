@@ -281,7 +281,8 @@
     },
     "newAchievement": "Nuovo traguardo",
     "noAchievements": "Non hai ancora creato nulla da rilasciare",
-    "noAchievementsHint": "Crea prima un traguardo: il certificato o il badge che riceveranno i destinatari, ad esempio «Certificato di completamento del workshop»."
+    "noAchievementsHint": "Crea prima un traguardo: il certificato o il badge che riceveranno i destinatari, ad esempio «Certificato di completamento del workshop».",
+    "editAchievement": "Modifica"
   },
   "achievements": {
     "createTitle": "Nuovo traguardo",
@@ -300,7 +301,13 @@
     "nameRequired": "Inserisci un nome.",
     "descriptionRequired": "Inserisci una descrizione.",
     "noProfile": "Il tuo profilo di emittente non è ancora stato caricato. Ricarica la pagina e riprova.",
-    "createFailed": "Impossibile creare il traguardo."
+    "createFailed": "Impossibile creare il traguardo.",
+    "editTitle": "Modifica traguardo",
+    "editSubtitle": "Le credenziali che emetti da ora in poi useranno questi dati. Quelle già emesse mantengono il loro nome e il loro design.",
+    "saveAction": "Salva modifiche",
+    "saveFailed": "Impossibile salvare il traguardo.",
+    "notFound": "Questo traguardo non è stato trovato oppure è stato creato da un altro account.",
+    "cancel": "Annulla"
   },
   "designTemplates": {
     "title": "Modelli di Design",

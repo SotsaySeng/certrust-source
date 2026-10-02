@@ -47,8 +47,7 @@
     "organization": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::organization.organization",
-      "inversedBy": "events"
+      "target": "api::organization.organization"
     }
   }
 }

@@ -41,6 +41,11 @@ function createFakeStrapi() {
           }
           throw new Error(`Unexpected query content type: ${contentType}`)
         },
+        findMany: async ({ where }: any) => {
+          if (contentType !== 'api::evidence.evidence') throw new Error(`Unexpected findMany: ${contentType}`)
+          const ids = where.credential.id.$in
+          return evidence.filter((e) => ids.includes(e.credentialId)).map(({ credentialId, ...e }) => ({ ...e, credential: { id: credentialId } }))
+        },
       }),
     },
     service: (uid: string) => {
@@ -59,9 +64,10 @@ function createFakeStrapi() {
 
 describe('data-portability', () => {
   it('exportProfileData gathers achievements created, credentials issued/received, and evidence from issued credentials', async () => {
-    const { strapi, achievements, credentials } = createFakeStrapi()
+    const { strapi, achievements, credentials, evidence } = createFakeStrapi()
     achievements.push({ id: 1, creator: 5, achievementId: 'my-badge' })
-    credentials.push({ id: 10, issuer: 5, credentialId: 'urn:uuid:issued', evidence: [{ evidenceId: 'ev-1' }] })
+    credentials.push({ id: 10, issuer: 5, credentialId: 'urn:uuid:issued' })
+    evidence.push({ credentialId: 10, evidenceId: 'ev-1' })
     credentials.push({ id: 11, recipientId: 5, credentialId: 'urn:uuid:received' })
 
     const service = dataPortabilityFactory({ strapi })

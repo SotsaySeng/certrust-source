@@ -3,6 +3,7 @@
  */
 
 import { cleanCustomFields, orgCustomAttributes, overridesFromBody, resolveIssueDesigns } from '../../../utils/issue-design'
+import { attachEvidence } from '../../../utils/credential-evidence'
 import { factories } from '@strapi/strapi'
 import crypto from 'crypto'
 import { credentialsRevokedTotal } from '../../../monitoring/metrics'
@@ -47,7 +48,7 @@ async function findPublicCredential(strapi: any, id: string) {
   if (!id) return null
   const populate = [
     'achievement', 'achievement.image', 'achievement.criteria',
-    'issuer', 'issuer.image', 'issuer.organization', 'recipient', 'evidence',
+    'issuer', 'issuer.image', 'issuer.organization', 'recipient',
   ]
   const [byCredentialId] = await strapi.entityService.findMany('api::credential.credential', {
     filters: { credentialId: id },
@@ -55,14 +56,14 @@ async function findPublicCredential(strapi: any, id: string) {
     populate,
     limit: 1,
   }) as any[]
-  if (byCredentialId) return byCredentialId
+  if (byCredentialId) return (await attachEvidence(strapi, [byCredentialId]))[0]
   const [byDocumentId] = await strapi.entityService.findMany('api::credential.credential', {
     filters: { documentId: id },
     status: 'published',
     populate,
     limit: 1,
   }) as any[]
-  return byDocumentId ?? null
+  return byDocumentId ? (await attachEvidence(strapi, [byDocumentId]))[0] : null
 }
 
 /**
@@ -447,7 +448,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
 
       const credential: any = await strapi.entityService.findOne('api::credential.credential', id, {
         status: 'published',
-        populate: ['achievement', 'issuer', 'recipient', 'evidence'],
+        populate: ['achievement', 'issuer', 'recipient'],
       })
 
       if (!credential) {

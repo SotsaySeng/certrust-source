@@ -528,7 +528,7 @@ function formatDate(date: string) {
                   <div
                     v-for="template in templates"
                     :key="template.id"
-                    class="relative border rounded-lg p-4 cursor-pointer transition-all"
+                    class="relative border rounded-lg p-4 pb-9 cursor-pointer transition-all"
                     :class="[
                       selectedTemplate?.id === template.id
                         ? 'border-[#28A745] bg-[#28A745]/5'
@@ -573,6 +573,16 @@ function formatDate(date: string) {
                     >
                       <div class="w-3 h-3 i-heroicons-check text-white" />
                     </div>
+                    <NuxtLink
+                      v-if="template.documentId"
+                      :to="`/achievements/${encodeURIComponent(template.documentId)}/edit`"
+                      class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-secondary hover:bg-white hover:text-[#28A745]"
+                      data-testid="edit-achievement"
+                      @click.stop
+                    >
+                      <div class="w-3.5 h-3.5 i-heroicons-pencil-square" />
+                      {{ t('issue.editAchievement') }}
+                    </NuxtLink>
                   </div>
                 </div>
 

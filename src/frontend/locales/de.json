@@ -281,7 +281,8 @@
     },
     "newAchievement": "Neue Auszeichnung",
     "noAchievements": "Sie haben noch nichts zum Ausstellen angelegt",
-    "noAchievementsHint": "Legen Sie zuerst eine Auszeichnung an: das Zertifikat oder Abzeichen, das Ihre Empfänger erhalten, z. B. „Teilnahmezertifikat Workshop“."
+    "noAchievementsHint": "Legen Sie zuerst eine Auszeichnung an: das Zertifikat oder Abzeichen, das Ihre Empfänger erhalten, z. B. „Teilnahmezertifikat Workshop“.",
+    "editAchievement": "Bearbeiten"
   },
   "achievements": {
     "createTitle": "Neue Auszeichnung",
@@ -300,7 +301,13 @@
     "nameRequired": "Bitte geben Sie einen Namen ein.",
     "descriptionRequired": "Bitte geben Sie eine Beschreibung ein.",
     "noProfile": "Ihr Aussteller-Profil ist noch nicht geladen. Bitte laden Sie die Seite neu und versuchen Sie es erneut.",
-    "createFailed": "Die Auszeichnung konnte nicht angelegt werden."
+    "createFailed": "Die Auszeichnung konnte nicht angelegt werden.",
+    "editTitle": "Auszeichnung bearbeiten",
+    "editSubtitle": "Ab jetzt ausgestellte Nachweise verwenden diese Angaben. Bereits ausgestellte Nachweise behalten ihren Namen und ihr Design.",
+    "saveAction": "Änderungen speichern",
+    "saveFailed": "Die Auszeichnung konnte nicht gespeichert werden.",
+    "notFound": "Diese Auszeichnung wurde nicht gefunden oder von einem anderen Konto erstellt.",
+    "cancel": "Abbrechen"
   },
   "designTemplates": {
     "title": "Design-Vorlagen",
