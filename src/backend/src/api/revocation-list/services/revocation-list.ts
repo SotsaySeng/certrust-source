@@ -16,6 +16,37 @@ interface RevocationList {
   lastUpdated: Date
 }
 
+// Concurrent first-time lookups per issuer share one find-or-create
+// (single backend instance, so in-process is enough - same approach as
+// profile/services/issuer-keys.ts).
+const listsInFlight = new Map<string, Promise<any>>()
+
+/**
+ * Run `fn` in a transaction holding a lock on every row (draft and
+ * published) of the status list document that row `id` belongs to.
+ * SQLite needs no row lock: it allows one writer at a time.
+ */
+async function withListRowsLocked<T>(
+  strapi: any,
+  id: number | string,
+  fn: (rows: any[], updateAll: (data: Record<string, unknown>) => Promise<unknown>) => Promise<T>,
+): Promise<T> {
+  const table = strapi.db.metadata.get('api::revocation-list.revocation-list').tableName
+  const schema = strapi.db.getSchemaName?.()
+  const isPostgres = strapi.db.config?.connection?.client === 'postgres'
+  return strapi.db.connection.transaction(async (trx: any) => {
+    const from = () => (schema ? trx(table).withSchema(schema) : trx(table))
+    const row = await from().select('document_id').where({ id }).first()
+    if (!row) {
+      throw new ApplicationError('Status list not found')
+    }
+    let query = from().select('id', 'next_index', 'encoded_list').where({ document_id: row.document_id }).orderBy('id')
+    if (isPostgres) query = query.forUpdate()
+    const rows = await query
+    return fn(rows, data => from().where({ document_id: row.document_id }).update(data))
+  })
+}
+
 // Exported separately (not just inline in createCoreService below) so unit
 // tests can call it directly against a lightweight fake `strapi` without
 // going through Strapi's core service factory, which needs a real app
@@ -118,65 +149,83 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
   /**
    * Find the issuer's active revocation list, creating one if this is
    * their first credential.
+   *
+   * Batch issuance calls this once per recipient, concurrently. A plain
+   * find-or-create there gave every recipient of an issuer's first batch
+   * a list of its own (40 lists for 40 recipients, each handing out
+   * index 0). Concurrent first calls now share one creation, and the
+   * oldest list always wins so issuers already holding duplicates keep
+   * using the same one.
    */
   async getOrCreateActiveListForIssuer(issuerId: number | string) {
-    const existing = await strapi.entityService.findMany('api::revocation-list.revocation-list', {
-      filters: { issuer: { id: issuerId }, statusPurpose: 'revocation' },
-      status: 'published',
-    })
-    if (existing && existing.length > 0) return existing[0]
-    return this.createStatusListCredential(issuerId)
+    const key = String(issuerId)
+    const pending = listsInFlight.get(key)
+    if (pending) return pending
+    const work = (async () => {
+      const existing = await strapi.entityService.findMany('api::revocation-list.revocation-list', {
+        filters: { issuer: { id: issuerId }, statusPurpose: 'revocation' },
+        status: 'published',
+        sort: { id: 'asc' },
+      })
+      if (existing && existing.length > 0) return existing[0]
+      return this.createStatusListCredential(issuerId)
+    })()
+    listsInFlight.set(key, work)
+    try {
+      return await work
+    }
+    finally {
+      listsInFlight.delete(key)
+    }
   },
 
   /**
    * Reserve the next available index in a status list for a new credential.
+   *
+   * An atomic in-place increment. This used entityService.update, which on
+   * a draftAndPublish type republishes: the published row is deleted and
+   * re-created under a new id. During a batch every other recipient was
+   * still holding the old row, so their credentials failed to link to it
+   * ("relation(s) ... do not exist", then "current transaction is
+   * aborted"), and the read-then-write let the ones that did succeed share
+   * the same index - revoking one would have revoked the others.
+   *
+   * @param statusList the list (or its numeric id) from
+   *   getOrCreateActiveListForIssuer
    */
-  async assignNextIndex(statusListId: number | string) {
-    const statusList = await strapi.entityService.findOne('api::revocation-list.revocation-list', statusListId, {
-      status: 'published'
+  async assignNextIndex(statusList: number | string | { id: number | string, documentId?: string }) {
+    const id = typeof statusList === 'object' ? statusList.id : statusList
+    return withListRowsLocked(strapi, id, async (rows, updateAll) => {
+      // Draft and published rows are kept in step, so an admin "Publish"
+      // copying the draft over can't rewind the counter. Taking the highest
+      // also repairs rows that drifted apart before this fix.
+      const index = Math.max(0, ...rows.map(r => Number(r.next_index) || 0))
+      await updateAll({ next_index: index + 1 })
+      return index
     })
-    if (!statusList) {
-      throw new ApplicationError('Status list not found')
-    }
-
-    const index = statusList.nextIndex ?? 0
-    await strapi.entityService.update('api::revocation-list.revocation-list', statusListId, {
-      data: { nextIndex: index + 1 },
-    })
-
-    return index
   },
-  
+
   /**
-   * Update a status list to revoke a credential
+   * Update a status list to revoke a credential. In place and under a row
+   * lock, for the same reasons as assignNextIndex (two revocations at once
+   * used to keep only one of the two indices).
    */
   async revokeCredentialInStatusList(statusListId: number | string, statusListIndex: number) {
     try {
-      // Find the status list
-      const statusList = await strapi.entityService.findOne('api::revocation-list.revocation-list', statusListId, {
-        status: 'published'
-      })
-
-      if (!statusList) {
-        throw new ApplicationError('Status list not found')
-      }
-      
-      // Update the encoded list to include the new index
-      const encodedList = statusList.encodedList || ''
-      const indices = encodedList ? encodedList.split(',').map(i => parseInt(i.trim())) : []
-      
-      if (!indices.includes(statusListIndex)) {
-        indices.push(statusListIndex)
-      }
-      
-      // Update the status list
-      await strapi.entityService.update('api::revocation-list.revocation-list', statusListId, {
-        data: {
-          encodedList: indices.join(','),
-          lastUpdated: new Date()
+      await withListRowsLocked(strapi, statusListId, async (rows, updateAll) => {
+        const indices = new Set<number>()
+        for (const row of rows) {
+          for (const part of String(row.encoded_list || '').split(',')) {
+            const n = parseInt(part.trim(), 10)
+            if (!Number.isNaN(n)) indices.add(n)
+          }
         }
+        indices.add(statusListIndex)
+        await updateAll({
+          encoded_list: [...indices].sort((a, b) => a - b).join(','),
+          last_updated: new Date(),
+        })
       })
-      
       return true
     } catch (error) {
       console.error('Error revoking credential in status list:', error)

@@ -6,6 +6,7 @@
 import type { BrandKit, Design, PlaceholderData, RenderResult, TextEngine } from '~/lib/design-core'
 import QRCode from 'qrcode'
 import { createTextEngine, renderSvg, resolveFont } from '~/lib/design-core'
+import { designAssetUrl } from './designAssetUrl'
 
 let enginePromise: Promise<TextEngine> | null = null
 
@@ -38,18 +39,6 @@ export function designQrMatrix(text: string) {
     qrCache.set(text, m)
   }
   return m
-}
-
-/** Absolute URL for an image src stored in a design (/uploads/... is on the API origin). */
-export function designAssetUrl(src: string | null | undefined): string {
-  if (!src) {
-    return ''
-  }
-  if (src.startsWith('/uploads/')) {
-    const base = String(useRuntimeConfig().public.apiUrl || '').replace(/\/$/, '')
-    return `${base}${src}`
-  }
-  return src
 }
 
 /**

@@ -94,6 +94,15 @@ const submissionError = ref<string | null>(null)
 const isLoadingTemplates = ref(false)
 const csvUploaded = ref(false)
 const batchResults = ref<any[]>([])
+// Sent in chunks so a long CSV is many short requests, not one that the
+// connection can drop part-way ("Load failed"); progress shows per chunk.
+const ISSUE_CHUNK_SIZE = 10
+const issueProgress = ref<{ done: number, total: number } | null>(null)
+// On by default: re-uploading the same CSV after an interruption then
+// only issues to the people who were missed.
+const skipExisting = ref(true)
+const skippedCount = computed(() => batchResults.value.filter(r => r.skipped).length)
+const issuedCount = computed(() => batchResults.value.filter(r => r.success && !r.skipped).length)
 // A credential can be issued fine while its notification email fails (the
 // backend catches send errors and reports them per recipient), so "issued"
 // and "emailed" are shown separately.
@@ -406,18 +415,35 @@ async function handleIssue() {
       selectedTemplate.value.certificateDesignId = certificateDesignId.value
       selectedTemplate.value.badgeDesignId = badgeDesignId.value
     }
-    const response = await apiClient.batchIssueBadges(
-      selectedTemplate.value.id,
-      recipients.value,
-      { certificateDesignId: certificateDesignId.value, badgeDesignId: badgeDesignId.value }
-    )
-    if (response && Array.isArray(response.results)) {
-      batchResults.value = response.results
-      isSuccess.value = response.results.every((r: { success: boolean }) => r.success)
+    const designs = { certificateDesignId: certificateDesignId.value, badgeDesignId: badgeDesignId.value }
+    const all = recipients.value.slice()
+    issueProgress.value = { done: 0, total: all.length }
+    for (let start = 0; start < all.length; start += ISSUE_CHUNK_SIZE) {
+      const chunk = all.slice(start, start + ISSUE_CHUNK_SIZE)
+      let response
+      try {
+        response = await apiClient.batchIssueBadges(selectedTemplate.value.id, chunk, designs, { skipExisting: skipExisting.value })
+      }
+      catch (err) {
+        // This chunk's outcome is unknown (the server may have issued some
+        // of it before the connection dropped); later ones were never sent.
+        const reason = err instanceof Error ? err.message : String(err)
+        batchResults.value.push(
+          ...chunk.map(r => ({ success: false, recipient: r.email, error: `Not confirmed: ${reason}` })),
+          ...all.slice(start + ISSUE_CHUNK_SIZE).map(r => ({ success: false, recipient: r.email, error: 'Not sent (stopped after an error)' })),
+        )
+        // The form keeps its recipients, so trying again is one click.
+        submissionError.value = `Issuing stopped after ${start} of ${all.length} recipients: ${reason}. `
+          + 'Click Issue Certificates again with "Skip people who already have this credential" ticked to finish without sending anyone a duplicate.'
+        isSuccess.value = false
+        return
+      }
+      if (response && Array.isArray(response.results)) {
+        batchResults.value.push(...response.results)
+      }
+      issueProgress.value = { done: Math.min(start + chunk.length, all.length), total: all.length }
     }
-    else {
-      isSuccess.value = true
-    }
+    isSuccess.value = batchResults.value.every((r: { success: boolean }) => r.success)
     clearForm()
   }
   catch (err) {
@@ -432,6 +458,7 @@ async function handleIssue() {
   }
   finally {
     isLoading.value = false
+    issueProgress.value = null
   }
 }
 
@@ -754,6 +781,11 @@ function formatDate(date: string) {
                 Recipients under 16: add a <code>minor</code> column with <code>yes</code> to your CSV. Their credentials will be private, and you confirm you have parental or guardian consent where the law requires it.
               </p>
 
+              <label class="flex items-start gap-2 text-sm text-text-secondary">
+                <input v-model="skipExisting" type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300 text-[#28A745] focus:ring-[#28A745]">
+                <span>Skip people who already have this credential (and anyone listed twice). Keep this on when re-uploading a CSV that was partly issued.</span>
+              </label>
+
               <!-- Issue Date -->
               <p class="text-sm text-text-secondary">
                 Credentials are dated when you issue them ({{ formatDate(issueDate) }}). Leave "Expires on" empty unless the credential should stop being valid on a set date.
@@ -770,6 +802,9 @@ function formatDate(date: string) {
                     <div class="ml-3">
                       <p class="text-sm font-medium text-green-800">
                         Certificates issued successfully!
+                      </p>
+                      <p v-if="skippedCount" class="mt-1 text-sm text-green-800">
+                        {{ issuedCount }} issued, {{ skippedCount }} skipped (already had it or listed twice).
                       </p>
                       <p v-if="emailFailures.length" class="mt-1 text-sm text-amber-700">
                         {{ emailFailures.length }} of {{ batchResults.length }} notification email(s) could not be sent - see the Notification email column below.
@@ -815,16 +850,17 @@ function formatDate(date: string) {
                             {{ row.recipient }}
                           </td>
                           <td class="px-4 py-2">
-                            <span v-if="row.success" class="text-green-600">Success</span>
+                            <span v-if="row.skipped" class="text-gray-500">Skipped</span>
+                            <span v-else-if="row.success" class="text-green-600">Success</span>
                             <span v-else class="text-red-600">Failed</span>
                           </td>
                           <td class="px-4 py-2">
-                            <span v-if="!row.success" class="text-gray-400">-</span>
+                            <span v-if="!row.success || row.skipped" class="text-gray-400">-</span>
                             <span v-else-if="row.data?.notification?.sent" class="text-green-600">Emailed</span>
                             <span v-else class="text-amber-700">Not emailed</span>
                           </td>
-                          <td class="px-4 py-2 text-xs text-red-500">
-                            {{ row.error || row.data?.notification?.error || '' }}
+                          <td class="px-4 py-2 text-xs" :class="row.skipped ? 'text-gray-500' : 'text-red-500'">
+                            {{ row.error || row.note || row.data?.notification?.error || '' }}
                           </td>
                         </tr>
                       </tbody>
@@ -863,7 +899,10 @@ function formatDate(date: string) {
                   class="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-white bg-[#28A745] hover:bg-[#28A745]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#28A745] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span v-if="!isLoading">Issue Certificates</span>
-                  <div v-else class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span v-else class="flex items-center gap-2">
+                    <span class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span v-if="issueProgress && issueProgress.total > 1">Issuing {{ issueProgress.done }} of {{ issueProgress.total }}… keep this page open</span>
+                  </span>
                 </button>
               </div>
             </form>

@@ -11,6 +11,23 @@ import { channelAlerts } from '../services/channel-alerts/index'
 import { toPublicCredential, isCredentialPrivate } from '../../../utils/public-credential'
 import { optionalUser } from '../../../utils/optional-user'
 
+// Recipients issued at once by batchIssue.
+const BATCH_ISSUE_CONCURRENCY = 4
+
+/** Like Promise.all(items.map(fn)), with at most `limit` running at once. Keeps order. */
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      results[i] = await fn(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
+
 // Define types to help with type assertions
 interface Achievement {
   id: any
@@ -767,8 +784,33 @@ export default factories.createCoreController('api::credential.credential', ({ s
       const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
       const attributeDefs = await orgCustomAttributes(organization?.id ?? null)
 
-      const issuePromises = recipients.map(async (recipientData) => {
+      // Re-uploading a CSV after an interrupted batch must not issue twice:
+      // with skipExisting, anyone already holding an unrevoked credential
+      // for this achievement (or listed twice in this upload) is skipped.
+      const skipExisting = data.skipExisting === true
+      const seen = new Set<string>()
+
+      const issueOne = async (recipientData) => {
         try {
+          const emailKey = String(recipientData.email ?? '').trim().toLowerCase()
+          if (skipExisting && emailKey) {
+            if (seen.has(emailKey)) {
+              return { success: true, skipped: true, recipient: recipientData.email, note: 'Listed more than once in this upload' }
+            }
+            seen.add(emailKey)
+            const existing = await strapi.db.query('api::credential.credential').findOne({
+              select: ['id'],
+              where: {
+                achievement: { documentId: (achievement as any).documentId },
+                recipient: { email: { $eqi: emailKey } },
+                revoked: false,
+                publishedAt: { $notNull: true },
+              },
+            })
+            if (existing) {
+              return { success: true, skipped: true, recipient: recipientData.email, note: 'Already has this credential' }
+            }
+          }
           const customFields = cleanCustomFields(recipientData.customFields, attributeDefs)
           const recipient = { ...recipientData }
           const expirationDate = recipientData.expirationDate || undefined
@@ -796,9 +838,12 @@ export default factories.createCoreController('api::credential.credential', ({ s
           strapi.log.error(`[credential.batchIssue] Error issuing to ${recipientData.email}: ${error.message}`)
           return { success: false, recipient: recipientData.email, error: error.message }
         }
-      })
+      }
 
-      const results = await Promise.all(issuePromises)
+      // A few at a time, not all at once: Promise.all over a whole CSV
+      // queued every recipient on the database pool and the mail pool at
+      // once (and the SMTP rate limit sets the pace anyway).
+      const results = await mapWithConcurrency(recipients, BATCH_ISSUE_CONCURRENCY, issueOne)
 
       return { results }
     } catch (error) {

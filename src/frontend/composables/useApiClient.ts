@@ -154,8 +154,10 @@ export default () => {
    * @param recipients the people to issue to
    * @param designs per-kind design overrides for this issuance: omitted =
    *   the achievement's default, null = none, documentId = that design.
+   * @param options.skipExisting skip recipients who already hold an
+   *   unrevoked credential for this achievement (safe re-upload).
    */
-  async function batchIssueBadges(badgeId: string, recipients: Recipient[], designs: { certificateDesignId?: string | null, badgeDesignId?: string | null } = {}): Promise<any> {
+  async function batchIssueBadges(badgeId: string, recipients: Recipient[], designs: { certificateDesignId?: string | null, badgeDesignId?: string | null } = {}, options: { skipExisting?: boolean } = {}): Promise<any> {
     try {
       const headers = await getHeaders()
 
@@ -168,6 +170,7 @@ export default () => {
             achievementId: badgeId,
             recipients,
             ...designs,
+            skipExisting: options.skipExisting === true,
           }
         }),
       })

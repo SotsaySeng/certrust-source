@@ -104,7 +104,7 @@ export default factories.createCoreService('api::credential.credential', ({ stra
       // status list (StatusList2021), creating the list on first use.
       const revocationListService = strapi.service('api::revocation-list.revocation-list')
       const statusList = await revocationListService.getOrCreateActiveListForIssuer(credentialPayload.issuer)
-      const statusListIndex = await revocationListService.assignNextIndex(statusList.id)
+      const statusListIndex = await revocationListService.assignNextIndex(statusList)
 
       // Create the credential. Uses the Document Service (not
       // entityService.create with a manual publishedAt) so this ends up as
