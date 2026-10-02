@@ -7,7 +7,7 @@ import type {
 import QRCode from 'qrcode'
 import { apiClient } from '~/api/api-client'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const config = useRuntimeConfig()
 
@@ -341,6 +341,12 @@ const designs = computed(() => verificationData.value?.rawCredential?.designs)
 const showBadge = computed(() => designs.value?.badge === true)
 const showCertificate = computed(() => !(designs.value?.badge && !designs.value?.certificate))
 const badgeAvailable = ref(true)
+
+// The event it was issued for, as it was at issuance.
+const issuedForEvent = computed(() => verificationData.value?.rawCredential?.event ?? null)
+const issuedForEventDates = computed(() => issuedForEvent.value
+  ? formatEventDates(issuedForEvent.value.startDate, issuedForEvent.value.endDate, locale.value)
+  : '')
 const badgeUrl = computed(() => (credential.value?.id ? apiClient.getBadgePngUrl(credential.value.id, 480) : null))
 async function downloadBadge() {
   if (!credential.value) {
@@ -960,6 +966,24 @@ async function submitRenewal() {
                     Visit Website
                   </a>
                 </div>
+              </div>
+            </div>
+
+            <!-- Event -->
+            <div v-if="issuedForEvent" class="space-y-2" data-testid="credential-event">
+              <div class="text-sm font-medium text-gray-500">
+                {{ t('issue.event.credentialTitle') }}
+              </div>
+              <div class="font-medium">
+                {{ issuedForEvent.name }}
+              </div>
+              <div v-if="issuedForEventDates" class="flex items-center gap-1.5 text-sm text-gray-600">
+                <div class="i-heroicons-calendar h-4 w-4 shrink-0" />
+                {{ issuedForEventDates }}
+              </div>
+              <div v-if="issuedForEvent.location" class="flex items-center gap-1.5 text-sm text-gray-600">
+                <div class="i-heroicons-map-pin h-4 w-4 shrink-0" />
+                {{ issuedForEvent.location }}
               </div>
             </div>
 

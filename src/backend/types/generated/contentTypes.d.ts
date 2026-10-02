@@ -582,6 +582,8 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
     customFields: Schema.Attribute.JSON;
     description: Schema.Attribute.Text;
     designTemplateId: Schema.Attribute.String;
+    event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
+    eventSnapshot: Schema.Attribute.JSON;
     expirationDate: Schema.Attribute.DateTime;
     image: Schema.Attribute.Media<'images'>;
     issuanceDate: Schema.Attribute.DateTime & Schema.Attribute.Required;

@@ -220,6 +220,35 @@ function selectTemplate(template: Template) {
   certificateDesignId.value = template.certificateDesignId ?? null
   badgeDesignId.value = template.badgeDesignId ?? null
   saveDesignsAsDefault.value = false
+  loadEvents(template)
+}
+
+// The event this batch is for (optional): the achievement's events and the
+// organization's events that aren't tied to an achievement. Each credential
+// keeps a copy of the chosen event's details.
+const events = ref<any[]>([])
+const eventId = ref<string | null>(null)
+async function loadEvents(template: Template) {
+  events.value = []
+  eventId.value = null
+  if (!template.documentId) {
+    return
+  }
+  try {
+    const res = await api.get<{ data: any[] }>('/api/events', {
+      'filters[$or][0][achievement][documentId][$eq]': template.documentId,
+      'filters[$or][1][achievement][id][$null]': 'true',
+      'filters[status][$ne]': 'cancelled',
+      'sort[0]': 'startDate:desc',
+      'pagination[pageSize]': '100',
+    })
+    if (selectedTemplate.value === template) {
+      events.value = res.data ?? []
+    }
+  }
+  catch (err) {
+    console.error('Error loading events:', err)
+  }
 }
 
 /** Header normalisation for CSV column matching: "Training Date" == "training_date". */
@@ -422,7 +451,7 @@ async function handleIssue() {
       const chunk = all.slice(start, start + ISSUE_CHUNK_SIZE)
       let response
       try {
-        response = await apiClient.batchIssueBadges(selectedTemplate.value.id, chunk, designs, { skipExisting: skipExisting.value })
+        response = await apiClient.batchIssueBadges(selectedTemplate.value.id, chunk, designs, { skipExisting: skipExisting.value, eventId: eventId.value })
       }
       catch (err) {
         // This chunk's outcome is unknown (the server may have issued some
@@ -660,6 +689,33 @@ function formatDate(date: string) {
                   <input v-model="saveDesignsAsDefault" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#28A745] focus:ring-[#28A745]">
                   {{ t('designStudio.issue.saveDefault', { name: selectedTemplate.title }) }}
                 </label>
+              </div>
+
+              <!-- Event (optional) -->
+              <div v-if="selectedTemplate" class="rounded-xl border border-gray-200 bg-gray-50/60 p-4" data-testid="issue-event-section">
+                <div class="mb-1 flex items-center justify-between">
+                  <label for="issueEvent" class="block text-sm font-medium text-text-primary">{{ t('issue.event.label') }}</label>
+                  <NuxtLink to="/events/create" class="text-xs text-[#1B7A34] hover:underline">
+                    {{ t('issue.event.create') }}
+                  </NuxtLink>
+                </div>
+                <p class="mb-2 text-xs text-text-secondary">
+                  {{ events.length ? t('issue.event.hint') : t('issue.event.empty') }}
+                </p>
+                <select
+                  v-if="events.length"
+                  id="issueEvent"
+                  v-model="eventId"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#28A745]"
+                  data-testid="issue-event-select"
+                >
+                  <option :value="null">
+                    {{ t('issue.event.none') }}
+                  </option>
+                  <option v-for="ev in events" :key="ev.documentId" :value="ev.documentId">
+                    {{ [ev.name, formatEventDates(ev.startDate, ev.endDate), ev.location].filter(Boolean).join(' · ') }}
+                  </option>
+                </select>
               </div>
 
               <!-- Recipients -->

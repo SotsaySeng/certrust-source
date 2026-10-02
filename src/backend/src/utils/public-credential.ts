@@ -80,6 +80,8 @@ export function toPublicCredential(credential: any, { fullView = false }: { full
           ...status,
         }
       : null,
+    // The event it was issued for, as it was at issuance.
+    event: isPrivate ? null : credential.eventSnapshot ?? null,
     // Which Design Studio designs it was issued with ("no design" = false).
     designs: {
       certificate: !!credential.certificateDesignSnapshot,

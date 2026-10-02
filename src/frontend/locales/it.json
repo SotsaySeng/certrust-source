@@ -282,7 +282,15 @@
     "newAchievement": "Nuovo traguardo",
     "noAchievements": "Non hai ancora creato nulla da rilasciare",
     "noAchievementsHint": "Crea prima un traguardo: il certificato o il badge che riceveranno i destinatari, ad esempio «Certificato di completamento del workshop».",
-    "editAchievement": "Modifica"
+    "editAchievement": "Modifica",
+    "event": {
+      "label": "Evento (facoltativo)",
+      "hint": "Scegli l'evento per cui vengono emesse queste credenziali. Nome, date e luogo vengono salvati su ogni credenziale e mostrati nella sua pagina.",
+      "empty": "Questo traguardo non ha ancora eventi. Creane uno per mostrare nome, date e luogo su ogni credenziale.",
+      "none": "Nessun evento",
+      "create": "Nuovo evento",
+      "credentialTitle": "Evento"
+    }
   },
   "achievements": {
     "createTitle": "Nuovo traguardo",

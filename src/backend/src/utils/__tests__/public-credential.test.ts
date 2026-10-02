@@ -43,6 +43,14 @@ describe('toPublicCredential', () => {
     expect(JSON.stringify(dto)).not.toContain('secret-layout')
   })
 
+  it('shows the event a credential was issued for, except on private credentials', () => {
+    const eventSnapshot = { name: 'TETL Workshop', startDate: '2026-10-01T01:00:00.000Z', endDate: null, location: 'Pakpasak Technical College' }
+    expect((toPublicCredential({ ...row(), eventSnapshot }) as any).event).toEqual(eventSnapshot)
+    expect((toPublicCredential(row()) as any).event).toBeNull()
+    expect((toPublicCredential({ ...row(), eventSnapshot, visibility: 'private' }) as any).event).toBeNull()
+    expect((toPublicCredential({ ...row(), eventSnapshot, visibility: 'private' }, { fullView: true }) as any).event).toEqual(eventSnapshot)
+  })
+
   it('hides recipient and achievement details for private or minor credentials', () => {
     for (const extra of [{ visibility: 'private' }, { issuedToMinor: true }]) {
       const dto: any = toPublicCredential({ ...row(), ...extra })

@@ -282,7 +282,15 @@
     "newAchievement": "Neue Auszeichnung",
     "noAchievements": "Sie haben noch nichts zum Ausstellen angelegt",
     "noAchievementsHint": "Legen Sie zuerst eine Auszeichnung an: das Zertifikat oder Abzeichen, das Ihre Empfänger erhalten, z. B. „Teilnahmezertifikat Workshop“.",
-    "editAchievement": "Bearbeiten"
+    "editAchievement": "Bearbeiten",
+    "event": {
+      "label": "Veranstaltung (optional)",
+      "hint": "Wählen Sie die Veranstaltung, für die diese Nachweise ausgestellt werden. Name, Datum und Ort werden auf jedem Nachweis gespeichert und auf seiner Seite angezeigt.",
+      "empty": "Für diese Auszeichnung gibt es noch keine Veranstaltung. Erstellen Sie eine, um Name, Datum und Ort auf jedem Nachweis anzuzeigen.",
+      "none": "Keine Veranstaltung",
+      "create": "Neue Veranstaltung",
+      "credentialTitle": "Veranstaltung"
+    }
   },
   "achievements": {
     "createTitle": "Neue Auszeichnung",

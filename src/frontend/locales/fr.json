@@ -282,7 +282,15 @@
     "newAchievement": "Nouvelle réalisation",
     "noAchievements": "Vous n'avez encore rien créé à délivrer",
     "noAchievementsHint": "Créez d'abord une réalisation : le certificat ou le badge que recevront vos destinataires, par exemple « Certificat de participation à l'atelier ».",
-    "editAchievement": "Modifier"
+    "editAchievement": "Modifier",
+    "event": {
+      "label": "Événement (facultatif)",
+      "hint": "Choisissez l'événement pour lequel ces titres sont émis. Son nom, ses dates et son lieu sont enregistrés sur chaque titre et affichés sur sa page.",
+      "empty": "Aucun événement pour cette réalisation. Créez-en un pour afficher son nom, ses dates et son lieu sur chaque titre.",
+      "none": "Aucun événement",
+      "create": "Nouvel événement",
+      "credentialTitle": "Événement"
+    }
   },
   "achievements": {
     "createTitle": "Nouvelle réalisation",

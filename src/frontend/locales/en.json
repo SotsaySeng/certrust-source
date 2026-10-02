@@ -282,7 +282,15 @@
     "newAchievement": "New achievement",
     "noAchievements": "You haven't created anything to issue yet",
     "noAchievementsHint": "Create an achievement first: the certificate or badge your recipients will receive, such as \"Workshop Completion Certificate\".",
-    "editAchievement": "Edit"
+    "editAchievement": "Edit",
+    "event": {
+      "label": "Event (optional)",
+      "hint": "Choose the event these credentials are for. Its name, dates and location are saved on each credential and shown on its page.",
+      "empty": "No events for this achievement yet. Create one to show its name, dates and location on each credential.",
+      "none": "No event",
+      "create": "New event",
+      "credentialTitle": "Event"
+    }
   },
   "achievements": {
     "createTitle": "New achievement",

@@ -282,7 +282,15 @@
     "newAchievement": "Nuevo logro",
     "noAchievements": "Todavía no has creado nada para emitir",
     "noAchievementsHint": "Primero crea un logro: el certificado o la insignia que recibirán tus destinatarios, por ejemplo «Certificado de finalización del taller».",
-    "editAchievement": "Editar"
+    "editAchievement": "Editar",
+    "event": {
+      "label": "Evento (opcional)",
+      "hint": "Elige el evento para el que se emiten estas credenciales. Su nombre, fechas y lugar se guardan en cada credencial y se muestran en su página.",
+      "empty": "Este logro todavía no tiene eventos. Crea uno para mostrar su nombre, fechas y lugar en cada credencial.",
+      "none": "Sin evento",
+      "create": "Nuevo evento",
+      "credentialTitle": "Evento"
+    }
   },
   "achievements": {
     "createTitle": "Nuevo logro",

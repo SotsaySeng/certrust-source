@@ -157,7 +157,7 @@ export default () => {
    * @param options.skipExisting skip recipients who already hold an
    *   unrevoked credential for this achievement (safe re-upload).
    */
-  async function batchIssueBadges(badgeId: string, recipients: Recipient[], designs: { certificateDesignId?: string | null, badgeDesignId?: string | null } = {}, options: { skipExisting?: boolean } = {}): Promise<any> {
+  async function batchIssueBadges(badgeId: string, recipients: Recipient[], designs: { certificateDesignId?: string | null, badgeDesignId?: string | null } = {}, options: { skipExisting?: boolean, eventId?: string | null } = {}): Promise<any> {
     try {
       const headers = await getHeaders()
 
@@ -171,6 +171,7 @@ export default () => {
             recipients,
             ...designs,
             skipExisting: options.skipExisting === true,
+            ...(options.eventId ? { eventId: options.eventId } : {}),
           }
         }),
       })

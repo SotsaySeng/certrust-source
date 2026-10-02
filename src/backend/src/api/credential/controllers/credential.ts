@@ -4,6 +4,7 @@
 
 import { cleanCustomFields, orgCustomAttributes, overridesFromBody, resolveIssueDesigns } from '../../../utils/issue-design'
 import { attachEvidence } from '../../../utils/credential-evidence'
+import { resolveIssueEvent } from '../../../utils/issue-event'
 import { factories } from '@strapi/strapi'
 import crypto from 'crypto'
 import { credentialsRevokedTotal } from '../../../monitoring/metrics'
@@ -166,6 +167,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
       const organization = (achievement as any).creator?.organization ?? null
       const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
       const customFields = cleanCustomFields(data.customFields ?? recipient.customFields, await orgCustomAttributes(organization?.id ?? null))
+      const event = await resolveIssueEvent(data.eventId, achievement, organization)
 
       // Create the credential
       const credential = await strapi.service('api::credential.credential').issue(
@@ -174,7 +176,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
         evidence,
         expirationDate,
         ctx.state.user?.id,
-        { designs, customFields }
+        { designs, customFields, event }
       )
 
       return credential
@@ -783,6 +785,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
       const organization = (achievement as any).creator?.organization ?? null
       const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
       const attributeDefs = await orgCustomAttributes(organization?.id ?? null)
+      const event = await resolveIssueEvent(data.eventId, achievement, organization)
 
       // Re-uploading a CSV after an interrupted batch must not issue twice:
       // with skipExisting, anyone already holding an unrevoked credential
@@ -831,7 +834,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
             evidence,
             expirationDate,
             ctx.state.user?.id,
-            { designs, customFields }
+            { designs, customFields, event }
           )
           return { success: true, recipient: recipientData.email, data: credential }
         } catch (error) {

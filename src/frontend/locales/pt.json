@@ -282,7 +282,15 @@
     "newAchievement": "Nova conquista",
     "noAchievements": "Ainda não criou nada para emitir",
     "noAchievementsHint": "Crie primeiro uma conquista: o certificado ou o selo que os destinatários vão receber, por exemplo «Certificado de conclusão do workshop».",
-    "editAchievement": "Editar"
+    "editAchievement": "Editar",
+    "event": {
+      "label": "Evento (opcional)",
+      "hint": "Escolha o evento para o qual estas credenciais são emitidas. O nome, as datas e o local ficam guardados em cada credencial e aparecem na sua página.",
+      "empty": "Esta conquista ainda não tem eventos. Crie um para mostrar o nome, as datas e o local em cada credencial.",
+      "none": "Sem evento",
+      "create": "Novo evento",
+      "credentialTitle": "Evento"
+    }
   },
   "achievements": {
     "createTitle": "Nova conquista",

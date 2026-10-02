@@ -19,6 +19,7 @@
  */
 
 import type { IssueDesigns } from '../../../utils/issue-design'
+import type { IssueEvent } from '../../../utils/issue-event'
 import { attachEvidence } from '../../../utils/credential-evidence'
 import { resolveIssueDesigns } from '../../../utils/issue-design'
 import { randomUUID } from 'node:crypto'
@@ -44,8 +45,9 @@ export default factories.createCoreService('api::credential.credential', ({ stra
    *   default that can't be used falls back to the classic certificate
    *   rather than failing the issuance.
    * @param opts.customFields cleaned custom attribute values.
+   * @param opts.event the event it was issued for (its details are copied).
    */
-  async issue(achievement, recipient, evidence = [], expirationDate = undefined, actorId = undefined, opts: { designs?: IssueDesigns, customFields?: Record<string, string> } = {}) {
+  async issue(achievement, recipient, evidence = [], expirationDate = undefined, actorId = undefined, opts: { designs?: IssueDesigns, customFields?: Record<string, string>, event?: IssueEvent | null } = {}) {
     try {
       // Covers every path that issues (API, CSV, scheduled issuance).
       let organization: any = null
@@ -135,6 +137,7 @@ export default factories.createCoreService('api::credential.credential', ({ stra
           badgeDesignSnapshot: designs.badge,
           designTemplateId: designs.templateId,
           customFields: opts.customFields && Object.keys(opts.customFields).length ? opts.customFields : null,
+          ...(opts.event ? { event: opts.event.id, eventSnapshot: opts.event.snapshot } : {}),
         },
         status: 'published'
       })
