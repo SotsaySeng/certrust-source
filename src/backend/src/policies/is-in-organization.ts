@@ -23,6 +23,8 @@
  * api::profile.multi-tenancy - and is always allowed through, never denied.
  */
 
+import { errors } from '@strapi/utils';
+
 type RelationRef =
   | string
   | number
@@ -197,37 +199,32 @@ async function checkProfileAccess(user: any, profileId: string | number, strapi:
   return (profile.organization.members ?? []).some((m: any) => m.id === user.id);
 }
 
-// NOTE: plain ctx.forbidden(...) (the shorthand most Strapi docs show)
-// does NOT work from inside a policy handler - @strapi/utils'
-// createPolicyContext rebuilds the ctx object with
-// Object.assign({is, type}, ctx), which copies ctx's own-enumerable
-// properties but drops the app.context prototype chain that the
-// forbidden/badRequest/etc. response shorthands are delegated onto
-// (they're added to the shared Koa app.context/app.response prototypes
-// via the `delegates` package, not as own properties of any individual
-// request's ctx). Calling ctx.forbidden(...) here throws "not a
-// function". ctx.response is copied by reference though (it's a real
-// own property of ctx), and *its* prototype chain is intact, so
-// ctx.response.forbidden(...) works below. Confirmed by direct inspection
-// of this repo's installed @strapi/core (services/server/koa.js) and
-// @strapi/utils (policy.js) - not just framework docs.
+// NOTE: returning `false` here (the shape most Strapi docs show) does NOT
+// surface any message we set - @strapi/core's createPolicicesMiddleware
+// (services/server/policy.js) throws a brand new, argument-less
+// `errors.PolicyError()` whenever a policy's return value isn't `true` or
+// `undefined`, discarding whatever ctx.response.forbidden(...) already set
+// and always producing the generic "Policy Failed" instead. The only way to
+// get our own message to the client is to throw it ourselves - throwing
+// propagates past that middleware's `await handler(...)` call (not wrapped
+// in try/catch) up to Strapi's own error-formatting middleware, same as
+// `errors.ForbiddenError` thrown from a controller/service elsewhere in
+// this codebase (e.g. utils/issue-design.ts). Confirmed by direct
+// inspection of this repo's installed @strapi/core.
 const isInOrganization = async (ctx: any, config: IsInOrganizationConfig, { strapi }: { strapi: any }): Promise<boolean> => {
   const user = ctx.state.user;
   if (!user) {
-    ctx.response.forbidden('You must be logged in.');
-    return false;
+    throw new errors.ForbiddenError('You must be logged in.');
   }
 
   const resolution = await resolveProfileId(ctx, config, strapi);
 
   if (resolution.status === 'unresolvable') {
-    ctx.response.forbidden('The referenced record could not be found.');
-    return false;
+    throw new errors.ForbiddenError('The referenced record could not be found.');
   }
 
   if (resolution.status === 'resolved' && !(await checkProfileAccess(user, resolution.profileId, strapi))) {
-    ctx.response.forbidden("You do not have access to this organization's resources.");
-    return false;
+    throw new errors.ForbiddenError("You do not have access to this organization's resources.");
   }
 
   // via: 'existing' only checks the record's CURRENTLY PERSISTED relation
@@ -243,13 +240,11 @@ const isInOrganization = async (ctx: any, config: IsInOrganizationConfig, { stra
     const proposed = await resolveProfileId(ctx, { ...config, via: 'body' }, strapi);
 
     if (proposed.status === 'unresolvable') {
-      ctx.response.forbidden('The referenced record could not be found.');
-      return false;
+      throw new errors.ForbiddenError('The referenced record could not be found.');
     }
 
     if (proposed.status === 'resolved' && !(await checkProfileAccess(user, proposed.profileId, strapi))) {
-      ctx.response.forbidden("You do not have access to this organization's resources.");
-      return false;
+      throw new errors.ForbiddenError("You do not have access to this organization's resources.");
     }
   }
 
