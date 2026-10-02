@@ -80,6 +80,11 @@ export function toPublicCredential(credential: any, { fullView = false }: { full
           ...status,
         }
       : null,
+    // Which Design Studio designs it was issued with ("no design" = false).
+    designs: {
+      certificate: !!credential.certificateDesignSnapshot,
+      badge: !!credential.badgeDesignSnapshot,
+    },
     recipient: !isPrivate && credential.recipient?.name ? { name: credential.recipient.name } : null,
     evidence: isPrivate
       ? []

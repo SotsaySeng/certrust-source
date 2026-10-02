@@ -9,17 +9,17 @@
  *
  * Re-reads the role from the database rather than trusting whatever is
  * on ctx.state.user, so a role change takes effect on the next request.
- * Uses ctx.response.forbidden - see is-in-organization.ts for why the
- * ctx.forbidden shorthand doesn't exist inside a policy.
+ * Denials throw errors.PolicyError(message) - see is-in-organization.ts.
  */
+
+import { errors } from '@strapi/utils';
 
 export const PLATFORM_ADMIN_ROLE_TYPE = 'platform-admin';
 
 const isPlatformAdmin = async (ctx: any, _config: unknown, { strapi }: { strapi: any }): Promise<boolean> => {
   const userId = ctx.state?.user?.id;
   if (!userId) {
-    ctx.response.forbidden('You must be logged in.');
-    return false;
+    throw new errors.PolicyError('You must be logged in.');
   }
 
   const user = await strapi.db.query('plugin::users-permissions.user').findOne({
@@ -28,8 +28,7 @@ const isPlatformAdmin = async (ctx: any, _config: unknown, { strapi }: { strapi:
   });
 
   if (user?.role?.type !== PLATFORM_ADMIN_ROLE_TYPE || user?.blocked) {
-    ctx.response.forbidden('Platform admins only.');
-    return false;
+    throw new errors.PolicyError('Platform admins only.');
   }
   return true;
 };

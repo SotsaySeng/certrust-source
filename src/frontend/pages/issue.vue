@@ -396,9 +396,13 @@ async function handleIssue() {
   try {
     // Remember the chosen designs as the achievement's defaults if asked.
     if (saveDesignsAsDefault.value && designsChanged.value && selectedTemplate.value.documentId) {
-      await api.put(`/api/achievements/${encodeURIComponent(selectedTemplate.value.documentId)}`, {
+      const updated = await api.put<{ data?: { id?: number } }>(`/api/achievements/${encodeURIComponent(selectedTemplate.value.documentId)}`, {
         data: { certificateDesignId: certificateDesignId.value, badgeDesignId: badgeDesignId.value },
       })
+      // Saving republishes the achievement under a new numeric id; the old one no longer exists.
+      if (updated?.data?.id != null) {
+        selectedTemplate.value.id = String(updated.data.id)
+      }
       selectedTemplate.value.certificateDesignId = certificateDesignId.value
       selectedTemplate.value.badgeDesignId = badgeDesignId.value
     }

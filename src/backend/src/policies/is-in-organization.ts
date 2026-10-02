@@ -199,32 +199,26 @@ async function checkProfileAccess(user: any, profileId: string | number, strapi:
   return (profile.organization.members ?? []).some((m: any) => m.id === user.id);
 }
 
-// NOTE: returning `false` here (the shape most Strapi docs show) does NOT
-// surface any message we set - @strapi/core's createPolicicesMiddleware
-// (services/server/policy.js) throws a brand new, argument-less
-// `errors.PolicyError()` whenever a policy's return value isn't `true` or
-// `undefined`, discarding whatever ctx.response.forbidden(...) already set
-// and always producing the generic "Policy Failed" instead. The only way to
-// get our own message to the client is to throw it ourselves - throwing
-// propagates past that middleware's `await handler(...)` call (not wrapped
-// in try/catch) up to Strapi's own error-formatting middleware, same as
-// `errors.ForbiddenError` thrown from a controller/service elsewhere in
-// this codebase (e.g. utils/issue-design.ts). Confirmed by direct
-// inspection of this repo's installed @strapi/core.
+// Denials throw errors.PolicyError(message). Returning false makes
+// @strapi/core (services/server/policy.js) throw an argument-less
+// PolicyError, so the client only ever sees "Policy Failed". It must be
+// PolicyError specifically: the authorize middleware wrapping policies
+// (services/server/compose-endpoint.js) turns any other ForbiddenError
+// into a bare "Forbidden".
 const isInOrganization = async (ctx: any, config: IsInOrganizationConfig, { strapi }: { strapi: any }): Promise<boolean> => {
   const user = ctx.state.user;
   if (!user) {
-    throw new errors.ForbiddenError('You must be logged in.');
+    throw new errors.PolicyError('You must be logged in.');
   }
 
   const resolution = await resolveProfileId(ctx, config, strapi);
 
   if (resolution.status === 'unresolvable') {
-    throw new errors.ForbiddenError('The referenced record could not be found.');
+    throw new errors.PolicyError('The referenced record could not be found.');
   }
 
   if (resolution.status === 'resolved' && !(await checkProfileAccess(user, resolution.profileId, strapi))) {
-    throw new errors.ForbiddenError("You do not have access to this organization's resources.");
+    throw new errors.PolicyError("You do not have access to this organization's resources.");
   }
 
   // via: 'existing' only checks the record's CURRENTLY PERSISTED relation
@@ -240,11 +234,11 @@ const isInOrganization = async (ctx: any, config: IsInOrganizationConfig, { stra
     const proposed = await resolveProfileId(ctx, { ...config, via: 'body' }, strapi);
 
     if (proposed.status === 'unresolvable') {
-      throw new errors.ForbiddenError('The referenced record could not be found.');
+      throw new errors.PolicyError('The referenced record could not be found.');
     }
 
     if (proposed.status === 'resolved' && !(await checkProfileAccess(user, proposed.profileId, strapi))) {
-      throw new errors.ForbiddenError("You do not have access to this organization's resources.");
+      throw new errors.PolicyError("You do not have access to this organization's resources.");
     }
   }
 

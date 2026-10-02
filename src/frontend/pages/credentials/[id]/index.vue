@@ -334,7 +334,12 @@ const displayImageUrl = computed(() => {
   return imageUrlOptions.value[currentImageIndex.value]
 })
 
-// Design Studio badge (only shown when the credential was issued with one).
+// Show only the designs the issuer chose. A credential issued with neither
+// (including every one from before the Design Studio) keeps the classic
+// certificate, so there is always something to show.
+const designs = computed(() => verificationData.value?.rawCredential?.designs)
+const showBadge = computed(() => designs.value?.badge === true)
+const showCertificate = computed(() => !(designs.value?.badge && !designs.value?.certificate))
 const badgeAvailable = ref(true)
 const badgeUrl = computed(() => (credential.value?.id ? apiClient.getBadgePngUrl(credential.value.id, 480) : null))
 async function downloadBadge() {
@@ -825,7 +830,7 @@ async function submitRenewal() {
       <div v-if="!isPrivate || canManage" class="mb-8 overflow-hidden rounded-2xl bg-white/80 backdrop-blur-lg border border-gray-200 shadow-xl">
         <!-- Credential Image -->
         <div
-          v-if="displayImageUrl && !imageLoadError"
+          v-if="showCertificate && displayImageUrl && !imageLoadError"
           class="relative aspect-video bg-gray-100"
         >
           <img
@@ -864,7 +869,7 @@ async function submitRenewal() {
         </div>
 
         <!-- Badge (Design Studio) -->
-        <div v-if="badgeUrl && badgeAvailable" class="flex items-center gap-4 border-b border-gray-100 px-6 py-4" data-testid="credential-badge">
+        <div v-if="showBadge && badgeUrl && badgeAvailable" class="flex items-center gap-4 border-b border-gray-100 px-6 py-4" data-testid="credential-badge">
           <img :src="badgeUrl" :alt="t('designStudio.credential.badgeAlt', { name: credential.name })" class="h-24 w-24 object-contain" @error="badgeAvailable = false">
           <div class="flex-1">
             <p class="font-medium text-text-primary">
@@ -876,6 +881,15 @@ async function submitRenewal() {
           </div>
           <button class="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50" @click="downloadBadge">
             <div class="i-lucide-image-down h-5 w-5" />PNG
+          </button>
+          <!-- The share button normally sits on the certificate image. -->
+          <button
+            v-if="!showCertificate"
+            class="rounded-lg border border-gray-200 p-2 hover:bg-gray-50"
+            title="Share credential"
+            @click="shareCredential"
+          >
+            <div class="i-lucide-share h-5 w-5" />
           </button>
         </div>
 

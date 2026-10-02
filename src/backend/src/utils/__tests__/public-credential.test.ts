@@ -36,6 +36,13 @@ describe('toPublicCredential', () => {
     expect(dto.achievement.image.formats.small).toEqual({ url: '/uploads/s.png' })
   })
 
+  it('says which designs the credential was issued with, without the designs themselves', () => {
+    expect((toPublicCredential(row()) as any).designs).toEqual({ certificate: false, badge: false })
+    const dto: any = toPublicCredential({ ...row(), certificateDesignSnapshot: null, badgeDesignSnapshot: { pages: [{ elements: [{ text: 'secret-layout' }] }] } })
+    expect(dto.designs).toEqual({ certificate: false, badge: true })
+    expect(JSON.stringify(dto)).not.toContain('secret-layout')
+  })
+
   it('hides recipient and achievement details for private or minor credentials', () => {
     for (const extra of [{ visibility: 'private' }, { issuedToMinor: true }]) {
       const dto: any = toPublicCredential({ ...row(), ...extra })
