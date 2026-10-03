@@ -19,13 +19,13 @@ describe('Design Template lifecycles - beforeCreate tier-limit enforcement', () 
     expect(findOne).not.toHaveBeenCalled()
   })
 
-  it('allows creation when the organization id does not resolve to a real, published organization', async () => {
+  it('allows creation when the organization id does not resolve to a real organization', async () => {
     const findOne = jest.fn().mockResolvedValue(null)
     global.strapi = { entityService: { findOne }, service: jest.fn() } as any
 
     const event = makeEvent({ name: 'Blank', organization: 42 })
     await expect(lifecycles.beforeCreate(event as any)).resolves.toBeUndefined()
-    expect(findOne).toHaveBeenCalledWith('api::organization.organization', 42, { status: 'published' })
+    expect(findOne).toHaveBeenCalledWith('api::organization.organization', 42)
   })
 
   it('normalizes a { connect: [{ id }] } organization shape', async () => {
@@ -34,7 +34,7 @@ describe('Design Template lifecycles - beforeCreate tier-limit enforcement', () 
 
     const event = makeEvent({ name: 'Blank', organization: { connect: [{ id: 7 }] } })
     await lifecycles.beforeCreate(event as any)
-    expect(findOne).toHaveBeenCalledWith('api::organization.organization', 7, expect.anything())
+    expect(findOne).toHaveBeenCalledWith('api::organization.organization', 7)
   })
 
   it('allows creation when the tier has no design-template limit set (unlimited)', async () => {

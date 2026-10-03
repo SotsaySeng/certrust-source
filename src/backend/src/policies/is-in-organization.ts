@@ -114,36 +114,20 @@ async function resolveProfileId(ctx: any, config: IsInOrganizationConfig, strapi
     directId = normalizeRelationId(ctx.request?.body?.data?.[config.field]);
   } else {
     // via: 'existing' - ctx.params.id here is a *documentId* string, not
-    // the legacy numeric id. All four content types this policy is wired
-    // into (achievement, evidence, endorsement, credential) have
-    // draftAndPublish enabled, and Strapi 5's default core update/delete
-    // actions route through the Document Service, which only resolves
-    // routes by documentId - a numeric id in this position 404s before
-    // this policy is even involved (verified directly: GET
-    // /api/achievements/<numeric id> -> 404 NotFoundError, GET
-    // /api/achievements/<documentId> -> 200). strapi.entityService (the
-    // legacy v4-style compatibility API) only understands numeric ids and
-    // silently returns null for a documentId string, which would make
-    // every update/delete on these routes deny as 'unresolvable'
-    // regardless of the actual caller - so this specifically has to use
-    // strapi.documents(uid).findOne({ documentId }), the Document Service
-    // API that documentId is native to. status: 'published' is required
-    // here too - findOne() without it defaults to the *draft* row, which
-    // (verified directly) can have stale/incomplete relation data: a
-    // partial update (e.g. `{ data: { description: '...' } }`, not
-    // re-specifying `creator`) updates the published row correctly but
-    // leaves the draft row's `creator` null, which would otherwise make
-    // this resolve to 'no-claim' and fall through to an open allow.
-    // status: 'published' matches this codebase's own convention for
-    // reading these content types - e.g. credential.ts controller's
-    // issue()/verify()/export() and achievement.ts controller's
-    // findWithCredentials()/findByCreator() all explicitly filter
-    // status: 'published'.
+    // the legacy numeric id. Strapi 5's default core update/delete actions
+    // route through the Document Service, which only resolves routes by
+    // documentId - a numeric id in this position 404s before this policy is
+    // even involved (verified directly: GET /api/achievements/<numeric id>
+    // -> 404 NotFoundError, GET /api/achievements/<documentId> -> 200).
+    // strapi.entityService (the legacy v4-style compatibility API) only
+    // understands numeric ids and silently returns null for a documentId
+    // string, which would make every update/delete on these routes deny as
+    // 'unresolvable' regardless of the actual caller - so this specifically
+    // has to use strapi.documents(uid).findOne({ documentId }).
     const recordId = ctx.params?.id;
     if (!recordId || !config.uid) return { status: 'no-claim' };
     const record: any = await strapi.documents(config.uid as any).findOne({
       documentId: recordId,
-      status: 'published',
       populate: [config.field],
     } as any);
     if (!record) return { status: 'unresolvable' };
@@ -153,17 +137,7 @@ async function resolveProfileId(ctx: any, config: IsInOrganizationConfig, strapi
   if (directId == null) return { status: 'no-claim' };
   if (!config.through) return { status: 'resolved', profileId: directId };
 
-  // status: 'published' - see the long comment above on why this is
-  // required for every entityService.findOne/findMany call in this file:
-  // it silently re-resolves by documentId under the hood and defaults to
-  // the draft row otherwise (verified directly against this repo's
-  // installed @strapi/core - services/entity-service/index.js's findOne
-  // does a raw `where: { id }` lookup *only* to discover the row's
-  // documentId, then throws that row away and re-fetches via
-  // strapi.documents(uid).findOne({ documentId, ...opts }), which
-  // defaults to draft when opts.status is unset).
   const intermediate: any = await strapi.entityService.findOne(config.through.uid as any, directId, {
-    status: 'published',
     populate: [config.through.field],
   } as any);
   if (!intermediate) return { status: 'unresolvable' };
@@ -180,9 +154,7 @@ async function resolveProfileId(ctx: any, config: IsInOrganizationConfig, strapi
  * function's own comment for why an update needs both.
  */
 async function checkProfileAccess(user: any, profileId: string | number, strapi: any): Promise<boolean> {
-  // status: 'published' - see resolveProfileId's through-lookup comment.
   const profile: any = await strapi.entityService.findOne('api::profile.profile', profileId as any, {
-    status: 'published',
     populate: { owner: true, organization: { populate: ['members'] } },
   } as any);
 

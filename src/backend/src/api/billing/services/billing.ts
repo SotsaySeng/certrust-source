@@ -7,14 +7,9 @@
  * ever writes that one field plus its own bookkeeping fields, so no
  * limit-enforcement code had to change.
  *
- * All organization writes go through updateOrg(), which uses
- * strapi.db.query().updateMany({ where: { documentId } }) - an in-place
- * write to both the draft and published rows. organization is
- * draftAndPublish, and entityService.update()/documents().update() on a
- * draftAndPublish type republishes by deleting the published row and
- * cloning the draft under a new numeric id, orphaning everything that
- * pointed at the old one (profiles, design templates, events). Never
- * use those for billing writes.
+ * All organization writes go through updateOrg(), a plain in-place
+ * strapi.db.query() write. It skips the Document Service's lifecycles
+ * and relation handling, which billing's scalar fields don't need.
  *
  * Webhook handlers read everything they need from the event payload
  * (subscription metadata carries orgDocumentId/tier/interval) and make
@@ -134,7 +129,7 @@ export default ({ strapi }: { strapi: any }) => ({
   async findOrg(documentId: string | null | undefined): Promise<any | null> {
     if (!documentId) return null
     return strapi.db.query(ORG_UID).findOne({
-      where: { documentId, publishedAt: { $notNull: true } },
+      where: { documentId },
       populate: ['members'],
     })
   },
@@ -142,7 +137,7 @@ export default ({ strapi }: { strapi: any }) => ({
   async findOrgByCustomer(customerId: string | null | undefined): Promise<any | null> {
     if (!customerId) return null
     return strapi.db.query(ORG_UID).findOne({
-      where: { stripeCustomerId: customerId, publishedAt: { $notNull: true } },
+      where: { stripeCustomerId: customerId },
       populate: ['members'],
     })
   },
@@ -156,10 +151,10 @@ export default ({ strapi }: { strapi: any }) => ({
   },
 
   async listOrgs(): Promise<any[]> {
-    return strapi.db.query(ORG_UID).findMany({ where: { publishedAt: { $notNull: true } } })
+    return strapi.db.query(ORG_UID).findMany()
   },
 
-  /** In-place write to draft + published rows. See the header comment for why. */
+  /** In-place write of billing fields. See the header comment. */
   async updateOrg(documentId: string, data: Record<string, any>) {
     await strapi.db.query(ORG_UID).updateMany({ where: { documentId }, data })
   },
@@ -187,7 +182,7 @@ export default ({ strapi }: { strapi: any }) => ({
    */
   async migrateExistingOrgs(now = new Date()): Promise<{ trials: number; kept: number }> {
     const rows: any[] = await strapi.db.query(ORG_UID).findMany({
-      where: { publishedAt: { $notNull: true }, subscriptionStatus: { $null: true } },
+      where: { subscriptionStatus: { $null: true } },
     })
     let trials = 0
     let kept = 0
@@ -489,7 +484,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const members = (org.members ?? []).map((m: any) => m.email).filter(Boolean)
     if (members.length) return Array.from(new Set(members))
     const profiles: any[] = await strapi.db.query('api::profile.profile').findMany({
-      where: { organization: { documentId: org.documentId }, publishedAt: { $notNull: true } },
+      where: { organization: { documentId: org.documentId } },
       populate: ['owner'],
     })
     return Array.from(new Set(profiles.map((p) => p.owner?.email).filter(Boolean)))

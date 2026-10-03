@@ -322,7 +322,6 @@ const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
                   · {{ tpl.slug }}
                 </template>
                 · used by {{ tpl.usedByAchievements }} achievement{{ tpl.usedByAchievements === 1 ? '' : 's' }}
-                <span v-if="!tpl.published" class="ml-1 rounded bg-amber-100 px-1.5 text-amber-800">draft</span>
               </p>
             </div>
 

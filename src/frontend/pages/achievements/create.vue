@@ -93,7 +93,6 @@ async function handleCreate() {
       creator: authStore.profile.id,
       certificateDesignId: f.certificateDesignId,
       badgeDesignId: f.badgeDesignId,
-      publishedAt: new Date().toISOString(),
     })
     const id = created?.data?.id
     router.push(id ? `/issue?achievement=${id}` : '/issue')

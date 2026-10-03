@@ -15,12 +15,6 @@ function createFakeStrapi({
       if (!c.expirationDate) return false
       if (new Date(c.expirationDate) >= new Date(where.expirationDate.$lt)) return false
     }
-    if (where.publishedAt === null) {
-      if (c.publishedAt !== null && c.publishedAt !== undefined) return false
-    }
-    if (where.publishedAt?.$notNull) {
-      if (c.publishedAt === null || c.publishedAt === undefined) return false
-    }
     if (where.issuanceDate?.$gte) {
       if (!c.issuanceDate) return false
       if (new Date(c.issuanceDate) < new Date(where.issuanceDate.$gte)) return false
@@ -31,14 +25,13 @@ function createFakeStrapi({
   const strapi = {
     db: {
       query: (contentType: string) => ({
-        count: async ({ where }: any) => {
+        count: async ({ where }: any = { where: {} }) => {
           if (contentType === 'api::credential.credential') {
             return credentials.filter((c) => matchesCredentialWhere(c, where)).length
           }
           if (contentType === 'api::achievement.achievement') {
             return achievements.filter((a) => {
               if (a.creator !== where.creator) return false
-              if (where.publishedAt?.$notNull && (a.publishedAt === null || a.publishedAt === undefined)) return false
               return true
             }).length
           }
@@ -80,12 +73,6 @@ function createFakeStrapi({
 describe('dashboard service', () => {
   const PROFILE_ID = 10
   const USER_ID = 1
-  /**
-   * Fixtures below carry publishedAt because a real draftAndPublish create
-   * writes a published row (plus a draft shadow sharing its documentId), and
-   * every count in the service filters on it - see the service's own comment.
-   */
-  const PUBLISHED = '2024-06-01T00:00:00.000Z'
 
   it('returns zeros when there are no credentials or achievements', async () => {
     const strapi = createFakeStrapi({ user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
@@ -100,7 +87,6 @@ describe('dashboard service', () => {
     expect(stats.topAchievements).toEqual([])
     expect(stats.memberSince).toBe('2024-01-01T00:00:00.000Z')
     expect(stats.scheduledCredentials).toBe(0)
-    expect(stats.draftCredentials).toBe(0)
     expect(stats.issuanceByMonth).toHaveLength(12)
     expect(stats.issuanceByMonth.every((m) => m.count === 0)).toBe(true)
   })
@@ -109,10 +95,10 @@ describe('dashboard service', () => {
     const past = new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
     const future = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString()
     const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, publishedAt: PUBLISHED },
-      { id: 2, issuer: PROFILE_ID, revoked: true, publishedAt: PUBLISHED },
-      { id: 3, issuer: PROFILE_ID, revoked: false, expirationDate: past, publishedAt: PUBLISHED },
-      { id: 4, issuer: PROFILE_ID, revoked: false, expirationDate: future, publishedAt: PUBLISHED },
+      { id: 1, issuer: PROFILE_ID, revoked: false },
+      { id: 2, issuer: PROFILE_ID, revoked: true },
+      { id: 3, issuer: PROFILE_ID, revoked: false, expirationDate: past },
+      { id: 4, issuer: PROFILE_ID, revoked: false, expirationDate: future },
     ]
     const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
     const svc = dashboardFactory({ strapi })
@@ -124,9 +110,9 @@ describe('dashboard service', () => {
 
   it('counts unique recipients (deduplicates repeated recipients)', async () => {
     const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, recipient: 20, publishedAt: PUBLISHED },
-      { id: 2, issuer: PROFILE_ID, revoked: false, recipient: 20, publishedAt: PUBLISHED }, // same recipient
-      { id: 3, issuer: PROFILE_ID, revoked: false, recipient: 21, publishedAt: PUBLISHED },
+      { id: 1, issuer: PROFILE_ID, revoked: false, recipient: 20 },
+      { id: 2, issuer: PROFILE_ID, revoked: false, recipient: 20 }, // same recipient
+      { id: 3, issuer: PROFILE_ID, revoked: false, recipient: 21 },
     ]
     const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
     const svc = dashboardFactory({ strapi })
@@ -136,9 +122,9 @@ describe('dashboard service', () => {
 
   it('computes top achievements sorted by credential count', async () => {
     const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, achievement: 100, achievementName: 'Alpha', publishedAt: PUBLISHED },
-      { id: 2, issuer: PROFILE_ID, revoked: false, achievement: 100, achievementName: 'Alpha', publishedAt: PUBLISHED },
-      { id: 3, issuer: PROFILE_ID, revoked: false, achievement: 101, achievementName: 'Beta', publishedAt: PUBLISHED },
+      { id: 1, issuer: PROFILE_ID, revoked: false, achievement: 100, achievementName: 'Alpha' },
+      { id: 2, issuer: PROFILE_ID, revoked: false, achievement: 100, achievementName: 'Alpha' },
+      { id: 3, issuer: PROFILE_ID, revoked: false, achievement: 101, achievementName: 'Beta' },
     ]
     const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
     const svc = dashboardFactory({ strapi })
@@ -154,7 +140,6 @@ describe('dashboard service', () => {
       revoked: false,
       achievement: 200 + i,
       achievementName: `Ach ${i}`,
-      publishedAt: PUBLISHED,
     }))
     const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
     const svc = dashboardFactory({ strapi })
@@ -175,61 +160,14 @@ describe('dashboard service', () => {
     expect(stats.scheduledCredentials).toBe(2)
   })
 
-  it('draftCredentials counts only documentIds with a draft row and no published sibling', async () => {
-    // 2 normally-issued credentials: each has a draft shadow row AND a
-    // published row sharing one documentId (draftAndPublish's real
-    // behavior - see the plan/header comment). 1 genuinely-draft
-    // credential: only a draft row, created without publishedAt at all.
-    const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', publishedAt: null },
-      { id: 2, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', publishedAt: '2024-01-01T00:00:00.000Z' },
-      { id: 3, issuer: PROFILE_ID, revoked: false, documentId: 'doc-b', publishedAt: null },
-      { id: 4, issuer: PROFILE_ID, revoked: false, documentId: 'doc-b', publishedAt: '2024-01-02T00:00:00.000Z' },
-      { id: 5, issuer: PROFILE_ID, revoked: false, documentId: 'doc-c', publishedAt: null },
-    ]
-    const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
-    const svc = dashboardFactory({ strapi })
-    const stats = await svc.getStats(USER_ID, PROFILE_ID)
-    expect(stats.draftCredentials).toBe(1)
-  })
-
-  it('does not double-count a credential that also has a draft shadow row', async () => {
-    // What a real issuance looks like on disk: every published credential is
-    // accompanied by a draft row sharing its documentId. These counts run
-    // through strapi.db.query(), which sees both rows, so anything that
-    // forgets to filter on publishedAt reports exactly double - which is what
-    // the dashboard and its Plan Usage bar used to do.
-    const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', publishedAt: null, recipient: 20, achievement: 100, achievementName: 'Alpha' },
-      { id: 2, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', publishedAt: PUBLISHED, recipient: 20, achievement: 100, achievementName: 'Alpha' },
-      { id: 3, issuer: PROFILE_ID, revoked: true, documentId: 'doc-b', publishedAt: null, recipient: 21, achievement: 100, achievementName: 'Alpha' },
-      { id: 4, issuer: PROFILE_ID, revoked: true, documentId: 'doc-b', publishedAt: PUBLISHED, recipient: 21, achievement: 100, achievementName: 'Alpha' },
-    ]
-    const achievements = [
-      { id: 100, creator: PROFILE_ID, publishedAt: null },
-      { id: 101, creator: PROFILE_ID, publishedAt: PUBLISHED },
-    ]
-    const strapi = createFakeStrapi({ credentials, achievements, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
-    const svc = dashboardFactory({ strapi })
-    const stats = await svc.getStats(USER_ID, PROFILE_ID)
-
-    expect(stats.credentialsIssued).toBe(2)
-    expect(stats.credentialsRevoked).toBe(1)
-    expect(stats.uniqueRecipients).toBe(2)
-    expect(stats.achievementsCreated).toBe(1)
-    expect(stats.topAchievements[0]).toEqual({ id: 100, name: 'Alpha', count: 2 })
-  })
-
-  it('issuanceByMonth zero-fills the trailing 12 months and buckets published credentials by calendar month', async () => {
+  it('issuanceByMonth zero-fills the trailing 12 months and buckets credentials by calendar month', async () => {
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 15).toISOString()
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 10).toISOString()
     const credentials = [
-      { id: 1, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', publishedAt: thisMonth, issuanceDate: thisMonth },
-      { id: 2, issuer: PROFILE_ID, revoked: false, documentId: 'doc-b', publishedAt: thisMonth, issuanceDate: thisMonth },
-      { id: 3, issuer: PROFILE_ID, revoked: false, documentId: 'doc-c', publishedAt: lastMonth, issuanceDate: lastMonth },
-      // A draft-only row (publishedAt: null) must never contribute to issuanceByMonth.
-      { id: 4, issuer: PROFILE_ID, revoked: false, documentId: 'doc-d', publishedAt: null, issuanceDate: thisMonth },
+      { id: 1, issuer: PROFILE_ID, revoked: false, documentId: 'doc-a', issuanceDate: thisMonth },
+      { id: 2, issuer: PROFILE_ID, revoked: false, documentId: 'doc-b', issuanceDate: thisMonth },
+      { id: 3, issuer: PROFILE_ID, revoked: false, documentId: 'doc-c', issuanceDate: lastMonth },
     ]
     const strapi = createFakeStrapi({ credentials, user: { id: USER_ID, createdAt: '2024-01-01T00:00:00.000Z' } })
     const svc = dashboardFactory({ strapi })

@@ -287,7 +287,6 @@ describe('Multi-Tenancy Service', () => {
       expect(global.strapi.entityService.findMany).toHaveBeenCalledWith(
         'api::profile.profile',
         {
-          status: 'published',
           filters: { owner: { id: 123 } },
           populate: ['organization'],
         }

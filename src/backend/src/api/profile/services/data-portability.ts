@@ -31,17 +31,14 @@ export default ({ strapi }: { strapi: any }) => ({
     const [achievementsCreated, credentialsIssued, credentialsReceived] = await Promise.all([
       strapi.entityService.findMany('api::achievement.achievement', {
         filters: { creator: profile.id },
-        status: 'published',
         populate: ['criteria', 'alignment', 'skills', 'image'],
       }),
       strapi.entityService.findMany('api::credential.credential', {
         filters: { issuer: profile.id },
-        status: 'published',
         populate: ['achievement', 'recipient', 'proof'],
       }),
       strapi.entityService.findMany('api::credential.credential', {
         filters: { recipient: profile.id },
-        status: 'published',
         populate: ['achievement', 'issuer', 'proof'],
       }),
     ]);
@@ -98,7 +95,6 @@ export default ({ strapi }: { strapi: any }) => ({
           alignment: achievement.alignment,
           skills: achievement.skills,
           creator: profile.id,
-          publishedAt: new Date(),
         },
       });
       achievementIdMap.set(achievement.achievementId, created.id);
@@ -143,7 +139,6 @@ export default ({ strapi }: { strapi: any }) => ({
           issuer: profile.id,
           recipient: recipientEntity.id,
           proof: credential.proof,
-          publishedAt: new Date(),
         },
       });
       credentialsImported.push(credential.credentialId);
@@ -164,7 +159,6 @@ export default ({ strapi }: { strapi: any }) => ({
             url: item.url,
             evidenceId: item.evidenceId,
             credential: created.id,
-            publishedAt: new Date(),
           },
         });
       }

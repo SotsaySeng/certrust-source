@@ -189,7 +189,6 @@
       "title": "Analytique",
       "issued": "Justificatifs émis",
       "scheduled": "Programmés",
-      "draft": "Brouillon",
       "chartTitle": "Émissions dans le temps",
       "chartEmpty": "Pas encore de données d'émission",
       "chartNoIssuances": "Aucun justificatif émis au cours des 12 derniers mois"

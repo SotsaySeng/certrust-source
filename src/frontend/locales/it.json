@@ -189,7 +189,6 @@
       "title": "Analisi",
       "issued": "Credenziali emesse",
       "scheduled": "Programmate",
-      "draft": "Bozza",
       "chartTitle": "Emissioni nel tempo",
       "chartEmpty": "Ancora nessun dato di emissione",
       "chartNoIssuances": "Nessuna credenziale emessa negli ultimi 12 mesi"

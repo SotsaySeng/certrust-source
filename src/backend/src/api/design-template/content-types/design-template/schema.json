@@ -8,7 +8,7 @@
     "description": "A certificate or badge design made in the Design Studio. layoutConfig holds the design document (see src/shared/design-core/types.ts). organization null = platform/system template."
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

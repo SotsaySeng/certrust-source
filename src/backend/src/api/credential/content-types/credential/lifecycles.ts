@@ -76,11 +76,10 @@ export default {
   async beforeCreate(event) {
     const { data } = event.params;
 
-    // Strapi 5 saves an update to a draftAndPublish entry by re-creating its
-    // published row (same documentId), which runs this hook again. That is
-    // not a new credential - without this check an organization over its
-    // limit (e.g. after a downgrade) could not revoke, renew or otherwise
-    // update the credentials it already has.
+    // A create carrying an existing documentId is not a new credential
+    // (Strapi re-created rows on every save while draft & publish was on).
+    // Kept so an organization over its limit (e.g. after a downgrade) can
+    // never be blocked from revoking or renewing credentials it already has.
     if (data.documentId) {
       const existing = await strapi.db.query('api::credential.credential').count({
         where: { documentId: data.documentId },
@@ -96,19 +95,7 @@ export default {
       return;
     }
 
-    // status: 'published' matters here, not just for correctness in
-    // general: strapi.entityService.findOne (verified directly against
-    // this repo's installed @strapi/core - services/entity-service/
-    // index.js) resolves the given numeric id to its documentId, then
-    // re-fetches via strapi.documents(uid).findOne({ documentId, ...opts
-    // }), which *defaults to the draft row* when opts.status is unset.
-    // Without this, a profile whose draft happens to lack its
-    // organization relation (e.g. after any partial update that didn't
-    // re-specify `organization`, since Strapi 5 REST updates apply to
-    // the draft) would silently look like a legacy/unrestricted issuer
-    // to this hook and skip tier enforcement entirely, every time.
     const issuer: any = await strapi.entityService.findOne('api::profile.profile', issuerId as any, {
-      status: 'published',
       populate: ['organization'],
     } as any);
 

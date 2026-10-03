@@ -142,7 +142,6 @@ export default ({ strapi }) => ({
       }
       const issuer = await strapi.db.query('api::profile.profile').findOne({
         where: { id },
-        status: 'published'
       })
       return issuer
     } catch (error) {
@@ -158,7 +157,6 @@ export default ({ strapi }) => ({
     try {
       // Fetch the credential with all its relations
       const credential = await strapi.entityService.findOne('api::credential.credential', credentialId, {
-        status: 'published',
         populate: [
           'achievement', 
           'achievement.creator',
@@ -355,7 +353,6 @@ export default ({ strapi }) => ({
               did: issuerData.id,
               profileType: 'Issuer',
               description: issuerData.description,
-              publishedAt: new Date()
             }
           })
           issuerId = newIssuer.id
@@ -382,7 +379,6 @@ export default ({ strapi }) => ({
               achievementId: achievementData.id,
               achievementType: achievementData.type?.[0] || 'Achievement',
               creator: issuerId,
-              publishedAt: new Date()
             }
           })
           achievementId = newAchievement.id
@@ -417,7 +413,6 @@ export default ({ strapi }) => ({
               name: recipientData.name || 'Unknown Recipient',
               did: recipientData.id,
               profileType: 'Recipient',
-              publishedAt: new Date()
             }
           })
           recipientId = newRecipient.id
@@ -437,7 +432,6 @@ export default ({ strapi }) => ({
         issuer: issuerId,
         recipient: recipientId,
         revoked: false,
-        publishedAt: new Date()
       }
       
       const credential = await strapi.entityService.create('api::credential.credential', {
@@ -456,7 +450,6 @@ export default ({ strapi }) => ({
               audience: ev.audience,
               url: ev.id,
               credential: credential.id,
-              publishedAt: new Date()
             }
           })
         }

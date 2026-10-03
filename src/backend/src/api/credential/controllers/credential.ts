@@ -70,14 +70,12 @@ async function findPublicCredential(strapi: any, id: string) {
   ]
   const [byCredentialId] = await strapi.entityService.findMany('api::credential.credential', {
     filters: { credentialId: id },
-    status: 'published',
     populate,
     limit: 1,
   }) as any[]
   if (byCredentialId) return (await attachEvidence(strapi, [byCredentialId]))[0]
   const [byDocumentId] = await strapi.entityService.findMany('api::credential.credential', {
     filters: { documentId: id },
-    status: 'published',
     populate,
     limit: 1,
   }) as any[]
@@ -127,7 +125,6 @@ export default factories.createCoreController('api::credential.credential', ({ s
 
       // Find the achievement and ensure it's published
       const achievements = await strapi.entityService.findMany('api::achievement.achievement', {
-        status: 'published',
         filters: {
           id: achievementId,
         },
@@ -235,15 +232,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
         return ctx.badRequest('Credential ID is required')
       }
 
-      // status: 'published' - entityService.findOne resolves the given id
-      // to its documentId and re-fetches via the Document Service, which
-      // defaults to the draft row when status is unset; a credential
-      // that's ever been through a partial PUT update not re-specifying
-      // `issuer` would otherwise look issuer-less here and break the
-      // ownership check below (see the equivalent, more detailed comment
-      // in src/policies/is-in-organization.ts).
       const existing: any = await strapi.entityService.findOne('api::credential.credential', id, {
-        status: 'published',
         populate: ['statusList', 'issuer'],
       })
 
@@ -466,7 +455,6 @@ export default factories.createCoreController('api::credential.credential', ({ s
       }
 
       const credential: any = await strapi.entityService.findOne('api::credential.credential', id, {
-        status: 'published',
         populate: ['achievement', 'issuer', 'recipient'],
       })
 
@@ -709,9 +697,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
       return ctx.forbidden('Only the recipient or the issuer can change this credential\'s visibility')
     }
 
-    // In-place write to every row of the document. documents().update()
-    // on a draftAndPublish type republishes by cloning the row under a new
-    // id, orphaning the recipient/evidence relations (see billing.updateOrg).
+    // Plain in-place write of one scalar field.
     await strapi.db.query('api::credential.credential').updateMany({
       where: { documentId: credential.documentId },
       data: { visibility },
@@ -766,7 +752,6 @@ export default factories.createCoreController('api::credential.credential', ({ s
 
       // Find the achievement
       const achievement = await strapi.entityService.findOne('api::achievement.achievement', achievementId, {
-        status: 'published',
         populate: { creator: { populate: ['organization'] } } as any
       }) as Achievement
 
@@ -807,7 +792,6 @@ export default factories.createCoreController('api::credential.credential', ({ s
                 achievement: { documentId: (achievement as any).documentId },
                 recipient: { email: { $eqi: emailKey } },
                 revoked: false,
-                publishedAt: { $notNull: true },
               },
             })
             if (existing) {

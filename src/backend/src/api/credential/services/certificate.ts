@@ -54,7 +54,6 @@ export default ({ strapi }) => ({
    */
   async loadDesignContext(credentialId: number | string) {
     const credential: any = await strapi.entityService.findOne('api::credential.credential', credentialId, {
-      status: 'published',
       populate: ['achievement', 'issuer', 'issuer.organization', 'recipient'],
     } as any)
     if (!credential) throw new Error('Credential not found')
@@ -90,7 +89,6 @@ export default ({ strapi }) => ({
         'api::credential.credential',
         credentialId,
         {
-          status: 'published',
           populate: [
             'achievement',
             'achievement.image',

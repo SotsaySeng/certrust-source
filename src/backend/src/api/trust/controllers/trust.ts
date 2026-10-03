@@ -13,8 +13,8 @@
  *   organisation (its credentials then fail verification with "suspended
  *   pending review" and it cannot issue).
  *
- * Organisation writes go through billing.updateOrg (in-place, draft and
- * published rows) - see the header of api/billing/services/billing.ts.
+ * Organisation writes go through billing.updateOrg (in place) - see the
+ * header of api/billing/services/billing.ts.
  */
 
 import { DocumentError } from '../services/verification-documents'
@@ -279,7 +279,7 @@ export default ({ strapi }: { strapi: any }) => ({
   /** GET /trust/admin/verifications - organisations awaiting or holding verification. */
   async adminVerifications(ctx: any) {
     const orgs = await strapi.db.query(ORG_UID).findMany({
-      where: { publishedAt: { $notNull: true }, verificationStatus: { $in: ['pending', 'verified', 'rejected'] } },
+      where: { verificationStatus: { $in: ['pending', 'verified', 'rejected'] } },
       populate: { members: { select: ['id', 'email', 'username'] } },
       orderBy: { verificationRequestedAt: 'desc' },
     })

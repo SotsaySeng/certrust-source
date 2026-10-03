@@ -145,13 +145,7 @@ export default () => ({
    * lifecycle hooks each do an equivalent resolution inline).
    */
   async getUserOrganizationId(userId: number): Promise<number | string | null> {
-    // status: 'published' - entityService defaults to the draft profile
-    // row when status is unset, which can have stale/missing relation
-    // data (see the equivalent, more detailed comment on
-    // organization.usage() in organization/controllers/organization.ts,
-    // the existing logic this method consolidates).
     const profiles: any[] = await strapi.entityService.findMany('api::profile.profile', {
-      status: 'published',
       filters: { owner: { id: userId } },
       populate: ['organization'],
     } as any);

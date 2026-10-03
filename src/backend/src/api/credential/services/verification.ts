@@ -43,7 +43,6 @@ export default {
       // Find the credential with all necessary relationships using the credentialId field
       const credentials = await strapi.entityService.findMany('api::credential.credential', {
         filters: { credentialId: credentialId },
-        status: 'published',
         populate: [
           'achievement', 
           'achievement.image', 

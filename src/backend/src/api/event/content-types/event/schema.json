@@ -8,7 +8,7 @@
     "description": "A real-world event (cohort, ceremony, conference) that an achievement is issued in connection with."
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

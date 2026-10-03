@@ -8,7 +8,7 @@
     "description": "Open Badges 3.0 Evidence for credentials"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

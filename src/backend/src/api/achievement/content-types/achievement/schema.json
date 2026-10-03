@@ -8,7 +8,7 @@
     "description": "Open Badges 3.0 Achievement (Badge Class) definition"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

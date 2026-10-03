@@ -22,8 +22,8 @@ interface RevocationList {
 const listsInFlight = new Map<string, Promise<any>>()
 
 /**
- * Run `fn` in a transaction holding a lock on every row (draft and
- * published) of the status list document that row `id` belongs to.
+ * Run `fn` in a transaction holding a lock on the rows of the status list
+ * document that row `id` belongs to.
  * SQLite needs no row lock: it allows one writer at a time.
  */
 async function withListRowsLocked<T>(
@@ -110,9 +110,7 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
   async createStatusListCredential(issuerId: number | string, purpose = 'revocation') {
     try {
       // Find the issuer
-      const issuer = await strapi.entityService.findOne('api::profile.profile', issuerId, {
-        status: 'published'
-      })
+      const issuer = await strapi.entityService.findOne('api::profile.profile', issuerId)
 
       if (!issuer) {
         throw new ApplicationError('Issuer not found')
@@ -121,12 +119,7 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
       // Create a unique ID for the status list credential
       const statusListId = `urn:uuid:${crypto.randomUUID()}`
 
-      // Create an empty status list. Uses the Document Service (not
-      // entityService.create with a manual publishedAt) so this ends up as
-      // a single published row rather than a draft+published pair whose
-      // numeric ids diverge - see the matching gotcha already hit in
-      // seed-data.ts. This is a system-generated record with no editorial
-      // draft workflow, so publishing it directly is correct.
+      // Create an empty status list.
       const statusList = await strapi.documents('api::revocation-list.revocation-list').create({
         data: {
           issuer: issuerId,
@@ -136,7 +129,6 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
           nextIndex: 0,
           lastUpdated: new Date()
         },
-        status: 'published'
       })
 
       return statusList
@@ -164,7 +156,6 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
     const work = (async () => {
       const existing = await strapi.entityService.findMany('api::revocation-list.revocation-list', {
         filters: { issuer: { id: issuerId }, statusPurpose: 'revocation' },
-        status: 'published',
         sort: { id: 'asc' },
       })
       if (existing && existing.length > 0) return existing[0]
@@ -182,13 +173,9 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
   /**
    * Reserve the next available index in a status list for a new credential.
    *
-   * An atomic in-place increment. This used entityService.update, which on
-   * a draftAndPublish type republishes: the published row is deleted and
-   * re-created under a new id. During a batch every other recipient was
-   * still holding the old row, so their credentials failed to link to it
-   * ("relation(s) ... do not exist", then "current transaction is
-   * aborted"), and the read-then-write let the ones that did succeed share
-   * the same index - revoking one would have revoked the others.
+   * An atomic in-place increment under a row lock. Concurrent issuances in
+   * a batch used to read the same counter and share an index, so revoking
+   * one credential would have revoked the others.
    *
    * @param statusList the list (or its numeric id) from
    *   getOrCreateActiveListForIssuer
@@ -196,9 +183,8 @@ export const revocationListExtension = ({ strapi }: { strapi: any }) => ({
   async assignNextIndex(statusList: number | string | { id: number | string, documentId?: string }) {
     const id = typeof statusList === 'object' ? statusList.id : statusList
     return withListRowsLocked(strapi, id, async (rows, updateAll) => {
-      // Draft and published rows are kept in step, so an admin "Publish"
-      // copying the draft over can't rewind the counter. Taking the highest
-      // also repairs rows that drifted apart before this fix.
+      // A list document used to have a draft row too; taking the highest
+      // is still correct with the single row it has now.
       const index = Math.max(0, ...rows.map(r => Number(r.next_index) || 0))
       await updateAll({ next_index: index + 1 })
       return index

@@ -60,7 +60,6 @@ export async function seedDesignLibrary(strapi: any): Promise<void> {
             organization: null,
             ...(categoryId ? { category: { connect: [{ documentId: categoryId }] } } : {}),
           },
-          status: 'published',
         } as any)
         await refreshDesignPreview(created.documentId)
       }

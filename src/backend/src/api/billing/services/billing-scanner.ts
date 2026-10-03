@@ -114,7 +114,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const billing = this.billing()
     const settings: BillingSettings = await billing.getSettings()
     const orgs: any[] = await strapi.db.query('api::organization.organization').findMany({
-      where: { publishedAt: { $notNull: true }, subscriptionStatus: { $in: ['trialing', 'active', 'past_due'] } },
+      where: { subscriptionStatus: { $in: ['trialing', 'active', 'past_due'] } },
       populate: ['members'],
     })
 

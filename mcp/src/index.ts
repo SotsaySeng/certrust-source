@@ -111,7 +111,7 @@ server.tool(
   'Returns ID, name, description, and criteria for each achievement.',
   {},
   async () => {
-    const result = await certrust<any>('GET', '/api/achievements?populate=*&status=published');
+    const result = await certrust<any>('GET', '/api/achievements?populate=*');
     const items: any[] = result.data ?? result ?? [];
     if (items.length === 0) return { content: [{ type: 'text', text: 'No achievements found.' }] };
 

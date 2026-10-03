@@ -33,10 +33,8 @@ function createFakeStrapi() {
           if (contentType !== 'api::profile.profile') throw new Error('unexpected content type')
           return profiles.get(id) || null
         },
-        // Signing must never write to the issuer's profile: on a
-        // draftAndPublish type that re-publishes the document, which deletes
-        // the published row and orphans every relation pointing at it (see
-        // the service's header comment). Blow up loudly if it comes back.
+        // Signing must never write to the issuer's profile (see the
+        // service's header comment). Blow up loudly if it comes back.
         update: async () => {
           throw new Error('entityService.update must not be called while generating issuer keys')
         },

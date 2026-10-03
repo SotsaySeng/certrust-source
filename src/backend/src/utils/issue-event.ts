@@ -22,7 +22,6 @@ export async function resolveIssueEvent(eventDocumentId: unknown, achievement: a
   if (eventDocumentId == null || eventDocumentId === '') return null
   const event: any = await strapi.documents('api::event.event').findOne({
     documentId: String(eventDocumentId),
-    status: 'published',
     populate: ['organization', 'achievement'],
   } as any)
   if (!event) throw new errors.ValidationError('The selected event no longer exists. Choose another event.')

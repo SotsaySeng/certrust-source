@@ -189,7 +189,6 @@
       "title": "Analysen",
       "issued": "Ausgestellte Nachweise",
       "scheduled": "Geplant",
-      "draft": "Entwurf",
       "chartTitle": "Ausstellungen im Zeitverlauf",
       "chartEmpty": "Noch keine Ausstellungsdaten",
       "chartNoIssuances": "In den letzten 12 Monaten wurden keine Nachweise ausgestellt"

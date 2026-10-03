@@ -61,11 +61,10 @@ export default {
       data.tags = [];
     }
 
-    // Strapi 5 saves an update to a draftAndPublish entry by re-creating its
-    // published row (same documentId), which runs this hook again. That is
-    // not a new achievement - without this check an organization over its
-    // limit (e.g. after a downgrade) could not edit the achievements it
-    // already has. Tag sanitisation above still applies to republishes.
+    // A create carrying an existing documentId is not a new achievement
+    // (Strapi re-created rows on every save while draft & publish was on).
+    // Kept so an organization over its limit can never be blocked from
+    // saving an achievement it already has.
     if (data.documentId) {
       const existing = await strapi.db.query('api::achievement.achievement').count({
         where: { documentId: data.documentId },
@@ -83,15 +82,7 @@ export default {
       return;
     }
 
-    // status: 'published' - entityService.findOne resolves the given id
-    // to its documentId and re-fetches via the Document Service, which
-    // defaults to the *draft* row when status is unset - a creator
-    // profile whose draft happens to lack its organization relation
-    // would otherwise silently look like a legacy/unrestricted creator
-    // and skip tier enforcement entirely. Same reasoning as credential
-    // lifecycle's beforeCreate.
     const creator: any = await strapi.entityService.findOne('api::profile.profile', creatorId as any, {
-      status: 'published',
       populate: ['organization'],
     } as any);
 

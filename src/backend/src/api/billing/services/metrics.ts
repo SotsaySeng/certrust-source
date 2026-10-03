@@ -160,7 +160,7 @@ export function rowsToCsv(rows: ReturnType<typeof orgRows>): string {
 export default ({ strapi }: { strapi: any }) => ({
   async load() {
     const [orgs, payments] = await Promise.all([
-      strapi.db.query('api::organization.organization').findMany({ where: { publishedAt: { $notNull: true } } }),
+      strapi.db.query('api::organization.organization').findMany(),
       strapi.db.query('api::payment.payment').findMany({ orderBy: { paidAt: 'asc' } }),
     ])
     return { orgs, payments }

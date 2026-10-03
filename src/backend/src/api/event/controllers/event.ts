@@ -73,7 +73,6 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
     try {
       const existing: any = await strapi.documents('api::event.event').findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any);
 
@@ -139,7 +138,6 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
     try {
       const existing: any = await strapi.documents('api::event.event').findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any);
 
@@ -175,7 +173,6 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
     try {
       const existing: any = await strapi.documents('api::event.event').findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any);
 

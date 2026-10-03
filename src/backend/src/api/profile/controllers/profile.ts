@@ -52,7 +52,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
       // Find profile by email
       const profiles = await strapi.entityService.findMany('api::profile.profile', {
         filters: { email: userEmail },
-        status: 'published',
         populate: ['organization'],
         limit: 1
       });
@@ -82,7 +81,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       const profiles = await strapi.entityService.findMany('api::profile.profile', {
         filters: { email: ctx.state.user.email },
-        status: 'published',
         limit: 1,
       });
 
@@ -112,7 +110,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       const profiles = await strapi.entityService.findMany('api::profile.profile', {
         filters: { email: ctx.state.user.email },
-        status: 'published',
         limit: 1,
       });
 
@@ -142,7 +139,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       const profiles = await strapi.entityService.findMany('api::profile.profile', {
         filters: { email: ctx.state.user.email },
-        status: 'published',
         limit: 1,
       });
 
@@ -169,9 +165,7 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
         return ctx.forbidden('You do not have access to this profile')
       }
       
-      const profile = await strapi.entityService.findOne('api::profile.profile', id, {
-        status: 'published',
-      } as any)
+      const profile = await strapi.entityService.findOne('api::profile.profile', id)
       
       if (!profile) {
         return ctx.notFound('Profile not found')
@@ -179,7 +173,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       const credentials = await strapi.entityService.findMany('api::credential.credential', {
         filters: { issuer: { id: profile.id } },
-        status: 'published',
         populate: { achievement: { populate: ['image'] }, recipient: true },
       }) as any[]
       
@@ -199,9 +192,7 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
         return ctx.forbidden('You do not have access to this profile')
       }
       
-      const profile = await strapi.entityService.findOne('api::profile.profile', id, {
-        status: 'published',
-      } as any)
+      const profile = await strapi.entityService.findOne('api::profile.profile', id)
       
       if (!profile) {
         return ctx.notFound('Profile not found')
@@ -209,7 +200,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       const credentials = await strapi.entityService.findMany('api::credential.credential', {
         filters: { recipient: { id: profile.id } },
-        status: 'published',
         populate: { achievement: { populate: ['image'] }, issuer: true },
       }) as any[]
       
@@ -228,7 +218,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       // Find the profile with its public keys
       const profile = await strapi.entityService.findOne('api::profile.profile', id, {
-        status: 'published',
         populate: ['publicKey']
       }) as ProfileWithPublicKeys
 
@@ -265,7 +254,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
 
       // Find the profile with its public keys
       const profile = await strapi.entityService.findOne('api::profile.profile', id, {
-        status: 'published',
         populate: ['publicKey']
       }) as ProfileWithPublicKeys
 
@@ -358,7 +346,6 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
   async getIssuer(ctx) {
     const { id } = ctx.params
     const profile = await strapi.entityService.findOne('api::profile.profile', id, {
-      status: 'published',
       populate: ['publicKey', 'image', 'organization']
     }) as any
 
@@ -533,7 +520,7 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
       const orgs: any[] = [];
       for (const documentId of orgDocumentIds) {
         const org: any = await strapi.db.query('api::organization.organization').findOne({
-          where: { documentId, publishedAt: { $notNull: true } },
+          where: { documentId },
           populate: ['members'],
         });
         if (!org) continue;
@@ -554,8 +541,7 @@ export default factories.createCoreController('api::profile.profile', ({ strapi 
         }
       }
 
-      // In-place writes (draft and published rows): see billing.updateOrg
-      // for why documents().update() must not be used on organisations.
+      // In-place writes with the query engine, like billing.updateOrg.
       const now = new Date();
       for (const org of orgs) {
         if ((org.members || []).some((m: any) => m.id === userId)) {

@@ -638,7 +638,6 @@ export class ApiClient {
       topAchievements: [] as { id: number, name: string, count: number }[],
       memberSince: new Date().toISOString(),
       scheduledCredentials: 0,
-      draftCredentials: 0,
       issuanceByMonth: [] as { month: string, count: number }[],
     }
     try {
@@ -704,18 +703,12 @@ export class ApiClient {
   /**
    * List the current organization's design templates.
    * Served by GET /api/design-templates.
-   *
-   * filters[publishedAt][$notNull] mirrors getAvailableBadges()'s existing
-   * convention for the same underlying reason: design-template is a
-   * draftAndPublish content type, so an unfiltered list can otherwise
-   * surface an entry's transient draft row alongside its published one.
    */
   async getDesignTemplates() {
     try {
       const response = await this.get<StrapiResponse<any>>('/api/design-templates', {
-        'populate': '*',
-        'filters[publishedAt][$notNull]': 'true',
-        'sort': 'updatedAt:desc'
+        populate: '*',
+        sort: 'updatedAt:desc'
       })
       return {
         data: Array.isArray(response.data) ? response.data : [],
@@ -732,34 +725,23 @@ export class ApiClient {
    * Get a single design template by id (documentId).
    */
   async getDesignTemplate(id: number | string) {
-    return this.get<any>(`/api/design-templates/${encodeURIComponent(id)}?populate=*&status=published`)
+    return this.get<any>(`/api/design-templates/${encodeURIComponent(id)}?populate=*`)
   }
 
   /**
    * Create a design template.
-   *
-   * `?status=published` matters here, not just tidiness: Strapi 5's
-   * Document Service always creates a *draft*-only row by default
-   * (verified directly against @strapi/core's document-service
-   * repository.js) - a plain POST with no status param would produce a
-   * design template invisible to getDesignTemplates() (published-only,
-   * above) and uncounted by the backend's tier-limit hook (which also
-   * only counts publishedAt-not-null rows). Passing status=published as a
-   * query param makes Strapi publish the same create in one round trip.
    */
   async createDesignTemplate(templateData: any) {
-    return this.post<any>('/api/design-templates?status=published', {
+    return this.post<any>('/api/design-templates', {
       data: templateData
     })
   }
 
   /**
-   * Update a design template. Same status=published reasoning as create -
-   * without it, an edit would only land on the draft copy and the
-   * published (visible) one would silently keep showing stale data.
+   * Update a design template.
    */
   async updateDesignTemplate(id: number | string, templateData: any) {
-    return this.put<any>(`/api/design-templates/${encodeURIComponent(id)}?status=published`, {
+    return this.put<any>(`/api/design-templates/${encodeURIComponent(id)}`, {
       data: templateData
     })
   }
@@ -922,9 +904,8 @@ export class ApiClient {
   async getEvents() {
     try {
       const response = await this.get<StrapiResponse<any>>('/api/events', {
-        'populate': '*',
-        'filters[publishedAt][$notNull]': 'true',
-        'sort': 'startDate:desc'
+        populate: '*',
+        sort: 'startDate:desc'
       })
       return {
         data: Array.isArray(response.data) ? response.data : [],
@@ -941,32 +922,29 @@ export class ApiClient {
    * Get a single event by id (documentId).
    */
   async getEvent(id: number | string) {
-    return this.get<any>(`/api/events/${encodeURIComponent(id)}?populate=*&status=published`)
+    return this.get<any>(`/api/events/${encodeURIComponent(id)}?populate=*`)
   }
 
   /**
-   * Create an event. `?status=published` matters here for the same reason
-   * as createDesignTemplate - Strapi 5's Document Service creates a
-   * draft-only row by default, which would be invisible to getEvents()
-   * (published-only, above) without this.
+   * Create an event.
    */
   async createEvent(eventData: any) {
-    return this.post<any>('/api/events?status=published', {
+    return this.post<any>('/api/events', {
       data: eventData
     })
   }
 
   /**
-   * Update an event. Same status=published reasoning as create.
+   * Update an event.
    */
   async updateEvent(id: number | string, eventData: any) {
-    return this.put<any>(`/api/events/${encodeURIComponent(id)}?status=published`, {
+    return this.put<any>(`/api/events/${encodeURIComponent(id)}`, {
       data: eventData
     })
   }
 
   /**
-   * Delete an event (both its draft and published rows).
+   * Delete an event.
    */
   async deleteEvent(id: number | string) {
     return this.delete<any>(`/api/events/${encodeURIComponent(id)}`)
@@ -1150,8 +1128,7 @@ export class ApiClient {
   async getAvailableBadges() {
     try {
       const response = await this.get<StrapiResponse<any>>('/api/achievements', {
-        'populate': '*',
-        'filters[publishedAt][$notNull]': 'true'
+        populate: '*'
       })
 
       if (!response.data) {

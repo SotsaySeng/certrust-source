@@ -102,7 +102,6 @@ export async function seedDevelopmentData(strapi: any): Promise<void> {
         profileType: 'Both',
         url: 'http://localhost:3000',
         owner: apiUser.id,  // NEW: Link profile to API user for multi-tenancy
-        publishedAt: new Date(),
       },
     });
 
@@ -122,7 +121,6 @@ export async function seedDevelopmentData(strapi: any): Promise<void> {
           { skillName: 'Open Badges 3.0', skillDescription: 'Familiarity with the Open Badges 3.0 specification' },
         ],
         creator: adminProfile.id,
-        publishedAt: new Date(),
       },
     });
 
@@ -185,7 +183,6 @@ export async function seedDevelopmentData(strapi: any): Promise<void> {
         issuer: adminProfile.id,
         recipient: adminProfile.id,
         proof: [proof],
-        publishedAt: new Date(),
       },
     });
 

@@ -71,7 +71,6 @@ export default factories.createCoreController('api::organization.organization', 
 
       const requested: any = await strapi.documents('api::organization.organization').findOne({
         documentId: ctx.params.id,
-        status: 'published',
       } as any);
 
       if (!requested || String(requested.id) !== String(organizationId)) {
@@ -103,13 +102,7 @@ export default factories.createCoreController('api::organization.organization', 
         return ctx.unauthorized('You must be logged in.');
       }
 
-      // status: 'published' - entityService (and the Document Service it
-      // wraps) defaults to the draft version when status is unset; see
-      // the equivalent comment in
-      // src/policies/is-in-organization.ts for why that matters for a
-      // relation like `organization` here.
       const profiles: any[] = await strapi.entityService.findMany('api::profile.profile', {
-        status: 'published',
         filters: { owner: { id: ctx.state.user.id } },
         populate: ['organization'],
       } as any);

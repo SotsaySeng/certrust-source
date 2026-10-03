@@ -1,7 +1,6 @@
 /**
  * Evidence links to its credential one way (evidence.credential), so a
- * credential's evidence is queried rather than populated. A two-way link
- * is wiped whenever Strapi republishes the credential.
+ * credential's evidence is queried rather than populated.
  */
 export async function attachEvidence<T extends { id?: number | string, evidence?: any[] }>(
   strapi: any,
@@ -10,7 +9,7 @@ export async function attachEvidence<T extends { id?: number | string, evidence?
   const ids = credentials.map(c => c?.id).filter(id => id != null)
   if (!ids.length) return credentials
   const rows = await strapi.db.query('api::evidence.evidence').findMany({
-    where: { credential: { id: { $in: ids } }, publishedAt: { $notNull: true } },
+    where: { credential: { id: { $in: ids } } },
     populate: ['credential'],
   })
   const byCredential = new Map<string, any[]>()

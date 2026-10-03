@@ -23,7 +23,7 @@ export interface IssueDesigns {
 }
 
 async function loadDesign(documentId: string, organization: any): Promise<{ design: Design, kind: 'certificate' | 'badge' } | null> {
-  const tpl: any = await strapi.documents(DT).findOne({ documentId, status: 'published', populate: ['organization'] } as any)
+  const tpl: any = await strapi.documents(DT).findOne({ documentId, populate: ['organization'] } as any)
   if (!tpl) throw new errors.ValidationError('The selected design no longer exists. Choose another design.')
   const ownerOrg = tpl.organization?.id ?? null
   if (ownerOrg != null && String(ownerOrg) !== String(organization?.id)) {
@@ -179,7 +179,7 @@ export async function validateAchievementDesigns(data: any, userId: number): Pro
       continue
     }
     const loaded = await loadDesign(id, caller.organization)
-    const actual = loaded?.kind ?? (await strapi.documents(DT).findOne({ documentId: id, status: 'published' } as any) as any)?.kind
+    const actual = loaded?.kind ?? (await strapi.documents(DT).findOne({ documentId: id } as any) as any)?.kind
     if (actual && actual !== kind) {
       throw new errors.ValidationError(kind === 'certificate' ? 'Choose a certificate design for the certificate.' : 'Choose a badge design for the badge.')
     }

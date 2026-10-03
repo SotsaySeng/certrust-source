@@ -19,10 +19,9 @@ export interface CallerContext {
   isPlatformAdmin: boolean
 }
 
-/** The caller's own profile + organization (published rows) and admin flag. */
+/** The caller's own profile + organization and admin flag. */
 export async function callerContext(userId: number): Promise<CallerContext> {
   const profiles: any[] = await strapi.entityService.findMany('api::profile.profile', {
-    status: 'published',
     filters: { owner: { id: userId } },
     populate: ['organization'],
   } as any)
@@ -85,19 +84,16 @@ export async function uploadBuffer(buffer: Buffer, filename: string, mimetype: s
 
 /**
  * Re-render a template's gallery thumbnail (sample data, default brand) and
- * attach it as previewImage. Written straight to every row of the document
- * (draft + published) with the query engine: going through
- * documents().update would republish the template under a new numeric id.
+ * attach it as previewImage, written in place with the query engine.
  * The previous thumbnail file is deleted. Never throws - a missing
  * thumbnail must not fail a save.
  */
 export async function refreshDesignPreview(documentId: string): Promise<void> {
   try {
-    const rows: any[] = await strapi.db.query('api::design-template.design-template').findMany({
+    const row: any = await strapi.db.query('api::design-template.design-template').findOne({
       where: { documentId },
       populate: ['previewImage'],
     })
-    const row = rows.find(r => r.publishedAt) ?? rows[0]
     if (!row || isEmptyDesign(row.layoutConfig)) return
     const r = validateDesign(row.layoutConfig)
     if (!r.ok) return
@@ -105,15 +101,11 @@ export async function refreshDesignPreview(documentId: string): Promise<void> {
     const png = await renderDesignPng(design, { data: sampleData(), width: design.kind === 'badge' ? 480 : 720 })
     const file = await uploadBuffer(png, `design-${documentId}.png`, 'image/png')
     if (!file?.id) return
-    const old = new Set(rows.map(x => x.previewImage?.id).filter(Boolean))
-    for (const x of rows) {
-      await strapi.db.query('api::design-template.design-template').update({ where: { id: x.id }, data: { previewImage: file.id } })
-    }
-    for (const id of old) {
-      if (id === file.id) continue
-      const stillUsed = await strapi.db.query('api::design-template.design-template').count({ where: { previewImage: { id } } })
-      if (stillUsed) continue
-      const f = await strapi.db.query('plugin::upload.file').findOne({ where: { id } })
+    const oldId = row.previewImage?.id
+    await strapi.db.query('api::design-template.design-template').update({ where: { id: row.id }, data: { previewImage: file.id } })
+    if (oldId && oldId !== file.id) {
+      const stillUsed = await strapi.db.query('api::design-template.design-template').count({ where: { previewImage: { id: oldId } } })
+      const f = stillUsed ? null : await strapi.db.query('plugin::upload.file').findOne({ where: { id: oldId } })
       if (f) await strapi.plugin('upload').service('upload').remove(f).catch(() => {})
     }
   }

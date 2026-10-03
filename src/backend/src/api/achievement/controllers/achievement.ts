@@ -101,7 +101,6 @@ export default factories.createCoreController('api::achievement.achievement', ({
       const { id } = ctx.params
 
       const achievement = await strapi.entityService.findOne('api::achievement.achievement', id, {
-        status: 'published',
         populate: {
           image: true,
           creator: { populate: { owner: true, organization: { populate: ['members'] } } },
@@ -124,7 +123,6 @@ export default factories.createCoreController('api::achievement.achievement', ({
 
       achievement.credentials = await strapi.entityService.findMany('api::credential.credential', {
         filters: { achievement: { id: achievement.id } },
-        status: 'published',
         populate: ['recipient'],
       })
 
@@ -167,7 +165,6 @@ export default factories.createCoreController('api::achievement.achievement', ({
 
     try {
       const creatorProfile: any = await strapi.entityService.findOne('api::profile.profile', creatorId, {
-        status: 'published',
         populate: ['owner'],
       })
 
@@ -176,7 +173,6 @@ export default factories.createCoreController('api::achievement.achievement', ({
       }
 
       const achievements = await strapi.entityService.findMany('api::achievement.achievement', {
-        status: 'published',
         filters: { creator: { id: creatorId } },
         populate: ['image', 'creator'],
       })

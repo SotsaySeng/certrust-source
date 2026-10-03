@@ -382,7 +382,7 @@ export interface ApiAchievementAchievement extends Struct.CollectionTypeSchema {
     singularName: 'achievement';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     achievementId: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
@@ -560,7 +560,7 @@ export interface ApiCredentialCredential extends Struct.CollectionTypeSchema {
     singularName: 'credential';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     achievement: Schema.Attribute.Relation<
@@ -759,7 +759,7 @@ export interface ApiDesignTemplateDesignTemplate
     singularName: 'design-template';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     category: Schema.Attribute.Relation<
@@ -822,7 +822,7 @@ export interface ApiEndorsementEndorsement extends Struct.CollectionTypeSchema {
     singularName: 'endorsement';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     claim: Schema.Attribute.JSON;
@@ -862,7 +862,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
     singularName: 'event';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     achievement: Schema.Attribute.Relation<
@@ -906,7 +906,7 @@ export interface ApiEvidenceEvidence extends Struct.CollectionTypeSchema {
     singularName: 'evidence';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     audience: Schema.Attribute.String;
@@ -1126,7 +1126,7 @@ export interface ApiOrganizationOrganization
     singularName: 'organization';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     billedTier: Schema.Attribute.Enumeration<['pro', 'enterprise']>;
@@ -1237,7 +1237,7 @@ export interface ApiProfileProfile extends Struct.CollectionTypeSchema {
     singularName: 'profile';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1284,7 +1284,7 @@ export interface ApiRevocationListRevocationList
     singularName: 'revocation-list';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;

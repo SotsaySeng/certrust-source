@@ -8,7 +8,7 @@
     "description": "Billing/tenant boundary. Owns profiles, design templates, and events, and is subject to its tier's usage limits (see api::tier-settings.tier-settings, an admin-editable singleType)."
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

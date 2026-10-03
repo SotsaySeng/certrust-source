@@ -8,7 +8,7 @@
     "description": "Open Badges 3.0 Endorsement"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

@@ -8,25 +8,9 @@
  * the authoritative home of the public key too.
  *
  * It deliberately does NOT write the public key back onto the issuer's
- * profile. It used to (mirrorPublicKeyOntoProfile, removed), and that one
- * write broke the first issuance of every new organization:
- *
- *   `profile` is a draftAndPublish content type, and entityService.update()
- *   on a published entry delegates to documents().update({status:'published'})
- *   (verified in @strapi/core's entity-service compat layer), which
- *   re-publishes by DELETING the published row and cloning the draft into a
- *   new one - with a new numeric id. Every relation that pointed at the old
- *   published profile row is dropped with it.
- *
- * Since key creation happens lazily on the first signature, that republish
- * landed in the middle of the first batch issuance, with two consequences:
- * the other recipients in the same batch (batchIssue runs them through
- * Promise.all) were still holding the now-deleted numeric profile id, so
- * their issuer_keys_profile_lnk inserts died on a FOREIGN KEY constraint and
- * createStatusListCredential reported "Issuer not found"; and the
- * achievement's own `creator` link - which pointed at that published profile
- * row - was silently deleted, permanently breaking the achievement with
- * "Achievement creator not found" on every later attempt.
+ * profile. It used to (mirrorPublicKeyOntoProfile, removed); while profile
+ * had draft & publish on, that write republished the profile under a new
+ * id in the middle of the first batch issuance and broke it.
  *
  * Signing must not mutate the issuer's identity record. Readers that want the
  * public key on a profile now resolve it from here instead - see

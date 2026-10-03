@@ -25,7 +25,6 @@ export default factories.createCoreController('api::endorsement.endorsement', ({
       const { id } = ctx.params
       
       const endorsement = await strapi.entityService.findOne('api::endorsement.endorsement', id, {
-        status: 'published',
         populate: ['endorser', 'proof']
       }) as Endorsement
       

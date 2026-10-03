@@ -34,16 +34,7 @@ export default factories.createCoreService('api::homepage.homepage', ({ strapi }
   /**
    * Platform-wide totals for the marketing homepage's stats strip.
    *
-   * publishedAt: { $notNull: true } on every one of these is mandatory, not
-   * tidiness - the same trap documented at length in
-   * api/organization/services/usage.ts and api/profile/services/dashboard.ts.
-   * All four of these content types are draftAndPublish: true, and a create
-   * writes TWO physical rows per entry (a draft and a published copy sharing
-   * one documentId). strapi.db.query is the low-level query engine below the
-   * Document Service and has no notion of status, so without this filter every
-   * number on the public homepage would be exactly double the truth.
-   *
-   * No status filtering beyond that, by product decision: "Organizations"
+   * No status filtering, by product decision: "Organizations"
    * therefore includes organizations with closedAt or suspendedAt set, and
    * "Credentials issued" includes revoked ones (issued is issued). That is
    * intentional - do not "fix" it without checking, and note it deliberately
@@ -59,21 +50,11 @@ export default factories.createCoreService('api::homepage.homepage', ({ strapi }
       return countsCache.value
     }
 
-    // Each `where` is written out separately rather than hoisting one shared
-    // object - Strapi's query layer is free to mutate what it is handed.
     const [organizations, achievements, events, credentials] = await Promise.all([
-      strapi.db.query('api::organization.organization').count({
-        where: { publishedAt: { $notNull: true } },
-      } as any),
-      strapi.db.query('api::achievement.achievement').count({
-        where: { publishedAt: { $notNull: true } },
-      } as any),
-      strapi.db.query('api::event.event').count({
-        where: { publishedAt: { $notNull: true } },
-      } as any),
-      strapi.db.query('api::credential.credential').count({
-        where: { publishedAt: { $notNull: true } },
-      } as any),
+      strapi.db.query('api::organization.organization').count(),
+      strapi.db.query('api::achievement.achievement').count(),
+      strapi.db.query('api::event.event').count(),
+      strapi.db.query('api::credential.credential').count(),
     ])
 
     const value: PlatformCounts = { organizations, achievements, events, credentials }

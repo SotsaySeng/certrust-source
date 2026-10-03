@@ -19,7 +19,7 @@ interface MonthlyIssuance {
 }
 
 export interface DashboardStats {
-  /** Credentials this profile issued (published_at IS NOT NULL) */
+  /** Credentials this profile issued */
   credentialsIssued: number;
   /** Issued credentials that have been revoked */
   credentialsRevoked: number;
@@ -37,17 +37,6 @@ export interface DashboardStats {
   memberSince: string;
   /** This user's scheduled-issuance rows still pending (not yet issued/cancelled/failed) */
   scheduledCredentials: number;
-  /**
-   * documentIds issued by this profile that have a draft row but no
-   * published row at all - NOT a naive `publishedAt: null` count. Every
-   * normally-issued credential also has an auto-generated draft
-   * shadow-row sharing its documentId (draftAndPublish's create behavior
-   * - see api::organization.usage's header comment for the same
-   * double-row hazard), so counting raw publishedAt: null rows would
-   * count every issued credential's harmless shadow draft as if it were
-   * itself an unpublished/incomplete credential.
-   */
-  draftCredentials: number;
   /** Trailing 12 calendar months (oldest first, including the current one), zero-filled, from published credentials' issuanceDate */
   issuanceByMonth: MonthlyIssuance[];
 }
@@ -88,53 +77,36 @@ export default ({ strapi }: { strapi: any }) => ({
       topRaw,
       user,
       scheduledCredentials,
-      draftRows,
-      publishedRows,
       issuanceRows,
     ] = await Promise.all([
-      // publishedAt: { $notNull: true } on every one of these, for the same
-      // reason api::organization.usage documents at length: this is
-      // strapi.db.query(), the low-level query engine below the Document
-      // Service, and a draftAndPublish create writes *two* physical rows per
-      // entry (a draft and a published copy sharing one documentId), each
-      // with its own fully-attached relations. Without the filter both rows
-      // match and every count comes back at exactly double. The queries
-      // further down this same list already had it; these did not, so the
-      // dashboard reported twice the credentials actually issued, received,
-      // revoked and expired - and, because dashboard.vue feeds
-      // credentialsIssued into the Plan Usage bar's numerator, a free-tier
-      // organization saw "50 / 50, limit reached" after 25 real credentials.
-      // (Enforcement itself was never wrong: the lifecycle hooks count
-      // through api::organization.usage, which has always filtered.)
       strapi.db.query('api::credential.credential').count({
-        where: { issuer: profileId, publishedAt: { $notNull: true } },
+        where: { issuer: profileId },
       }),
       strapi.db.query('api::credential.credential').count({
-        where: { issuer: profileId, revoked: true, publishedAt: { $notNull: true } },
+        where: { issuer: profileId, revoked: true },
       }),
       strapi.db.query('api::credential.credential').count({
         where: {
           issuer: profileId,
           revoked: false,
           expirationDate: { $lt: now.toISOString() },
-          publishedAt: { $notNull: true },
         },
       }),
       strapi.db.query('api::credential.credential').count({
-        where: { recipient: profileId, publishedAt: { $notNull: true } },
+        where: { recipient: profileId },
       }),
       strapi.db.query('api::achievement.achievement').count({
-        where: { creator: profileId, publishedAt: { $notNull: true } },
+        where: { creator: profileId },
       }),
       // For uniqueRecipients we need distinct IDs - fetch minimal fields only
       strapi.db.query('api::credential.credential').findMany({
-        where: { issuer: profileId, publishedAt: { $notNull: true } },
+        where: { issuer: profileId },
         populate: { recipient: { fields: ['id'] } },
         fields: ['id'],
       }),
       // Top achievements: group credentials by achievement id + name
       strapi.db.query('api::credential.credential').findMany({
-        where: { issuer: profileId, publishedAt: { $notNull: true } },
+        where: { issuer: profileId },
         populate: { achievement: { fields: ['id', 'achievementName'] } },
         fields: ['id'],
       }),
@@ -146,23 +118,10 @@ export default ({ strapi }: { strapi: any }) => ({
       strapi.db.query('api::scheduled-issuance.scheduled-issuance').count({
         where: { scheduledById: userId, status: 'pending' },
       }),
-      // draftCredentials: documentIds with a draft row (publishedAt: null) ...
-      strapi.db.query('api::credential.credential').findMany({
-        where: { issuer: profileId, publishedAt: null },
-        select: ['documentId'],
-      }),
-      // ... minus documentIds that also have a published row (see
-      // DashboardStats.draftCredentials's doc comment for why this can't
-      // be a naive publishedAt: null count).
-      strapi.db.query('api::credential.credential').findMany({
-        where: { issuer: profileId, publishedAt: { $notNull: true } },
-        select: ['documentId'],
-      }),
       // issuanceByMonth: published credentials issued within the trailing-12-month window.
       strapi.db.query('api::credential.credential').findMany({
         where: {
           issuer: profileId,
-          publishedAt: { $notNull: true },
           issuanceDate: { $gte: earliestBucketStart.toISOString() },
         },
         select: ['issuanceDate'],
@@ -196,18 +155,6 @@ export default ({ strapi }: { strapi: any }) => ({
       .slice(0, 5)
       .map(([id, { name, count }]) => ({ id, name, count }));
 
-    // draftCredentials = draft-row documentIds minus published-row
-    // documentIds (set difference) - see DashboardStats.draftCredentials's
-    // doc comment.
-    const publishedDocumentIds = new Set(
-      (publishedRows as any[]).map((r) => r.documentId).filter((id) => id != null)
-    );
-    const draftOnlyDocumentIds = new Set(
-      (draftRows as any[])
-        .map((r) => r.documentId)
-        .filter((id) => id != null && !publishedDocumentIds.has(id))
-    );
-
     // issuanceByMonth - bucket each published credential's issuanceDate
     // into its calendar month; buckets outside the trailing-12-month
     // window were never fetched, so nothing to filter here.
@@ -229,7 +176,6 @@ export default ({ strapi }: { strapi: any }) => ({
       topAchievements,
       memberSince: user?.createdAt ?? new Date().toISOString(),
       scheduledCredentials,
-      draftCredentials: draftOnlyDocumentIds.size,
       issuanceByMonth: monthBuckets,
     };
   },

@@ -9,9 +9,7 @@ afterEach(async () => {
 
 /**
  * A fake `strapi` over a real in-memory SQLite table, so the in-place
- * index/revocation SQL actually runs. documents().create writes a draft and
- * a published row with one document_id, as Strapi does for a
- * draftAndPublish type.
+ * index/revocation SQL actually runs.
  */
 async function createFakeStrapi() {
   const knex = knexFactory({ client: 'better-sqlite3', connection: { filename: ':memory:' }, useNullAsDefault: true })
@@ -58,7 +56,6 @@ async function createFakeStrapi() {
           encoded_list: data.encodedList,
           next_index: data.nextIndex,
         }
-        await knex(TABLE).insert({ ...row, published_at: null })
         // Let concurrent callers interleave, as a real database round trip would.
         await new Promise(resolve => setTimeout(resolve, 5))
         const [id] = await knex(TABLE).insert({ ...row, published_at: new Date() })
@@ -140,19 +137,10 @@ describe('revocation-list service', () => {
 
     expect(new Set(indices).size).toBe(25)
     expect(Math.max(...indices)).toBe(24)
-    // Same rows, same ids (no republish), draft and published both at 25.
+    // Same row, same id, counter at 25.
     const rows = await allRows()
-    expect(rows.map(r => r.id)).toEqual([1, 2])
-    expect(rows.map(r => r.next_index)).toEqual([25, 25])
-  })
-
-  it('assignNextIndex continues from the higher counter when draft and published drifted', async () => {
-    const { strapi, knex } = await createFakeStrapi()
-    const service = revocationListExtension({ strapi } as any)
-    const list = await service.createStatusListCredential(1)
-    await knex(TABLE).where({ id: list.id }).update({ next_index: 7 })
-
-    expect(await service.assignNextIndex(list)).toBe(7)
+    expect(rows.map(r => r.id)).toEqual([1])
+    expect(rows.map(r => r.next_index)).toEqual([25])
   })
 
   it('checkStatusInList is false for an empty list', async () => {

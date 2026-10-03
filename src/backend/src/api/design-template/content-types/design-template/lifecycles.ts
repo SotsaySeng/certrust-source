@@ -47,10 +47,10 @@ export default {
   async beforeCreate(event) {
     const { data } = event.params;
 
-    // Strapi 5 saves an edit to a draftAndPublish entry by re-creating its
-    // published row (same documentId), which runs this hook again. That is
-    // not a new design - without this check an organization at its limit
-    // could not save changes to designs it already has.
+    // A create carrying an existing documentId is not a new design (Strapi
+    // re-created rows on every save while draft & publish was on). Kept so
+    // an organization at its limit can never be blocked from saving a
+    // design it already has.
     if (data.documentId) {
       const existing = await strapi.db.query('api::design-template.design-template').count({
         where: { documentId: data.documentId },
@@ -67,17 +67,10 @@ export default {
       return;
     }
 
-    // status: 'published' - entityService.findOne resolves the given id
-    // to its documentId and re-fetches via the Document Service, which
-    // defaults to the *draft* row (which can have a stale `tier`, e.g.
-    // after a partial update that didn't re-specify it) when status is
-    // unset. Same reasoning as credential lifecycle's beforeCreate.
-    const organization: any = await strapi.entityService.findOne('api::organization.organization', organizationId as any, {
-      status: 'published',
-    } as any);
+    const organization: any = await strapi.entityService.findOne('api::organization.organization', organizationId as any);
 
-    // Fails open if the organization id doesn't resolve to a real,
-    // published organization - not this hook's job to enforce
+    // Fails open if the organization id doesn't resolve to a real
+    // organization - not this hook's job to enforce
     // referential integrity, only tier limits.
     if (!organization) {
       return;

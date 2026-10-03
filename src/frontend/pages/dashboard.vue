@@ -35,7 +35,6 @@ interface DashboardStats {
   topAchievements: { id: number, name: string, count: number }[]
   memberSince: string
   scheduledCredentials: number
-  draftCredentials: number
   issuanceByMonth: { month: string, count: number }[]
 }
 
@@ -218,7 +217,7 @@ onMounted(async () => {
         <h2 class="text-lg font-medium text-text-primary mb-3">
           {{ t('dashboard.analytics.title') }}
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-[#28A745]/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -245,21 +244,6 @@ onMounted(async () => {
                 </p>
                 <p class="text-sm text-text-secondary">
                   {{ t('dashboard.analytics.scheduled') }}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <div class="w-5 h-5 i-heroicons-document-text text-slate-600" />
-              </div>
-              <div>
-                <p class="text-2xl font-semibold text-text-primary">
-                  {{ dashboardStats.draftCredentials }}
-                </p>
-                <p class="text-sm text-text-secondary">
-                  {{ t('dashboard.analytics.draft') }}
                 </p>
               </div>
             </div>

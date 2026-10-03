@@ -54,7 +54,6 @@ export default () => ({
         ...(orgTypeId !== undefined ? { type: orgTypeId } : {}),
         ...billingFields,
         billingEmail: userEmail,
-        publishedAt: new Date(),
       },
     } as any);
 
@@ -65,7 +64,6 @@ export default () => ({
         profileType: 'Both',
         owner: userId,
         organization: organization.id,
-        publishedAt: new Date(),
       },
     } as any);
 

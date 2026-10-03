@@ -137,7 +137,6 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     try {
       const existing: any = await strapi.documents(UID).findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any)
       if (!existing) return ctx.notFound('Design template not found')
@@ -212,7 +211,6 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     try {
       const existing: any = await strapi.documents(UID).findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any)
       if (!existing) return ctx.notFound('Design template not found')
@@ -246,7 +244,6 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     try {
       const existing: any = await strapi.documents(UID).findOne({
         documentId: ctx.params.id,
-        status: 'published',
         populate: ['organization'],
       } as any)
       if (!existing) return ctx.notFound('Design template not found')
@@ -277,7 +274,6 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
     }
     const source: any = await strapi.documents(UID).findOne({
       documentId: ctx.params.id,
-      status: 'published',
       populate: ['organization', 'category'],
     } as any)
     if (!source || !canRead(caller, source.organization?.id ?? null)) {
@@ -305,10 +301,9 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
         organization: caller.organizationId,
         creator: caller.profileId,
       },
-      status: 'published',
     } as any)
     await refreshDesignPreview(created.documentId)
-    const fresh = await strapi.documents(UID).findOne({ documentId: created.documentId, status: 'published', populate: ['previewImage', 'category'] } as any)
+    const fresh = await strapi.documents(UID).findOne({ documentId: created.documentId, populate: ['previewImage', 'category'] } as any)
     return { data: fresh }
   },
 
@@ -372,9 +367,7 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
 
   // ---------------------------------------------------------------------
   // Admin > Design library (routes guarded by global::is-platform-admin).
-  // Curation fields are written to every row of the document with the
-  // query engine: going through the Document Service would republish the
-  // template under a new numeric id for a metadata change.
+  // Curation fields are plain in-place writes with the query engine.
 
   /** GET /design-templates/admin/library - every system template, hidden ones included. */
   async adminLibrary(ctx) {
@@ -383,15 +376,11 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       populate: ['previewImage', 'category'],
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
     })
-    const docs = new Map<string, any>()
-    for (const r of rows) {
-      const prev = docs.get(r.documentId)
-      if (!prev || (r.publishedAt && !prev.publishedAt)) docs.set(r.documentId, r)
-    }
+    const docs = new Map<string, any>(rows.map(r => [r.documentId, r]))
     const ids = [...docs.keys()]
     const achievements: any[] = ids.length
       ? await strapi.db.query('api::achievement.achievement').findMany({
-        where: { publishedAt: { $notNull: true }, $or: [{ certificateDesignId: { $in: ids } }, { badgeDesignId: { $in: ids } }] },
+        where: { $or: [{ certificateDesignId: { $in: ids } }, { badgeDesignId: { $in: ids } }] },
         select: ['certificateDesignId', 'badgeDesignId'],
       })
       : []
@@ -411,7 +400,6 @@ export default factories.createCoreController(UID, ({ strapi }) => ({
       isPremium: !!r.isPremium,
       isHidden: !!r.isHidden,
       sortOrder: r.sortOrder ?? 0,
-      published: !!r.publishedAt,
       category: r.category ? { documentId: r.category.documentId, name: r.category.name } : null,
       previewImage: r.previewImage ? { url: r.previewImage.url } : null,
       usedByAchievements: usedBy.get(r.documentId) || 0,

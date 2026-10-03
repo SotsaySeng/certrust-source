@@ -189,7 +189,6 @@
       "title": "Análises",
       "issued": "Credenciais emitidas",
       "scheduled": "Agendadas",
-      "draft": "Rascunho",
       "chartTitle": "Emissões ao longo do tempo",
       "chartEmpty": "Ainda não há dados de emissão",
       "chartNoIssuances": "Nenhuma credencial emitida nos últimos 12 meses"

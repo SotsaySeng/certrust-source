@@ -64,7 +64,7 @@ describe('Organization Usage Service', () => {
   })
 
   describe('countOrganizationCredentials', () => {
-    it('counts only published credentials scoped through issuer.organization', async () => {
+    it('counts credentials scoped through issuer.organization', async () => {
       const count = jest.fn().mockResolvedValue(7)
       global.strapi = { db: { query: () => ({ count }) } } as any
       service = usageFactory()
@@ -74,7 +74,6 @@ describe('Organization Usage Service', () => {
       expect(count).toHaveBeenCalledWith({
         where: {
           issuer: { organization: 42 },
-          publishedAt: { $notNull: true },
         },
       })
       expect(result).toBe(7)
@@ -82,7 +81,7 @@ describe('Organization Usage Service', () => {
   })
 
   describe('countOrganizationDesignTemplates', () => {
-    it('counts only published design templates scoped by the direct organization column', async () => {
+    it('counts design templates scoped by the direct organization column', async () => {
       const count = jest.fn().mockResolvedValue(3)
       global.strapi = { db: { query: () => ({ count }) } } as any
       service = usageFactory()
@@ -92,7 +91,6 @@ describe('Organization Usage Service', () => {
       expect(count).toHaveBeenCalledWith({
         where: {
           organization: 42,
-          publishedAt: { $notNull: true },
         },
       })
       expect(result).toBe(3)
@@ -100,7 +98,7 @@ describe('Organization Usage Service', () => {
   })
 
   describe('countOrganizationAchievements', () => {
-    it('counts only published achievements scoped through creator.organization', async () => {
+    it('counts achievements scoped through creator.organization', async () => {
       const count = jest.fn().mockResolvedValue(5)
       global.strapi = { db: { query: () => ({ count }) } } as any
       service = usageFactory()
@@ -110,7 +108,6 @@ describe('Organization Usage Service', () => {
       expect(count).toHaveBeenCalledWith({
         where: {
           creator: { organization: 42 },
-          publishedAt: { $notNull: true },
         },
       })
       expect(result).toBe(5)

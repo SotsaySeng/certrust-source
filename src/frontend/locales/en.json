@@ -189,7 +189,6 @@
       "title": "Analytics",
       "issued": "Credentials Issued",
       "scheduled": "Scheduled",
-      "draft": "Draft",
       "chartTitle": "Issuance over time",
       "chartEmpty": "No issuance data yet",
       "chartNoIssuances": "No credentials issued in the last 12 months"

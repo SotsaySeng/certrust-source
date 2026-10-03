@@ -32,7 +32,7 @@ describe('Credential lifecycles - beforeCreate tier limit', () => {
   it('allows creation when the organization is under its credential limit', async () => {
     const { findOne, countOrganizationCredentials } = mockStrapi({ current: 49 })
     await expect(lifecycles.beforeCreate(makeEvent({ issuer: { connect: [{ id: 5 }] } }) as any)).resolves.toBeUndefined()
-    expect(findOne).toHaveBeenCalledWith('api::profile.profile', 5, { status: 'published', populate: ['organization'] })
+    expect(findOne).toHaveBeenCalledWith('api::profile.profile', 5, { populate: ['organization'] })
     expect(countOrganizationCredentials).toHaveBeenCalledWith(42)
   })
 

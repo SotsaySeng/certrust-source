@@ -73,7 +73,6 @@ describe('Achievement lifecycles', () => {
       const event = makeEvent({ tags: [], creator: 5 })
       await expect(lifecycles.beforeCreate(event as any)).resolves.toBeUndefined()
       expect(findOne).toHaveBeenCalledWith('api::profile.profile', 5, {
-        status: 'published',
         populate: ['organization'],
       })
     })

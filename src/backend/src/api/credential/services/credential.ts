@@ -96,6 +96,8 @@ export default factories.createCoreService('api::credential.credential', ({ stra
         recipient: recipientEntity.id,
         issuanceDate: new Date(),
         revoked: false,
+        // Not used by Strapi any more, but part of the signed payload's
+        // format since launch, so it stays.
         publishedAt: new Date(),
         ...(expirationDate ? { expirationDate: new Date(expirationDate) } : {})
       }
@@ -108,12 +110,7 @@ export default factories.createCoreService('api::credential.credential', ({ stra
       const statusList = await revocationListService.getOrCreateActiveListForIssuer(credentialPayload.issuer)
       const statusListIndex = await revocationListService.assignNextIndex(statusList)
 
-      // Create the credential. Uses the Document Service (not
-      // entityService.create with a manual publishedAt) so this ends up as
-      // a single published row rather than a draft+published pair whose
-      // numeric ids diverge - same gotcha as the revocation-list fix above,
-      // and the original seed-data.ts one. A freshly-issued credential has
-      // no editorial draft state, so publishing it directly is correct.
+      // Create the credential.
       const credential = await strapi.documents('api::credential.credential').create({
         data: {
           credentialId,
@@ -139,12 +136,9 @@ export default factories.createCoreService('api::credential.credential', ({ stra
           customFields: opts.customFields && Object.keys(opts.customFields).length ? opts.customFields : null,
           ...(opts.event ? { event: opts.event.id, eventSnapshot: opts.event.snapshot } : {}),
         },
-        status: 'published'
       })
 
-      // Add evidence if provided. Uses the Document Service (not
-      // entityService.create with a manual publishedAt) for the same
-      // reason as the credential creation above.
+      // Add evidence if provided.
       if (evidence && evidence.length > 0) {
         for (const item of evidence) {
           if (item.name || item.description) {
@@ -154,7 +148,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
                 description: item.description || '',
                 credential: credential.id,
               },
-              status: 'published',
             })
           }
         }
@@ -165,7 +158,6 @@ export default factories.createCoreService('api::credential.credential', ({ stra
         'api::credential.credential',
         credential.id,
         {
-          status: 'published',
           populate: [
             'achievement',
             'issuer',
@@ -267,32 +259,24 @@ export default factories.createCoreService('api::credential.credential', ({ stra
     let recipientEntity = null
 
     if (recipient.id && recipient.id !== 0) {
-      recipientEntity = await strapi.entityService.findOne(
-        'api::profile.profile',
-        recipient.id,
-        { status: 'published' }
-      )
+      recipientEntity = await strapi.entityService.findOne('api::profile.profile', recipient.id)
     } else if (recipient.email) {
       const existingRecipients = await strapi.entityService.findMany(
         'api::profile.profile',
         {
           filters: { email: recipient.email },
-          status: 'published',
         }
       )
 
       if (existingRecipients && existingRecipients.length > 0) {
         recipientEntity = existingRecipients[0]
       } else {
-        // Document Service (not entityService.create with a manual
-        // publishedAt) - see issue()'s own credential creation for why.
         recipientEntity = await strapi.documents('api::profile.profile').create({
           data: {
             name: recipient.name,
             email: recipient.email,
             profileType: 'Recipient',
           },
-          status: 'published',
         })
       }
     }
@@ -329,22 +313,18 @@ export default factories.createCoreService('api::credential.credential', ({ stra
       // Try to find a system issuer
       const existingIssuers = await strapi.entityService.findMany('api::profile.profile', {
         filters: { name: 'System Issuer' },
-        status: 'published',
       })
       
       if (existingIssuers && existingIssuers.length > 0) {
         return existingIssuers[0].id
       }
       
-      // Create a default system issuer. Document Service (not
-      // entityService.create with a manual publishedAt) - see issue()'s
-      // own credential creation for why.
+      // Create a default system issuer.
       const systemIssuer = await strapi.documents('api::profile.profile').create({
         data: {
           name: 'System Issuer',
           profileType: 'Issuer',
         },
-        status: 'published',
       })
 
       return systemIssuer.id
