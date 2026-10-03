@@ -30,5 +30,6 @@ export const MANAGE_MENU_LINKS = [
   { href: '/achievements/create', i18nKey: 'achievements.createTitle', icon: 'i-heroicons-plus-circle' },
   { href: '/design-templates', i18nKey: 'nav.designTemplates', icon: 'i-heroicons-paint-brush' },
   { href: '/events', i18nKey: 'nav.events', icon: 'i-heroicons-calendar-days' },
+  { href: '/api-keys', i18nKey: 'nav.apiKeys', icon: 'i-heroicons-key' },
 ]
 export const HELLO_SH_MAIL = 'mailto:hello@schroedinger-hat.org'

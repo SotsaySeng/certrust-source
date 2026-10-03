@@ -9,7 +9,7 @@ export default {
       path: '/achievements/creator/:creatorId',
       handler: 'achievement.findByCreator',
       config: {
-        auth: { strategies: ['users-permissions'] },
+        auth: { strategies: ['users-permissions', 'api-key'] },
       },
     },
   ],

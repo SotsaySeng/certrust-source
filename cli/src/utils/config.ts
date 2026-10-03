@@ -37,6 +37,6 @@ export function getConfig(flags: Record<string, string | boolean> = {}): Config 
   }
   return {
     apiUrl: (flags['url'] as string) || process.env['CERTRUST_API_URL'] || 'http://localhost:1337',
-    token: (flags['token'] as string) || process.env['CERTRUST_API_TOKEN'] || '',
+    token: (flags['token'] as string) || process.env['CERTRUST_API_KEY'] || process.env['CERTRUST_API_TOKEN'] || '',
   };
 }

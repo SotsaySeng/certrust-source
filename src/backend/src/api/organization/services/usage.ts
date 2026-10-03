@@ -86,6 +86,19 @@ export default () => ({
     };
   },
 
+  /**
+   * May this organization create and use API keys? Follows the same
+   * Tier Settings column as getDesignLimits (trial while trialing). When
+   * the flag was never set on that column: every tier except Free.
+   */
+  async getApiAccess(organization: { tier?: string | null, subscriptionStatus?: string | null } | null): Promise<boolean> {
+    const tier = organization?.tier || 'free';
+    const settings: any = await this.getTierSettings();
+    const trialing = organization?.subscriptionStatus === 'trialing' && settings?.trial;
+    const flag = settings?.[trialing ? 'trial' : tier]?.apiAccess;
+    return typeof flag === 'boolean' ? flag : tier !== 'free';
+  },
+
   async getTierLimit(tier: string, dimension: UsageDimension = 'credential'): Promise<number | null> {
     const tierSettings: any = await strapi.documents('api::tier-settings.tier-settings').findFirst({
       populate: ['free', 'pro', 'enterprise'],

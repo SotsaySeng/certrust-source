@@ -56,7 +56,7 @@ export function IssueScreen({ cfg, onBack }: Props) {
           ...(expiry ? { expirationDate: expiry } : {}),
         },
       });
-      setIssuedId(result.credentialId ?? result.data?.credentialId ?? '');
+      setIssuedId(result.credential?.credentialId ?? result.credentialId ?? result.data?.credentialId ?? '');
       setStep('done');
     } catch (err: unknown) {
       setError(err instanceof ApiError ? err.message : String(err));

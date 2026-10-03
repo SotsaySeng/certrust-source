@@ -71,6 +71,20 @@ export interface BrandKitInfo {
   exists?: boolean
 }
 
+export type ApiKeyScope = 'read' | 'issue' | 'revoke' | 'manage'
+
+export interface ApiKeyInfo {
+  documentId: string
+  name: string
+  prefix: string
+  scopes: ApiKeyScope[]
+  createdAt: string
+  lastUsedAt: string | null
+  expiresAt: string | null
+  revokedAt: string | null
+  createdBy: { username: string, email: string } | null
+}
+
 export class ApiClient {
   private baseUrl: string
   private token: string | null
@@ -948,6 +962,21 @@ export class ApiClient {
    */
   async deleteEvent(id: number | string) {
     return this.delete<any>(`/api/events/${encodeURIComponent(id)}`)
+  }
+
+  // ---- Organization API keys (api::api-key) ----
+
+  async getApiKeys() {
+    return this.get<{ data: ApiKeyInfo[], meta: { apiAccess: boolean, scopes: ApiKeyScope[] } }>('/api/api-keys')
+  }
+
+  /** Returns the new key once, in `data.key`. */
+  async createApiKey(input: { name: string, scopes: ApiKeyScope[], expiresAt?: string | null }) {
+    return (await this.post<{ data: ApiKeyInfo & { key: string } }>('/api/api-keys', { data: input })).data
+  }
+
+  async revokeApiKey(documentId: string) {
+    return this.post<{ data: { revoked: boolean } }>(`/api/api-keys/${encodeURIComponent(documentId)}/revoke`, {})
   }
 
   // ---- Billing (api::billing) ----

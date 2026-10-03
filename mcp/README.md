@@ -33,7 +33,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "args": ["-y", "@certrust/mcp"],
       "env": {
         "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_TOKEN": "your-api-token"
+        "CERTRUST_API_KEY": "crt_..."
       }
     }
   }
@@ -52,7 +52,7 @@ Add to your Cursor MCP config (`~/.cursor/mcp.json`):
       "args": ["-y", "@certrust/mcp"],
       "env": {
         "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_TOKEN": "your-api-token"
+        "CERTRUST_API_KEY": "crt_..."
       }
     }
   }
@@ -72,7 +72,7 @@ Add to `.vscode/mcp.json` in your workspace:
       "args": ["-y", "@certrust/mcp"],
       "env": {
         "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_TOKEN": "your-api-token"
+        "CERTRUST_API_KEY": "crt_..."
       }
     }
   }
@@ -84,9 +84,12 @@ Add to `.vscode/mcp.json` in your workspace:
 | Variable | Description | Default |
 |---|---|---|
 | `CERTRUST_API_URL` | Base URL of your Certrust backend | `http://localhost:1337` |
-| `CERTRUST_API_TOKEN` | Strapi API token | _(empty — only public tools work)_ |
+| `CERTRUST_API_KEY` | Organization API key (`crt_...`) | _(empty — only public tools work)_ |
+| `CERTRUST_API_TOKEN` | Older name; read when `CERTRUST_API_KEY` is not set | |
 
-To generate an API token: Certrust admin panel → Settings → API Tokens → Create.
+To create an API key: sign in to Certrust → **Manage → API keys** → Create key (paid plans). Give it only the permissions the assistant needs: `read` and `issue` for issuing, `revoke` to revoke. The key acts with the permissions of the member who created it and stops working if they leave the organization.
+
+`issue_credential` sends an `Idempotency-Key` built from the achievement and recipient email, so an assistant that retries the tool call within 24 hours gets the first credential back instead of issuing a duplicate. `export_profile_data` and `run_expiration_check` need a signed-in user token; API keys can't call them.
 
 ## Example prompts
 

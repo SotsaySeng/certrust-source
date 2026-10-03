@@ -31,7 +31,11 @@
     },
     "actorType": {
       "type": "enumeration",
-      "enum": ["user", "system"],
+      "enum": [
+        "user",
+        "system",
+        "api-key"
+      ],
       "default": "user"
     },
     "metadata": {

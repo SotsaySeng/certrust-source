@@ -7,6 +7,8 @@ import type {
   StrapiListResponse,
   StrapiSingleResponse,
   VerifyResult,
+  WriteOptions,
+  BatchIssueResult,
 } from '../types.js';
 
 export class CredentialsResource {
@@ -43,25 +45,27 @@ export class CredentialsResource {
 
   /**
    * Issue a credential for a recipient against an existing achievement.
-   * Requires an issuer or admin token.
+   * Needs an API key with the `issue` scope (or a signed-in issuer).
    *
    * @example
    * const result = await client.credentials.issue({
    *   achievementId: 1,
    *   recipientEmail: 'alice@example.com',
    *   recipientName: 'Alice Smith',
-   * });
+   * }, { idempotencyKey: 'student-1042-course-7' });
    */
-  issue(input: IssueCredentialInput): Promise<{ credential: Credential }> {
+  issue(input: IssueCredentialInput, opts: WriteOptions = {}): Promise<{ credential: Credential }> {
     return this.http.post<{ credential: Credential }>('/api/credentials/issue', {
-      achievement: input.achievementId,
-      recipient: {
-        email: input.recipientEmail,
-        name: input.recipientName,
+      data: {
+        achievementId: input.achievementId,
+        recipientId: 0,
+        recipient: { email: input.recipientEmail, name: input.recipientName },
+        expirationDate: input.expirationDate,
+        evidence: input.evidence,
+        customFields: input.customFields,
+        eventId: input.eventId,
       },
-      expirationDate: input.expirationDate,
-      evidence: input.evidence,
-    });
+    }, idempotencyHeader(opts));
   }
 
   /**
@@ -83,10 +87,11 @@ export class CredentialsResource {
    * @example
    * await client.credentials.revoke('urn:uuid:abc123', 'Duplicate issuance');
    */
-  revoke(id: number | string, reason?: string): Promise<{ success: boolean }> {
+  revoke(id: number | string, reason?: string, opts: WriteOptions = {}): Promise<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(
       `/api/credentials/${encodeURIComponent(String(id))}/revoke`,
       { reason },
+      idempotencyHeader(opts),
     );
   }
 
@@ -132,26 +137,36 @@ export class CredentialsResource {
 
   /**
    * Batch-issue credentials to multiple recipients in a single request.
-   * Returns the list of issued credentials.
+   * Each recipient gets its own result. Recipients who already hold this
+   * credential are skipped, so re-running a sync doesn't issue twice; pass
+   * `skipExisting: false` to issue to them again.
    *
    * @example
-   * const result = await client.credentials.batchIssue({
+   * const { results } = await client.credentials.batchIssue({
    *   achievementId: 1,
    *   recipients: [
    *     { email: 'a@example.com', name: 'Alice' },
    *     { email: 'b@example.com', name: 'Bob' },
    *   ],
-   * });
+   * }, { idempotencyKey: 'graduation-2026-batch-3' });
    */
   batchIssue(input: {
     achievementId: number;
-    recipients: Array<{ email: string; name?: string }>;
-    expirationDate?: string;
-  }): Promise<{ credentials: Credential[]; errors: Array<{ email: string; error: string }> }> {
-    return this.http.post('/api/credentials/batch-issue', {
-      achievement: input.achievementId,
-      recipients: input.recipients,
-      expirationDate: input.expirationDate,
-    });
+    recipients: Array<{ email: string; name?: string; expirationDate?: string; customFields?: Record<string, string | number> }>;
+    eventId?: string;
+    skipExisting?: boolean;
+  }, opts: WriteOptions = {}): Promise<BatchIssueResult> {
+    return this.http.post<BatchIssueResult>('/api/credentials/batch-issue', {
+      data: {
+        achievementId: input.achievementId,
+        recipients: input.recipients,
+        eventId: input.eventId,
+        skipExisting: input.skipExisting ?? true,
+      },
+    }, idempotencyHeader(opts));
   }
+}
+
+function idempotencyHeader(opts: WriteOptions): Record<string, string> | undefined {
+  return opts.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : undefined;
 }

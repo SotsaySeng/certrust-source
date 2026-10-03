@@ -5,7 +5,7 @@ import { CredentialsResource } from './resources/credentials.js';
 import { ProfilesResource } from './resources/profiles.js';
 import { ScheduledResource } from './resources/scheduled.js';
 import { RequestsResource } from './resources/requests.js';
-import type { CertrustClientOptions } from './types.js';
+import type { CertrustClientOptions, ApiKeyInfo } from './types.js';
 
 /**
  * The main entry point for the Certrust SDK.
@@ -62,5 +62,17 @@ export class CertrustClient {
   setToken(token: string): this {
     this._http.setToken(token);
     return this;
+  }
+
+  /**
+   * What the API key this client uses is: its organization, scopes and
+   * the endpoints it may call. Handy as a connection check.
+   *
+   * @example
+   * const client = new CertrustClient({ baseUrl: 'https://api.certrust.app', apiKey: process.env.CERTRUST_API_KEY });
+   * const { organization, scopes } = await client.whoami();
+   */
+  async whoami(): Promise<ApiKeyInfo> {
+    return (await this._http.get<{ data: ApiKeyInfo }>('/api/api-keys/me')).data;
   }
 }

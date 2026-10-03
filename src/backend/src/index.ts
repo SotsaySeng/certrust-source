@@ -16,6 +16,7 @@ import { setupEmailBranding } from './bootstrap/email-branding';
 import { startDevMailCatcher } from './bootstrap/dev-mail-catcher';
 import { assertPersistentStorage } from './bootstrap/persistence-guard';
 import { registerMonitoringRoutes } from './monitoring/routes';
+import { createApiKeyStrategy } from './auth/api-key-strategy';
 
 /**
  * Main entry point for the Strapi application
@@ -37,6 +38,10 @@ export default {
     // (server.initRouting()) partway through its own bootstrap(), before
     // this app's bootstrap({ strapi }) hook runs - see monitoring/routes.ts.
     registerMonitoringRoutes(strapi);
+
+    // Organization API keys (Bearer crt_...). Plugins register first, so
+    // this runs after the admin API-token and users-permissions strategies.
+    strapi.get('auth').register('content-api', createApiKeyStrategy(strapi));
   },
 
   /**
@@ -130,6 +135,18 @@ export default {
 
     setTimeout(runVerificationDocumentPurge, 45_000);
     setInterval(runVerificationDocumentPurge, 24 * 60 * 60 * 1000);
+
+    // Stored Idempotency-Key responses are kept 24 hours.
+    const runIdempotencyPurge = async () => {
+      try {
+        await strapi.service('api::idempotency-record.idempotency-record').purgeExpired();
+      } catch (err: any) {
+        strapi.log.error('[bootstrap] Idempotency purge error:', { error: err.message });
+      }
+    };
+
+    setTimeout(runIdempotencyPurge, 50_000);
+    setInterval(runIdempotencyPurge, 6 * 60 * 60 * 1000);
 
     // Billing scanner: trial/renewal reminders, trial expiry, past-due
     // grace. Every 6h rather than daily so a trial that ends mid-day drops

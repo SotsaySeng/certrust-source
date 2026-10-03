@@ -1,0 +1,46 @@
+{
+  "kind": "collectionType",
+  "collectionName": "idempotency_records",
+  "info": {
+    "singularName": "idempotency-record",
+    "pluralName": "idempotency-records",
+    "displayName": "Idempotency Record",
+    "description": "Stored responses for requests sent with an Idempotency-Key header, so a retried request returns the first result instead of running twice. Kept 24 hours. No REST routes."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "content-manager": { "visible": false },
+    "content-type-builder": { "visible": false }
+  },
+  "attributes": {
+    "lookup": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "description": "SHA-256 of the caller's credential and the Idempotency-Key"
+    },
+    "fingerprint": {
+      "type": "string",
+      "required": true,
+      "description": "SHA-256 of method, path and body; a reused key with a different request is rejected"
+    },
+    "state": {
+      "type": "enumeration",
+      "enum": ["processing", "completed"],
+      "default": "processing",
+      "required": true
+    },
+    "responseStatus": {
+      "type": "integer"
+    },
+    "responseBody": {
+      "type": "json"
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

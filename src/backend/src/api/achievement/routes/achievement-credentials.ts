@@ -7,7 +7,7 @@ export default {
       // Lists every recipient of the achievement (names, emails): issuer only.
       config: {
         auth: {
-          strategies: ['users-permissions'],
+          strategies: ['users-permissions', 'api-key'],
         },
       },
     },

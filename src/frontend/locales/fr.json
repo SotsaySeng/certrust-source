@@ -16,7 +16,8 @@
     "solution": "Solution",
     "billing": "Facturation",
     "revenue": "Revenus",
-    "manage": "Gérer"
+    "manage": "Gérer",
+    "apiKeys": "Clés API"
   },
   "common": {
     "loading": "Chargement...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Téléchargez l'image du badge pour la partager sur les réseaux sociaux ou votre site web.",
       "badgeAlt": "Badge de {name}"
     }
+  },
+  "apiKeys": {
+    "title": "Clés API",
+    "subtitle": "Laissez vos propres systèmes, comme le système de gestion des étudiants, le LMS ou le SIRH, délivrer des certificats automatiquement. Vos données restent où elles sont : ils n'envoient à Certrust que ce qui figure sur le certificat.",
+    "loadError": "Impossible de charger vos clés API. Veuillez réessayer.",
+    "notInPlan": {
+      "title": "Les clés API font partie des offres payantes",
+      "body": "Changez d'offre pour connecter vos propres systèmes et délivrer des certificats automatiquement.",
+      "cta": "Voir les offres"
+    },
+    "created": {
+      "title": "Votre nouvelle clé API",
+      "body": "Copiez-la maintenant et conservez-la en lieu sûr, par exemple dans les paramètres secrets de votre système. Pour des raisons de sécurité, elle ne sera plus affichée.",
+      "copy": "Copier",
+      "copied": "Copiée",
+      "done": "Je l'ai enregistrée"
+    },
+    "form": {
+      "title": "Créer une clé",
+      "name": "Nom",
+      "namePlaceholder": "ex. Système de gestion des étudiants",
+      "expiry": "Expiration (facultative)",
+      "expiryHint": "Laissez vide pour une clé valable jusqu'à sa révocation.",
+      "permissions": "Autorisations",
+      "actsAs": "La clé agit avec vos autorisations dans cette organisation. Elle cesse de fonctionner si vous quittez l'organisation.",
+      "create": "Créer la clé",
+      "nameRequired": "Donnez un nom à la clé.",
+      "scopeRequired": "Choisissez au moins une autorisation.",
+      "createError": "Impossible de créer la clé. Veuillez réessayer."
+    },
+    "scopes": {
+      "read": {
+        "label": "Lecture",
+        "description": "Lister les certificats, les distinctions et les événements."
+      },
+      "issue": {
+        "label": "Délivrance",
+        "description": "Délivrer, délivrer en lot, programmer et renouveler des certificats."
+      },
+      "revoke": {
+        "label": "Révocation",
+        "description": "Révoquer des certificats."
+      },
+      "manage": {
+        "label": "Gestion",
+        "description": "Créer et modifier les distinctions et les événements."
+      }
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Révoquée",
+      "expired": "Expirée",
+      "paused": "En pause (hors de votre offre)"
+    },
+    "meta": {
+      "created": "Créée le {date} par {by}",
+      "lastUsed": "utilisée le {date}",
+      "neverUsed": "jamais utilisée",
+      "expires": "expire le {date}"
+    },
+    "empty": "Aucune clé API pour le moment.",
+    "revoke": {
+      "action": "Révoquer",
+      "title": "Révoquer « {name} » ?",
+      "body": "Tout ce qui utilise cette clé cesse immédiatement de fonctionner. Cette action est irréversible.",
+      "confirm": "Révoquer la clé",
+      "error": "Impossible de révoquer la clé. Veuillez réessayer."
+    },
+    "usage": {
+      "title": "Utiliser une clé",
+      "body": "Envoyez la clé comme jeton Bearer. Par exemple, pour délivrer un certificat :",
+      "idempotency": "Ajoutez un en-tête Idempotency-Key (n'importe quelle valeur unique, comme l'identifiant de l'étudiant et du cours) et une requête répétée ne délivre jamais deux fois : Certrust renvoie le premier résultat."
+    },
+    "guideLink": "Lire le guide de configuration (en anglais)"
   }
 }

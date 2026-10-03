@@ -3,7 +3,7 @@ const auth = { strategies: ['users-permissions'] }
 
 export default {
   routes: [
-    { method: 'GET', path: '/custom-attributes', handler: 'custom-attribute.list', config: { auth } },
+    { method: 'GET', path: '/custom-attributes', handler: 'custom-attribute.list', config: { auth: { strategies: ['users-permissions', 'api-key'] } } },
     { method: 'POST', path: '/custom-attributes', handler: 'custom-attribute.add', config: { auth } },
     { method: 'PUT', path: '/custom-attributes/:id', handler: 'custom-attribute.edit', config: { auth } },
     { method: 'DELETE', path: '/custom-attributes/:id', handler: 'custom-attribute.remove', config: { auth } },

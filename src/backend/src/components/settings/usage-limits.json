@@ -25,6 +25,10 @@
       "type": "boolean",
       "default": false,
       "description": "Whether organizations on this tier may use Premium system templates in the Design Studio."
+    },
+    "apiAccess": {
+      "type": "boolean",
+      "description": "Whether organizations on this tier may create API keys for integrations. Left empty: every tier except Free."
     }
   }
 }

@@ -56,6 +56,11 @@ const AUTHENTICATED_PERMISSIONS = [
   'api::custom-attribute.custom-attribute.add',
   'api::custom-attribute.custom-attribute.edit',
   'api::custom-attribute.custom-attribute.remove',
+  // Organization API keys (the controller checks organization membership)
+  'api::api-key.api-key.list',
+  'api::api-key.api-key.create',
+  'api::api-key.api-key.revoke',
+  'api::api-key.api-key.me',
   'api::brand-kit.brand-kit.mine',
   'api::brand-kit.brand-kit.save',
   'api::brand-kit.brand-kit.suggestColors',
@@ -175,6 +180,11 @@ const ISSUER_PERMISSIONS = [
   'api::custom-attribute.custom-attribute.add',
   'api::custom-attribute.custom-attribute.edit',
   'api::custom-attribute.custom-attribute.remove',
+  // Organization API keys (the controller checks organization membership)
+  'api::api-key.api-key.list',
+  'api::api-key.api-key.create',
+  'api::api-key.api-key.revoke',
+  'api::api-key.api-key.me',
   'api::brand-kit.brand-kit.mine',
   'api::brand-kit.brand-kit.save',
   'api::brand-kit.brand-kit.suggestColors',

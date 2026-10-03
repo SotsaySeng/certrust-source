@@ -8,7 +8,8 @@
  *
  * Configuration (env vars):
  *   CERTRUST_API_URL    Base URL of your Certrust backend  (default: http://localhost:1337)
- *   CERTRUST_API_TOKEN  Strapi API token with the required permissions
+ *   CERTRUST_API_KEY    Organization API key (crt_...) from Manage > API keys.
+ *                       CERTRUST_API_TOKEN is still read if this is not set.
  *
  * Usage in Claude Desktop (claude_desktop_config.json):
  *   {
@@ -18,7 +19,7 @@
  *         "args": ["-y", "@certrust/mcp"],
  *         "env": {
  *           "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
- *           "CERTRUST_API_TOKEN": "your-api-token"
+ *           "CERTRUST_API_KEY": "crt_..."
  *         }
  *       }
  *     }
@@ -32,7 +33,7 @@ import { z } from 'zod';
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const API_URL = process.env['CERTRUST_API_URL'] ?? 'http://localhost:1337';
-const API_TOKEN = process.env['CERTRUST_API_TOKEN'] ?? '';
+const API_TOKEN = process.env['CERTRUST_API_KEY'] ?? process.env['CERTRUST_API_TOKEN'] ?? '';
 
 // ─── HTTP helper ─────────────────────────────────────────────────────────────
 
@@ -40,9 +41,10 @@ async function certrust<T = unknown>(
   method: string,
   pathname: string,
   body?: unknown,
+  extraHeaders: Record<string, string> = {},
 ): Promise<T> {
   const url = new URL(pathname, API_URL).toString();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extraHeaders };
   if (API_TOKEN) headers['Authorization'] = `Bearer ${API_TOKEN}`;
 
   const res = await fetch(url, {
@@ -129,7 +131,7 @@ server.tool(
 server.tool(
   'list_credentials',
   'List credentials accessible to the authenticated user. ' +
-  'Requires CERTRUST_API_TOKEN to be set. ' +
+  'Requires CERTRUST_API_KEY to be set. ' +
   'Returns credential IDs, names, recipients, and status.',
   {
     status: z.enum(['all', 'active', 'revoked', 'expired']).optional()
@@ -164,7 +166,8 @@ server.tool(
 server.tool(
   'issue_credential',
   'Issue an Open Badges 3.0 credential to a recipient. ' +
-  'Requires CERTRUST_API_TOKEN. The recipient will receive an email notification.',
+  'Requires an API key with the "issue" permission. The recipient will receive an email notification. ' +
+  'Issuing the same achievement to the same email again within 24 hours returns the first credential instead of a duplicate.',
   {
     achievement_id: z.number().describe('Numeric ID of the achievement to issue'),
     recipient_email: z.string().email().describe('Email address of the credential recipient'),
@@ -172,14 +175,17 @@ server.tool(
     expiration_date: z.string().optional().describe('Expiration date in YYYY-MM-DD format (leave empty for no expiry)'),
   },
   async ({ achievement_id, recipient_email, recipient_name, expiration_date }) => {
+    // A retried tool call must not issue twice: same achievement + email
+    // within 24 hours replays the first response (Idempotency-Key).
+    const idempotencyKey = `mcp-issue-${achievement_id}-${recipient_email.toLowerCase()}`;
     const result = await certrust<any>('POST', '/api/credentials/issue', {
       data: {
         achievementId: achievement_id,
         recipient: { email: recipient_email, ...(recipient_name ? { name: recipient_name } : {}) },
         ...(expiration_date ? { expirationDate: expiration_date } : {}),
       },
-    });
-    const id = result.credentialId ?? result.data?.credentialId ?? '(issued)';
+    }, { 'Idempotency-Key': idempotencyKey });
+    const id = result.credential?.credentialId ?? result.credential?.credential_id ?? result.credentialId ?? '(issued)';
     return {
       content: [{ type: 'text', text: `✓ Credential issued successfully\nID: ${id}\nRecipient: ${recipient_email}` }],
     };
@@ -190,7 +196,7 @@ server.tool(
 server.tool(
   'revoke_credential',
   'Revoke a credential, rendering it invalid. ' +
-  'Requires CERTRUST_API_TOKEN. This action cannot be undone automatically.',
+  'Requires an API key with the "revoke" permission. This action cannot be undone automatically.',
   {
     credential_id: z.union([z.string(), z.number()]).describe('Numeric ID or URN of the credential to revoke'),
     reason: z.string().optional().describe('Reason for revocation (e.g. "Role change", "Error in issuance")'),
@@ -207,7 +213,7 @@ server.tool(
 server.tool(
   'renew_credential',
   'Renew a credential with a new expiration date. ' +
-  'Re-issues the credential and only the original issuer can call this. Requires CERTRUST_API_TOKEN.',
+  'Re-issues the credential and only the original issuer can call this. Requires an API key with the "issue" permission.',
   {
     credential_id: z.union([z.string(), z.number()]).describe('Numeric ID or URN of the credential to renew'),
     new_expiration_date: z.string().describe('New expiration date in YYYY-MM-DD format'),
@@ -245,7 +251,7 @@ server.tool(
   'run_expiration_check',
   'Trigger the expiration notification scan. ' +
   'Finds credentials expiring within 30, 7, and 1 day(s) and sends email warnings. ' +
-  'Requires CERTRUST_API_TOKEN with admin permissions.',
+  'Requires a signed-in admin token (CERTRUST_API_TOKEN); API keys cannot run it.',
   {},
   async () => {
     const result = await certrust<any>('POST', '/api/credentials/expiration-check', {});
@@ -262,7 +268,7 @@ server.tool(
 server.tool(
   'export_profile_data',
   'Export all data for the authenticated issuer profile: achievements, issued credentials, received credentials. ' +
-  'Requires CERTRUST_API_TOKEN.',
+  'Needs a signed-in user token (CERTRUST_API_TOKEN): API keys cannot export account data.',
   {},
   async () => {
     const result = await certrust<any>('GET', '/api/profiles/me/export');

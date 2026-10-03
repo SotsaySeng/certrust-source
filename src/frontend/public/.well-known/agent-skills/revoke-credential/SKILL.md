@@ -6,7 +6,7 @@ Revoke an issued credential, rendering it invalid for future verification.
 
 ```
 POST /api/credentials/{id}/revoke
-Authorization: Bearer {api-token}
+Authorization: Bearer {crt_api-key}
 Content-Type: application/json
 
 { "reason": "Employee left the organization" }
@@ -31,7 +31,7 @@ Content-Type: application/json
 
 ## Notes
 
-- Requires an API token with write permissions
+- Requires an organization API key with the `revoke` permission (Manage → API keys)
 - Revocation is reflected immediately — verification returns `not_revoked: error`
 - `reason` is optional but recommended for audit trail purposes
 - Only the issuer of the credential can revoke it

@@ -6,7 +6,8 @@ Issue an Open Badges 3.0 credential to a recipient via Certrust.
 
 ```
 POST /api/credentials/issue
-Authorization: Bearer {api-token}
+Authorization: Bearer {crt_api-key}
+Idempotency-Key: {unique-id-for-this-issuance}
 Content-Type: application/json
 
 {
@@ -22,8 +23,9 @@ Content-Type: application/json
 
 ```json
 {
-  "credentialId": "urn:uuid:abc-123",
-  "id": 42
+  "credential": { "id": 42, "documentId": "abc123...", "credentialId": "urn:uuid:abc-123" },
+  "openBadge": { "...": "the signed Open Badges 3.0 credential" },
+  "notification": { "...": "email delivery details" }
 }
 ```
 
@@ -42,11 +44,13 @@ Content-Type: application/json
 
 ## Prerequisites
 
-1. An API token with write permissions (Certrust admin → Settings → API Tokens)
-2. An existing achievement/badge definition (`achievementId`)
+1. An organization API key with the `issue` permission (Manage → API keys; paid plans)
+2. An existing achievement/badge definition (`achievementId`, its numeric id)
 
 ## Notes
 
 - The recipient receives an email notification after issuance
 - `expirationDate` is optional; omit for non-expiring credentials
 - Use `POST /api/credentials/batch-issue` for issuing to multiple recipients at once
+- Send an `Idempotency-Key` header so a retried request never issues twice: the same key with the same request returns the first response (kept 24 hours); the same key with a different request is refused with 422
+- `GET /api/api-keys/me` shows which organization and permissions the key has

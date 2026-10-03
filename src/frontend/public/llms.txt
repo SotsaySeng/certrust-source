@@ -35,7 +35,7 @@ Use Certrust from Claude Desktop, Cursor, or VS Code Copilot:
       "args": ["-y", "@certrust/mcp"],
       "env": {
         "CERTRUST_API_URL": "http://localhost:3000",
-        "CERTRUST_API_TOKEN": "your-api-token"
+        "CERTRUST_API_KEY": "crt_... (Manage > API keys)"
       }
     }
   }

@@ -11,7 +11,7 @@ export default {
       handler: 'credential.find',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         }
       }
     },
@@ -71,7 +71,7 @@ export default {
       handler: 'credential.issue',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         },
         policies: [
           { name: 'global::is-in-organization', config: { via: 'body', field: 'achievementId', through: { uid: 'api::achievement.achievement', field: 'creator' } } },
@@ -119,7 +119,7 @@ export default {
       handler: 'credential.revoke',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         }
       }
     },
@@ -132,7 +132,7 @@ export default {
       handler: 'credential.batchIssue',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         },
         policies: [
           { name: 'global::is-in-organization', config: { via: 'body', field: 'achievementId', through: { uid: 'api::achievement.achievement', field: 'creator' } } },
@@ -146,7 +146,7 @@ export default {
       handler: 'credential.renew',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         }
       }
     },

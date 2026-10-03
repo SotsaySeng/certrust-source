@@ -16,7 +16,8 @@
     "solution": "Lösung",
     "billing": "Abrechnung",
     "revenue": "Umsatz",
-    "manage": "Verwalten"
+    "manage": "Verwalten",
+    "apiKeys": "API-Schlüssel"
   },
   "common": {
     "loading": "Laden...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Laden Sie das Badge-Bild herunter, um es in sozialen Medien oder auf Ihrer Website zu teilen.",
       "badgeAlt": "Badge für {name}"
     }
+  },
+  "apiKeys": {
+    "title": "API-Schlüssel",
+    "subtitle": "Lassen Sie Ihre eigenen Systeme, etwa Studierendenverwaltung, LMS oder HR-System, Nachweise automatisch ausstellen. Ihre Daten bleiben, wo sie sind: An Certrust geht nur, was auf dem Nachweis steht.",
+    "loadError": "Ihre API-Schlüssel konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "notInPlan": {
+      "title": "API-Schlüssel gibt es in den kostenpflichtigen Tarifen",
+      "body": "Wechseln Sie den Tarif, um Ihre eigenen Systeme anzubinden und Nachweise automatisch auszustellen.",
+      "cta": "Tarife ansehen"
+    },
+    "created": {
+      "title": "Ihr neuer API-Schlüssel",
+      "body": "Kopieren Sie ihn jetzt und bewahren Sie ihn sicher auf, z. B. in den geheimen Einstellungen Ihres Systems. Aus Sicherheitsgründen wird er nicht noch einmal angezeigt.",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "done": "Ich habe ihn gespeichert"
+    },
+    "form": {
+      "title": "Schlüssel erstellen",
+      "name": "Name",
+      "namePlaceholder": "z. B. Studierendenverwaltung",
+      "expiry": "Ablaufdatum (optional)",
+      "expiryHint": "Leer lassen für einen Schlüssel, der gilt, bis Sie ihn widerrufen.",
+      "permissions": "Berechtigungen",
+      "actsAs": "Der Schlüssel handelt mit Ihren Berechtigungen in dieser Organisation. Er funktioniert nicht mehr, wenn Sie die Organisation verlassen.",
+      "create": "Schlüssel erstellen",
+      "nameRequired": "Geben Sie dem Schlüssel einen Namen.",
+      "scopeRequired": "Wählen Sie mindestens eine Berechtigung.",
+      "createError": "Der Schlüssel konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+    },
+    "scopes": {
+      "read": {
+        "label": "Lesen",
+        "description": "Nachweise, Auszeichnungen und Veranstaltungen auflisten."
+      },
+      "issue": {
+        "label": "Ausstellen",
+        "description": "Nachweise ausstellen, im Stapel ausstellen, planen und verlängern."
+      },
+      "revoke": {
+        "label": "Widerrufen",
+        "description": "Nachweise widerrufen."
+      },
+      "manage": {
+        "label": "Verwalten",
+        "description": "Auszeichnungen und Veranstaltungen anlegen und bearbeiten."
+      }
+    },
+    "status": {
+      "active": "Aktiv",
+      "revoked": "Widerrufen",
+      "expired": "Abgelaufen",
+      "paused": "Pausiert (nicht im Tarif)"
+    },
+    "meta": {
+      "created": "Erstellt am {date} von {by}",
+      "lastUsed": "zuletzt genutzt am {date}",
+      "neverUsed": "nie genutzt",
+      "expires": "läuft ab am {date}"
+    },
+    "empty": "Noch keine API-Schlüssel.",
+    "revoke": {
+      "action": "Widerrufen",
+      "title": "„{name}“ widerrufen?",
+      "body": "Alles, was diesen Schlüssel nutzt, funktioniert sofort nicht mehr. Das kann nicht rückgängig gemacht werden.",
+      "confirm": "Schlüssel widerrufen",
+      "error": "Der Schlüssel konnte nicht widerrufen werden. Bitte versuchen Sie es erneut."
+    },
+    "usage": {
+      "title": "Einen Schlüssel verwenden",
+      "body": "Senden Sie den Schlüssel als Bearer-Token. Zum Beispiel, um einen Nachweis auszustellen:",
+      "idempotency": "Fügen Sie einen Idempotency-Key-Header hinzu (ein beliebiger eindeutiger Wert, etwa Studierenden- und Kurs-ID), dann stellt eine wiederholte Anfrage nie doppelt aus: Certrust gibt das erste Ergebnis zurück."
+    },
+    "guideLink": "Einrichtungsanleitung lesen (auf Englisch)"
   }
 }

@@ -16,7 +16,8 @@
     "solution": "Solução",
     "billing": "Faturação",
     "revenue": "Receita",
-    "manage": "Gerenciar"
+    "manage": "Gerenciar",
+    "apiKeys": "Chaves de API"
   },
   "common": {
     "loading": "Carregando...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Baixe a imagem do crachá para compartilhar nas redes sociais ou no seu site.",
       "badgeAlt": "Crachá de {name}"
     }
+  },
+  "apiKeys": {
+    "title": "Chaves de API",
+    "subtitle": "Permita que os seus próprios sistemas, como o sistema de gestão de alunos, o LMS ou o sistema de RH, emitam credenciais automaticamente. Os seus dados ficam onde estão: enviam ao Certrust apenas o que aparece na credencial.",
+    "loadError": "Não foi possível carregar as suas chaves de API. Tente novamente.",
+    "notInPlan": {
+      "title": "As chaves de API fazem parte dos planos pagos",
+      "body": "Mude de plano para ligar os seus sistemas e emitir credenciais automaticamente.",
+      "cta": "Ver planos"
+    },
+    "created": {
+      "title": "A sua nova chave de API",
+      "body": "Copie-a agora e guarde-a num local seguro, como as definições secretas do seu sistema. Por segurança, não a poderá ver novamente.",
+      "copy": "Copiar",
+      "copied": "Copiada",
+      "done": "Já a guardei"
+    },
+    "form": {
+      "title": "Criar uma chave",
+      "name": "Nome",
+      "namePlaceholder": "ex.: Sistema de gestão de alunos",
+      "expiry": "Expira em (opcional)",
+      "expiryHint": "Deixe em branco para uma chave válida até a revogar.",
+      "permissions": "Permissões",
+      "actsAs": "A chave atua com as suas permissões nesta organização. Deixa de funcionar se sair da organização.",
+      "create": "Criar chave",
+      "nameRequired": "Dê um nome à chave.",
+      "scopeRequired": "Escolha pelo menos uma permissão.",
+      "createError": "Não foi possível criar a chave. Tente novamente."
+    },
+    "scopes": {
+      "read": {
+        "label": "Leitura",
+        "description": "Listar credenciais, conquistas e eventos."
+      },
+      "issue": {
+        "label": "Emissão",
+        "description": "Emitir, emitir em lote, agendar e renovar credenciais."
+      },
+      "revoke": {
+        "label": "Revogação",
+        "description": "Revogar credenciais."
+      },
+      "manage": {
+        "label": "Gestão",
+        "description": "Criar e editar conquistas e eventos."
+      }
+    },
+    "status": {
+      "active": "Ativa",
+      "revoked": "Revogada",
+      "expired": "Expirada",
+      "paused": "Em pausa (não incluído no plano)"
+    },
+    "meta": {
+      "created": "Criada a {date} por {by}",
+      "lastUsed": "usada pela última vez a {date}",
+      "neverUsed": "nunca usada",
+      "expires": "expira a {date}"
+    },
+    "empty": "Ainda não há chaves de API.",
+    "revoke": {
+      "action": "Revogar",
+      "title": "Revogar \"{name}\"?",
+      "body": "Tudo o que usa esta chave deixa de funcionar imediatamente. Esta ação não pode ser anulada.",
+      "confirm": "Revogar chave",
+      "error": "Não foi possível revogar a chave. Tente novamente."
+    },
+    "usage": {
+      "title": "Usar uma chave",
+      "body": "Envie a chave como token Bearer. Por exemplo, para emitir uma credencial:",
+      "idempotency": "Adicione um cabeçalho Idempotency-Key (qualquer valor único, como o ID do aluno e do curso) e um pedido repetido nunca emite duas vezes: o Certrust devolve o primeiro resultado."
+    },
+    "guideLink": "Ler o guia de configuração (em inglês)"
   }
 }

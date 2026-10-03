@@ -220,6 +220,7 @@ export interface SettingsUsageLimits extends Struct.ComponentSchema {
         },
         number
       >;
+    apiAccess: Schema.Attribute.Boolean;
     credentialLimit: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {

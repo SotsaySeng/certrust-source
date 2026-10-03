@@ -5,15 +5,17 @@
  * ```typescript
  * import { CertrustClient } from '@certrust/sdk';
  *
- * const client = new CertrustClient({ baseUrl: 'https://api.example.com' });
- * await client.auth.login({ identifier: 'admin@example.com', password: 'secret' });
+ * const client = new CertrustClient({
+ *   baseUrl: 'https://api.certrust.app',
+ *   apiKey: process.env.CERTRUST_API_KEY, // Manage > API keys
+ * });
  *
- * // Issue a credential
+ * // Issue a credential; a retry with the same idempotencyKey never issues twice
  * const result = await client.credentials.issue({
  *   achievementId: 1,
  *   recipientEmail: 'alice@example.com',
  *   recipientName: 'Alice Smith',
- * });
+ * }, { idempotencyKey: 'student-1042-course-7' });
  *
  * // Verify a credential (no auth needed)
  * const { verified } = await client.credentials.verify('urn:uuid:…');
@@ -56,4 +58,7 @@ export type {
   CredentialRequest,
   CredentialRequestStatus,
   CreateCredentialRequestInput,
+  WriteOptions,
+  BatchIssueResult,
+  ApiKeyInfo,
 } from './types.js';

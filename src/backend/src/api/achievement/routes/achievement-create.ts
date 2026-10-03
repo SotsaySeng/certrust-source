@@ -39,7 +39,7 @@ export default {
       path: '/achievements/create',
       handler: (ctx: any, next: any) => strapi.controller('api::achievement.achievement').createAchievement(ctx, next),
       config: {
-        auth: { strategies: ['users-permissions'], scope: [] },
+        auth: { strategies: ['users-permissions', 'api-key'], scope: [] },
         policies: [
           { name: 'global::is-in-organization', config: { via: 'body', field: 'creator' } },
         ],

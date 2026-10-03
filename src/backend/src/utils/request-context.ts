@@ -11,10 +11,16 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 interface RequestContext {
   requestId: string;
+  /** Set by auth/api-key-strategy.ts when the request is made with an API key. */
+  apiKey?: { documentId: string; name: string; prefix: string };
 }
 
 export const requestContextStorage = new AsyncLocalStorage<RequestContext>();
 
 export function getRequestId(): string | undefined {
   return requestContextStorage.getStore()?.requestId;
+}
+
+export function getRequestApiKey(): RequestContext['apiKey'] {
+  return requestContextStorage.getStore()?.apiKey;
 }

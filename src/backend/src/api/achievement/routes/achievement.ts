@@ -21,7 +21,7 @@ export default factories.createCoreRouter('api::achievement.achievement', {
       ],
     },
     update: {
-      auth: { strategies: ['users-permissions'] },
+      auth: { strategies: ['users-permissions', 'api-key'] },
       policies: [
         { name: 'global::is-in-organization', config: { via: 'existing', uid: 'api::achievement.achievement', field: 'creator' } },
       ],

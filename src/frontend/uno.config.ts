@@ -51,6 +51,7 @@ export default defineConfig({
     'i-heroicons-plus-circle',
     'i-heroicons-paint-brush',
     'i-heroicons-calendar-days',
+    'i-heroicons-key',
   ],
   theme: {
     colors: {

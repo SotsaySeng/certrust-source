@@ -57,13 +57,42 @@ console.log(verified ? '✓ Valid' : '✗ Invalid');
 
 ```typescript
 const client = new CertrustClient({
-  baseUrl: 'https://api.example.com',        // Backend URL (default: http://localhost:1337)
-  token: process.env.CERTRUST_API_TOKEN,        // (Optional) Bearer token
+  baseUrl: 'https://api.certrust.app',       // Backend URL (default: http://localhost:1337)
+  apiKey: process.env.CERTRUST_API_KEY,      // Organization API key (crt_...), for integrations
   fetch: customFetch,                        // (Optional) Custom fetch implementation
 });
 
-// Set/change token later
-client.setToken('new-jwt-token');
+// Check the connection: organization, permissions, endpoints
+const me = await client.whoami();
+
+// Or act as a signed-in user with their JWT instead of an API key
+client.setToken('user-jwt');
+```
+
+### API keys
+
+Create keys under **Manage → API keys** (paid plans). Each key has permissions:
+`read` (list credentials, achievements, events), `issue` (issue, batch-issue,
+schedule, renew), `revoke`, and `manage` (create and edit achievements and
+events). A key acts with the permissions of the member who created it, only for
+that organization, and stops working when it is revoked or expires or that
+member leaves. Keys never reach billing, account settings or key management.
+
+### Safe retries (idempotency)
+
+Write calls take an `idempotencyKey`. A retry with the same key returns the
+first result instead of running again (kept 24 hours), so a timeout never
+issues a credential twice. Use a value that names the operation:
+
+```typescript
+await client.credentials.issue(
+  { achievementId: 12, recipientEmail: 'ada@example.edu', recipientName: 'Ada Lovelace' },
+  { idempotencyKey: 'student-1042-course-7' },
+);
+
+// batchIssue skips recipients who already hold the credential, so re-running
+// a nightly sync never issues twice
+const { results } = await client.credentials.batchIssue({ achievementId: 12, recipients });
 ```
 
 ### Authentication
@@ -282,12 +311,12 @@ console.log('Data exported successfully');
 The SDK can read from environment variables:
 
 - `CERTRUST_API_URL` — Backend base URL (default: `http://localhost:1337`)
-- `CERTRUST_API_TOKEN` — Bearer token (optional)
+- `CERTRUST_API_KEY` — organization API key (optional)
 
 ```typescript
 const client = new CertrustClient({
   baseUrl: process.env.CERTRUST_API_URL,
-  token: process.env.CERTRUST_API_TOKEN,
+  apiKey: process.env.CERTRUST_API_KEY,
 });
 ```
 

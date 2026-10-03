@@ -8,6 +8,8 @@
  * there's no dashboard for this, entries are viewed via the admin panel's
  * content manager.
  */
+import { getRequestApiKey } from '../../../utils/request-context'
+
 export default ({ strapi }: { strapi: any }) => ({
   async record({
     action,
@@ -22,14 +24,17 @@ export default ({ strapi }: { strapi: any }) => ({
     actorId?: number | null
     metadata?: Record<string, unknown>
   }) {
+    // An action taken with an API key is recorded against the key, with
+    // actorId still the member the key acts for.
+    const apiKey = getRequestApiKey()
     await strapi.entityService.create('api::audit-log-entry.audit-log-entry', {
       data: {
         action,
         entityType,
         entityId: String(entityId),
         actorId: actorId ?? null,
-        actorType: actorId ? 'user' : 'system',
-        metadata: metadata ?? {},
+        actorType: apiKey ? 'api-key' : actorId ? 'user' : 'system',
+        metadata: apiKey ? { ...(metadata ?? {}), apiKey } : (metadata ?? {}),
       },
     })
   },

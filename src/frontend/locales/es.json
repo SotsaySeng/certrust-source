@@ -16,7 +16,8 @@
     "solution": "Solución",
     "billing": "Facturación",
     "revenue": "Ingresos",
-    "manage": "Gestionar"
+    "manage": "Gestionar",
+    "apiKeys": "Claves de API"
   },
   "common": {
     "loading": "Cargando...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Descarga la imagen de la insignia para compartirla en redes sociales o en tu sitio web.",
       "badgeAlt": "Insignia de {name}"
     }
+  },
+  "apiKeys": {
+    "title": "Claves de API",
+    "subtitle": "Permite que tus propios sistemas, como el sistema de gestión de estudiantes, el LMS o el sistema de RR. HH., emitan credenciales automáticamente. Tus datos se quedan donde están: solo envían a Certrust lo que aparece en la credencial.",
+    "loadError": "No se pudieron cargar tus claves de API. Inténtalo de nuevo.",
+    "notInPlan": {
+      "title": "Las claves de API forman parte de los planes de pago",
+      "body": "Mejora tu plan para conectar tus propios sistemas y emitir credenciales automáticamente.",
+      "cta": "Ver planes"
+    },
+    "created": {
+      "title": "Tu nueva clave de API",
+      "body": "Cópiala ahora y guárdala en un lugar seguro, como la configuración secreta de tu sistema. Por seguridad, no podrás volver a verla.",
+      "copy": "Copiar",
+      "copied": "Copiada",
+      "done": "Ya la guardé"
+    },
+    "form": {
+      "title": "Crear una clave",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. Sistema de gestión de estudiantes",
+      "expiry": "Caduca (opcional)",
+      "expiryHint": "Déjalo vacío para una clave válida hasta que la revoques.",
+      "permissions": "Permisos",
+      "actsAs": "La clave actúa con tus permisos en esta organización. Deja de funcionar si sales de la organización.",
+      "create": "Crear clave",
+      "nameRequired": "Ponle un nombre a la clave.",
+      "scopeRequired": "Elige al menos un permiso.",
+      "createError": "No se pudo crear la clave. Inténtalo de nuevo."
+    },
+    "scopes": {
+      "read": {
+        "label": "Lectura",
+        "description": "Listar credenciales, logros y eventos."
+      },
+      "issue": {
+        "label": "Emisión",
+        "description": "Emitir, emitir en lote, programar y renovar credenciales."
+      },
+      "revoke": {
+        "label": "Revocación",
+        "description": "Revocar credenciales."
+      },
+      "manage": {
+        "label": "Gestión",
+        "description": "Crear y editar logros y eventos."
+      }
+    },
+    "status": {
+      "active": "Activa",
+      "revoked": "Revocada",
+      "expired": "Caducada",
+      "paused": "En pausa (no incluido en tu plan)"
+    },
+    "meta": {
+      "created": "Creada el {date} por {by}",
+      "lastUsed": "último uso el {date}",
+      "neverUsed": "nunca usada",
+      "expires": "caduca el {date}"
+    },
+    "empty": "Aún no hay claves de API.",
+    "revoke": {
+      "action": "Revocar",
+      "title": "¿Revocar \"{name}\"?",
+      "body": "Todo lo que use esta clave dejará de funcionar de inmediato. No se puede deshacer.",
+      "confirm": "Revocar clave",
+      "error": "No se pudo revocar la clave. Inténtalo de nuevo."
+    },
+    "usage": {
+      "title": "Usar una clave",
+      "body": "Envía la clave como token Bearer. Por ejemplo, para emitir una credencial:",
+      "idempotency": "Añade una cabecera Idempotency-Key (cualquier valor único, como el ID del estudiante y del curso) y una solicitud repetida nunca emitirá dos veces: Certrust devuelve el primer resultado."
+    },
+    "guideLink": "Leer la guía de configuración (en inglés)"
   }
 }

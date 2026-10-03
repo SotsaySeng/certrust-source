@@ -12,7 +12,7 @@ export class HttpClient {
 
   constructor(opts: CertrustClientOptions = {}) {
     this.baseUrl = (opts.baseUrl ?? 'http://localhost:1337').replace(/\/$/, '');
-    this.token = opts.token;
+    this.token = opts.apiKey ?? opts.token;
     this._fetch = opts.fetch ?? globalThis.fetch;
   }
 
@@ -69,8 +69,8 @@ export class HttpClient {
     return this.request<T>('GET', pathname);
   }
 
-  post<T>(pathname: string, body?: unknown): Promise<T> {
-    return this.request<T>('POST', pathname, body);
+  post<T>(pathname: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>('POST', pathname, body, headers);
   }
 
   put<T>(pathname: string, body?: unknown): Promise<T> {

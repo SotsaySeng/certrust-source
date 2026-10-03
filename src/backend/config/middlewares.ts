@@ -66,7 +66,7 @@ export default ({ env }) => {
           return origin
         },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-        headers: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Certrust-Client'],
+        headers: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Certrust-Client', 'Idempotency-Key'],
         keepHeaderOnError: true,
         credentials: true,
       }
@@ -83,6 +83,9 @@ export default ({ env }) => {
     // signatures are computed over the exact bytes, so
     // api::billing's webhook can't verify against re-serialized JSON.
     { name: 'strapi::body', config: { includeUnparsed: true } },
+    // Idempotency-Key replays for API writes; needs the parsed body above
+    // and the Authorization header auth-cookie fills in.
+    'global::idempotency',
     'strapi::session',
     'strapi::favicon',
     'strapi::public',

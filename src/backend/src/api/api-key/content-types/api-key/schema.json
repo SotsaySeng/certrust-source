@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "api_keys",
+  "info": {
+    "singularName": "api-key",
+    "pluralName": "api-keys",
+    "displayName": "API Key",
+    "description": "Organization API keys for integrations. Only a SHA-256 hash of the secret is stored; the secret is shown once at creation. Managed through /api/api-keys by the organization, not the core REST routes."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 80
+    },
+    "prefix": {
+      "type": "string",
+      "required": true,
+      "description": "First characters of the key (e.g. crt_AbC123de), shown so people can tell keys apart"
+    },
+    "keyHash": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true
+    },
+    "scopes": {
+      "type": "json",
+      "required": true,
+      "description": "Array of 'read' | 'issue' | 'revoke' | 'manage'"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "lastUsedAt": {
+      "type": "datetime"
+    },
+    "expiresAt": {
+      "type": "datetime"
+    },
+    "revokedAt": {
+      "type": "datetime"
+    }
+  }
+}

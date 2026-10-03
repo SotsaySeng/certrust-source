@@ -118,10 +118,15 @@ export interface Credential {
 }
 
 export interface IssueCredentialInput {
+  /** Numeric id of the achievement to issue */
   achievementId: number;
   recipientEmail: string;
   recipientName?: string;
   expirationDate?: string;
+  /** Values for the organization's custom attributes, by key */
+  customFields?: Record<string, string | number>;
+  /** documentId of the event the credential is for */
+  eventId?: string;
   evidence?: Array<{
     id?: string;
     type?: string;
@@ -236,11 +241,40 @@ export interface CreateCredentialRequestInput {
 export interface CertrustClientOptions {
   /** Base URL of the Certrust backend. Default: http://localhost:1337 */
   baseUrl?: string;
-  /** Bearer token (Strapi JWT or API token) for authenticated requests */
+  /** Organization API key (crt_...), created under Manage > API keys */
+  apiKey?: string;
+  /** Bearer token (a signed-in user's JWT) for authenticated requests */
   token?: string;
   /**
    * Custom fetch implementation. Defaults to the global `fetch`.
    * Useful for test mocking or environments without native fetch.
    */
   fetch?: typeof globalThis.fetch;
+}
+
+/** Per-request options for write calls. */
+export interface WriteOptions {
+  /**
+   * Sent as the Idempotency-Key header: a retry with the same key returns
+   * the first result instead of running again (kept 24 hours). Use a value
+   * that identifies the operation, e.g. `student-1042-course-7`.
+   */
+  idempotencyKey?: string;
+}
+
+export interface BatchIssueResult {
+  results: Array<
+    | { success: true; recipient: string; data: Credential }
+    | { success: true; skipped: true; recipient: string; note: string }
+    | { success: false; recipient: string; error: string }
+  >;
+}
+
+export interface ApiKeyInfo {
+  name: string;
+  scopes: Array<'read' | 'issue' | 'revoke' | 'manage'>;
+  organization: { documentId: string; name: string } | null;
+  actsAs: { username: string; email: string };
+  issuerProfileId: number | null;
+  endpoints: string[];
 }

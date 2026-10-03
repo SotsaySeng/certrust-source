@@ -16,7 +16,8 @@
     "solution": "Soluzione",
     "billing": "Fatturazione",
     "revenue": "Ricavi",
-    "manage": "Gestisci"
+    "manage": "Gestisci",
+    "apiKeys": "Chiavi API"
   },
   "common": {
     "loading": "Caricamento...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Scarica l'immagine del badge per condividerla sui social o sul tuo sito web.",
       "badgeAlt": "Badge di {name}"
     }
+  },
+  "apiKeys": {
+    "title": "Chiavi API",
+    "subtitle": "Consenti ai tuoi sistemi, come il sistema informativo studenti, l'LMS o il sistema HR, di emettere credenziali automaticamente. I tuoi dati restano dove sono: a Certrust inviano solo ciò che compare sulla credenziale.",
+    "loadError": "Impossibile caricare le chiavi API. Riprova.",
+    "notInPlan": {
+      "title": "Le chiavi API sono incluse nei piani a pagamento",
+      "body": "Passa a un piano superiore per collegare i tuoi sistemi ed emettere credenziali automaticamente.",
+      "cta": "Vedi i piani"
+    },
+    "created": {
+      "title": "La tua nuova chiave API",
+      "body": "Copiala ora e conservala in un luogo sicuro, ad esempio nelle impostazioni segrete del tuo sistema. Per sicurezza, non potrai più vederla.",
+      "copy": "Copia",
+      "copied": "Copiata",
+      "done": "L'ho salvata"
+    },
+    "form": {
+      "title": "Crea una chiave",
+      "name": "Nome",
+      "namePlaceholder": "es. Sistema informativo studenti",
+      "expiry": "Scadenza (facoltativa)",
+      "expiryHint": "Lascia vuoto per una chiave valida finché non la revochi.",
+      "permissions": "Permessi",
+      "actsAs": "La chiave agisce con i tuoi permessi in questa organizzazione. Smette di funzionare se lasci l'organizzazione.",
+      "create": "Crea chiave",
+      "nameRequired": "Dai un nome alla chiave.",
+      "scopeRequired": "Scegli almeno un permesso.",
+      "createError": "Impossibile creare la chiave. Riprova."
+    },
+    "scopes": {
+      "read": {
+        "label": "Lettura",
+        "description": "Elenca credenziali, risultati ed eventi."
+      },
+      "issue": {
+        "label": "Emissione",
+        "description": "Emetti, emetti in blocco, programma e rinnova credenziali."
+      },
+      "revoke": {
+        "label": "Revoca",
+        "description": "Revoca credenziali."
+      },
+      "manage": {
+        "label": "Gestione",
+        "description": "Crea e modifica risultati ed eventi."
+      }
+    },
+    "status": {
+      "active": "Attiva",
+      "revoked": "Revocata",
+      "expired": "Scaduta",
+      "paused": "In pausa (non incluso nel piano)"
+    },
+    "meta": {
+      "created": "Creata il {date} da {by}",
+      "lastUsed": "ultimo uso {date}",
+      "neverUsed": "mai usata",
+      "expires": "scade il {date}"
+    },
+    "empty": "Nessuna chiave API.",
+    "revoke": {
+      "action": "Revoca",
+      "title": "Revocare \"{name}\"?",
+      "body": "Tutto ciò che usa questa chiave smette subito di funzionare. L'operazione non può essere annullata.",
+      "confirm": "Revoca chiave",
+      "error": "Impossibile revocare la chiave. Riprova."
+    },
+    "usage": {
+      "title": "Usare una chiave",
+      "body": "Invia la chiave come token Bearer. Ad esempio, per emettere una credenziale:",
+      "idempotency": "Aggiungi un'intestazione Idempotency-Key (qualsiasi valore univoco, ad esempio studente e corso) e una richiesta ripetuta non emette mai due volte: Certrust restituisce il primo risultato."
+    },
+    "guideLink": "Leggi la guida alla configurazione (in inglese)"
   }
 }

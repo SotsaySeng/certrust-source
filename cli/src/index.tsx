@@ -58,7 +58,7 @@ if (command && KNOWN_SCREENS.has(command as Screen)) {
     '',
     'Options:',
     '  --url <url>       Backend URL (default: $CERTRUST_API_URL or localhost:1337)',
-    '  --token <token>   API token   (default: $CERTRUST_API_TOKEN)',
+    '  --token <token>   API key     (default: $CERTRUST_API_KEY)',
     '',
   ].join('\n'));
   process.exit(0);

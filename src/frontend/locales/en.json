@@ -16,7 +16,8 @@
     "solution": "Solution",
     "billing": "Billing",
     "revenue": "Revenue",
-    "manage": "Manage"
+    "manage": "Manage",
+    "apiKeys": "API keys"
   },
   "common": {
     "loading": "Loading...",
@@ -1074,5 +1075,79 @@
       "badgeBody": "Download the badge image to share on social media or your website.",
       "badgeAlt": "Badge for {name}"
     }
+  },
+  "apiKeys": {
+    "title": "API keys",
+    "subtitle": "Let your own systems, such as a student information system, LMS or HR system, issue credentials automatically. Your data stays where it is: they send Certrust only what goes on the credential.",
+    "loadError": "Could not load your API keys. Please try again.",
+    "notInPlan": {
+      "title": "API keys are part of the paid plans",
+      "body": "Upgrade to connect your own systems and issue credentials automatically.",
+      "cta": "See plans"
+    },
+    "created": {
+      "title": "Your new API key",
+      "body": "Copy it now and store it somewhere safe, such as your system's secret settings. For security, you won't be able to see it again.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "done": "I've saved it"
+    },
+    "form": {
+      "title": "Create a key",
+      "name": "Name",
+      "namePlaceholder": "e.g. Student information system",
+      "expiry": "Expires (optional)",
+      "expiryHint": "Leave empty for a key that works until you revoke it.",
+      "permissions": "Permissions",
+      "actsAs": "The key acts with your permissions in this organisation. It stops working if you leave the organisation.",
+      "create": "Create key",
+      "nameRequired": "Give the key a name.",
+      "scopeRequired": "Choose at least one permission.",
+      "createError": "Could not create the key. Please try again."
+    },
+    "scopes": {
+      "read": {
+        "label": "Read",
+        "description": "List credentials, achievements and events."
+      },
+      "issue": {
+        "label": "Issue",
+        "description": "Issue, batch-issue, schedule and renew credentials."
+      },
+      "revoke": {
+        "label": "Revoke",
+        "description": "Revoke credentials."
+      },
+      "manage": {
+        "label": "Manage",
+        "description": "Create and edit achievements and events."
+      }
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired",
+      "paused": "Paused (not in your plan)"
+    },
+    "meta": {
+      "created": "Created {date} by {by}",
+      "lastUsed": "last used {date}",
+      "neverUsed": "never used",
+      "expires": "expires {date}"
+    },
+    "empty": "No API keys yet.",
+    "revoke": {
+      "action": "Revoke",
+      "title": "Revoke \"{name}\"?",
+      "body": "Anything using this key stops working straight away. This can't be undone.",
+      "confirm": "Revoke key",
+      "error": "Could not revoke the key. Please try again."
+    },
+    "usage": {
+      "title": "Using a key",
+      "body": "Send the key as a Bearer token. For example, to issue a credential:",
+      "idempotency": "Add an Idempotency-Key header (any unique value, such as a student and course ID) and a retried request never issues twice: Certrust returns the first result."
+    },
+    "guideLink": "Read the setup guide"
   }
 }

@@ -425,6 +425,56 @@ export interface ApiAchievementAchievement extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiApiKeyApiKey extends Struct.CollectionTypeSchema {
+  collectionName: 'api_keys';
+  info: {
+    description: 'Organization API keys for integrations. Only a SHA-256 hash of the secret is stored; the secret is shown once at creation. Managed through /api/api-keys by the organization, not the core REST routes.';
+    displayName: 'API Key';
+    pluralName: 'api-keys';
+    singularName: 'api-key';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    createdByUser: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    expiresAt: Schema.Attribute.DateTime;
+    keyHash: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
+    lastUsedAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::api-key.api-key'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 80;
+      }>;
+    organization: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::organization.organization'
+    >;
+    prefix: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    revokedAt: Schema.Attribute.DateTime;
+    scopes: Schema.Attribute.JSON & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiAuditLogEntryAuditLogEntry
   extends Struct.CollectionTypeSchema {
   collectionName: 'audit_log_entries';
@@ -440,7 +490,7 @@ export interface ApiAuditLogEntryAuditLogEntry
   attributes: {
     action: Schema.Attribute.String & Schema.Attribute.Required;
     actorId: Schema.Attribute.Integer;
-    actorType: Schema.Attribute.Enumeration<['user', 'system']> &
+    actorType: Schema.Attribute.Enumeration<['user', 'system', 'api-key']> &
       Schema.Attribute.DefaultTo<'user'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -1043,6 +1093,53 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
       Schema.Attribute.Private &
       Schema.Attribute.DefaultTo<5>;
     statsOrganizationsLabel: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiIdempotencyRecordIdempotencyRecord
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'idempotency_records';
+  info: {
+    description: 'Stored responses for requests sent with an Idempotency-Key header, so a retried request returns the first result instead of running twice. Kept 24 hours. No REST routes.';
+    displayName: 'Idempotency Record';
+    pluralName: 'idempotency-records';
+    singularName: 'idempotency-record';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    fingerprint: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::idempotency-record.idempotency-record'
+    > &
+      Schema.Attribute.Private;
+    lookup: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    publishedAt: Schema.Attribute.DateTime;
+    responseBody: Schema.Attribute.JSON;
+    responseStatus: Schema.Attribute.Integer;
+    state: Schema.Attribute.Enumeration<['processing', 'completed']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'processing'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2064,6 +2161,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::achievement.achievement': ApiAchievementAchievement;
+      'api::api-key.api-key': ApiApiKeyApiKey;
       'api::audit-log-entry.audit-log-entry': ApiAuditLogEntryAuditLogEntry;
       'api::billing-settings.billing-settings': ApiBillingSettingsBillingSettings;
       'api::brand-kit.brand-kit': ApiBrandKitBrandKit;
@@ -2077,6 +2175,7 @@ declare module '@strapi/strapi' {
       'api::evidence.evidence': ApiEvidenceEvidence;
       'api::global-settings.global-settings': ApiGlobalSettingsGlobalSettings;
       'api::homepage.homepage': ApiHomepageHomepage;
+      'api::idempotency-record.idempotency-record': ApiIdempotencyRecordIdempotencyRecord;
       'api::issuer-key.issuer-key': ApiIssuerKeyIssuerKey;
       'api::org-type.org-type': ApiOrgTypeOrgType;
       'api::organization.organization': ApiOrganizationOrganization;

@@ -6,7 +6,7 @@ export default {
       handler: 'profile.findIssuedCredentials',
       config: {
         auth: {
-          strategies: ['users-permissions']
+          strategies: ['users-permissions', 'api-key']
         },
       },
     },
