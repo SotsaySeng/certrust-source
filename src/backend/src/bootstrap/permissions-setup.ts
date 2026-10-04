@@ -61,6 +61,11 @@ const AUTHENTICATED_PERMISSIONS = [
   'api::api-key.api-key.create',
   'api::api-key.api-key.revoke',
   'api::api-key.api-key.me',
+  // Background issuance jobs (scoped to the caller's organization)
+  'api::issuance-job.issuance-job.create',
+  'api::issuance-job.issuance-job.list',
+  'api::issuance-job.issuance-job.get',
+  'api::issuance-job.issuance-job.cancel',
   'api::brand-kit.brand-kit.mine',
   'api::brand-kit.brand-kit.save',
   'api::brand-kit.brand-kit.suggestColors',
@@ -185,6 +190,11 @@ const ISSUER_PERMISSIONS = [
   'api::api-key.api-key.create',
   'api::api-key.api-key.revoke',
   'api::api-key.api-key.me',
+  // Background issuance jobs (scoped to the caller's organization)
+  'api::issuance-job.issuance-job.create',
+  'api::issuance-job.issuance-job.list',
+  'api::issuance-job.issuance-job.get',
+  'api::issuance-job.issuance-job.cancel',
   'api::brand-kit.brand-kit.mine',
   'api::brand-kit.brand-kit.save',
   'api::brand-kit.brand-kit.suggestColors',

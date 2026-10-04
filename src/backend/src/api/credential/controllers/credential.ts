@@ -5,6 +5,7 @@
 import { cleanCustomFields, orgCustomAttributes, overridesFromBody, resolveIssueDesigns } from '../../../utils/issue-design'
 import { attachEvidence } from '../../../utils/credential-evidence'
 import { resolveIssueEvent } from '../../../utils/issue-event'
+import { BATCH_ISSUE_CONCURRENCY, BatchIssueError, createRecipientIssuer, mapWithConcurrency, prepareBatchIssue } from '../../../utils/batch-issue'
 import { factories } from '@strapi/strapi'
 import crypto from 'crypto'
 import { credentialsRevokedTotal } from '../../../monitoring/metrics'
@@ -12,54 +13,8 @@ import { channelAlerts } from '../services/channel-alerts/index'
 import { toPublicCredential, isCredentialPrivate } from '../../../utils/public-credential'
 import { optionalUser } from '../../../utils/optional-user'
 
-// Recipients issued at once by batchIssue.
-const BATCH_ISSUE_CONCURRENCY = 4
-
-/** Like Promise.all(items.map(fn)), with at most `limit` running at once. Keeps order. */
-async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results = new Array<R>(items.length)
-  let next = 0
-  const worker = async () => {
-    while (next < items.length) {
-      const i = next++
-      results[i] = await fn(items[i])
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
-  return results
-}
-
-// Define types to help with type assertions
-interface Achievement {
-  id: any
-  name: string
-  description: string
-  image?: any
-  creator?: {
-    id: any
-  }
-}
-
-interface Profile {
-  id: any
-  name: string
-}
-
-interface Credential {
-  id: any
-  credentialId: string
-  name: string
-  description: string
-  issuanceDate: Date
-  expirationDate?: Date
-  revoked: boolean
-  revocationReason?: string
-  achievement?: Achievement
-  issuer?: Profile
-  recipient?: Profile
-  evidence?: any[]
-  proof?: any[]
-}
+// Recipients in one batch-issue request; larger groups go through issuance jobs.
+const MAX_BATCH_RECIPIENTS = 200
 
 /** Look a credential up by its public credentialId (or documentId). */
 async function findPublicCredential(strapi: any, id: string) {
@@ -743,94 +698,33 @@ export default factories.createCoreController('api::credential.credential', ({ s
       if (!data || !Array.isArray(data.recipients) || data.recipients.length === 0) {
         return ctx.badRequest('Missing or invalid recipients array')
       }
-
-      const { achievementId, recipients, evidence = [] } = data
-
-      if (!achievementId) {
-        return ctx.badRequest('Achievement ID is required')
+      if (data.recipients.length > MAX_BATCH_RECIPIENTS) {
+        return ctx.badRequest(`A batch can have up to ${MAX_BATCH_RECIPIENTS} recipients. For larger groups, create an issuance job (POST /api/issuance-jobs).`)
       }
 
-      // Find the achievement
-      const achievement = await strapi.entityService.findOne('api::achievement.achievement', achievementId, {
-        populate: { creator: { populate: ['organization'] } } as any
-      }) as Achievement
-
-      if (!achievement) {
-        return ctx.notFound('Achievement not found')
+      let batch
+      try {
+        batch = await prepareBatchIssue(data)
       }
-      if (!achievement.creator) {
-        return ctx.badRequest('Achievement creator not found')
+      catch (error) {
+        if (!(error instanceof BatchIssueError)) throw error
+        if (error.status === 404) return ctx.notFound(error.message)
+        if (error.status === 403) return ctx.forbidden(error.message)
+        return ctx.badRequest(error.message)
       }
-      if ((achievement as any).creator?.organization?.suspendedAt) {
-        return ctx.forbidden('Your organisation is suspended pending review and cannot issue credentials')
-      }
-
-      // Resolved once for the whole batch (a design problem fails the
-      // request up front instead of every recipient separately).
-      const organization = (achievement as any).creator?.organization ?? null
-      const designs = await resolveIssueDesigns(achievement, organization, overridesFromBody(data))
-      const attributeDefs = await orgCustomAttributes(organization?.id ?? null)
-      const event = await resolveIssueEvent(data.eventId, achievement, organization)
 
       // Re-uploading a CSV after an interrupted batch must not issue twice:
-      // with skipExisting, anyone already holding an unrevoked credential
-      // for this achievement (or listed twice in this upload) is skipped.
-      const skipExisting = data.skipExisting === true
-      const seen = new Set<string>()
-
-      const issueOne = async (recipientData) => {
-        try {
-          const emailKey = String(recipientData.email ?? '').trim().toLowerCase()
-          if (skipExisting && emailKey) {
-            if (seen.has(emailKey)) {
-              return { success: true, skipped: true, recipient: recipientData.email, note: 'Listed more than once in this upload' }
-            }
-            seen.add(emailKey)
-            const existing = await strapi.db.query('api::credential.credential').findOne({
-              select: ['id'],
-              where: {
-                achievement: { documentId: (achievement as any).documentId },
-                recipient: { email: { $eqi: emailKey } },
-                revoked: false,
-              },
-            })
-            if (existing) {
-              return { success: true, skipped: true, recipient: recipientData.email, note: 'Already has this credential' }
-            }
-          }
-          const customFields = cleanCustomFields(recipientData.customFields, attributeDefs)
-          const recipient = { ...recipientData }
-          const expirationDate = recipientData.expirationDate || undefined
-          // An expiry that is not in the future issues an already-expired
-          // credential (easy to do by typing today's date into the expiry box).
-          if (expirationDate) {
-            const expires = new Date(expirationDate)
-            if (Number.isNaN(expires.getTime())) {
-              return { success: false, recipient: recipientData.email, error: `Invalid expiration date "${expirationDate}"` }
-            }
-            if (expires.getTime() <= Date.now()) {
-              return { success: false, recipient: recipientData.email, error: 'Expiration date must be in the future (leave it empty for no expiry)' }
-            }
-          }
-          const credential = await strapi.service('api::credential.credential').issue(
-            achievement,
-            recipient,
-            evidence,
-            expirationDate,
-            ctx.state.user?.id,
-            { designs, customFields, event }
-          )
-          return { success: true, recipient: recipientData.email, data: credential }
-        } catch (error) {
-          strapi.log.error(`[credential.batchIssue] Error issuing to ${recipientData.email}: ${error.message}`)
-          return { success: false, recipient: recipientData.email, error: error.message }
-        }
-      }
+      // see createRecipientIssuer.
+      const issueOne = createRecipientIssuer(batch, {
+        skipExisting: data.skipExisting === true,
+        evidence: data.evidence ?? [],
+        actorUserId: ctx.state.user?.id,
+      })
 
       // A few at a time, not all at once: Promise.all over a whole CSV
       // queued every recipient on the database pool and the mail pool at
       // once (and the SMTP rate limit sets the pace anyway).
-      const results = await mapWithConcurrency(recipients, BATCH_ISSUE_CONCURRENCY, issueOne)
+      const results = await mapWithConcurrency(data.recipients, BATCH_ISSUE_CONCURRENCY, issueOne)
 
       return { results }
     } catch (error) {

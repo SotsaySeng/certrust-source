@@ -5,6 +5,7 @@ import { CredentialsResource } from './resources/credentials.js';
 import { ProfilesResource } from './resources/profiles.js';
 import { ScheduledResource } from './resources/scheduled.js';
 import { RequestsResource } from './resources/requests.js';
+import { IssuanceJobsResource } from './resources/issuance-jobs.js';
 import type { CertrustClientOptions, ApiKeyInfo } from './types.js';
 
 /**
@@ -42,6 +43,9 @@ export class CertrustClient {
   /** Approval workflow — submit, approve, reject credential requests */
   readonly requests: RequestsResource;
 
+  /** Background issuance for large groups */
+  readonly issuanceJobs: IssuanceJobsResource;
+
   constructor(opts: CertrustClientOptions = {}) {
     this._http = new HttpClient(opts);
     this.auth = new AuthResource(this._http);
@@ -50,6 +54,7 @@ export class CertrustClient {
     this.profiles = new ProfilesResource(this._http);
     this.scheduled = new ScheduledResource(this._http);
     this.requests = new RequestsResource(this._http);
+    this.issuanceJobs = new IssuanceJobsResource(this._http);
   }
 
   /**

@@ -1,0 +1,38 @@
+{
+  "collectionName": "components_marketing_integration_items",
+  "info": {
+    "displayName": "Integration Item",
+    "description": "One card in the homepage's 'Works with your systems' grid, linking to an integration manual."
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "tag": {
+      "type": "string",
+      "description": "Short line above the title saying who it is for, e.g. 'No technical knowledge'. Optional."
+    },
+    "url": {
+      "type": "string",
+      "required": true,
+      "description": "Where the card links to, e.g. /integrations/google-sheets"
+    },
+    "icon": {
+      "type": "enumeration",
+      "enum": [
+        "table-cells", "clipboard-document-list", "academic-cap", "code-bracket",
+        "puzzle-piece", "key", "bolt", "globe-alt", "link", "arrow-path",
+        "cloud-arrow-up", "squares-plus", "briefcase", "building-library",
+        "calendar-days", "user-group"
+      ],
+      "required": true,
+      "description": "Heroicons name, rendered via BaseIcon.vue (collection='heroicons'). An enum, like audience-segment's, so an icon that doesn't exist can't be typed."
+    }
+  }
+}

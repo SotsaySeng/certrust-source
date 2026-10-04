@@ -90,10 +90,33 @@ await client.credentials.issue(
   { idempotencyKey: 'student-1042-course-7' },
 );
 
-// batchIssue skips recipients who already hold the credential, so re-running
-// a nightly sync never issues twice
+// batchIssue (up to 200 recipients) skips those who already hold the
+// credential, so re-running a nightly sync never issues twice
 const { results } = await client.credentials.batchIssue({ achievementId: 12, recipients });
 ```
+
+### Large groups (issuance jobs)
+
+For up to 2,000 recipients, create a job. It returns at once and runs in the
+background; a job interrupted by a restart carries on where it stopped.
+
+```typescript
+const job = await client.issuanceJobs.create(
+  { achievementId: 12, recipients },
+  { idempotencyKey: 'graduation-2026' },
+);
+const done = await client.issuanceJobs.wait(job.documentId, {
+  onProgress: j => console.log(`${j.processed}/${j.total}`),
+});
+console.log(`${done.succeeded} issued, ${done.skipped} skipped, ${done.failed} failed`);
+for (const r of done.results ?? []) if (!r.success) console.warn(r.recipient, r.error);
+```
+
+### Rate limits
+
+Each API key may make 120 requests a minute. Beyond that the API answers 429
+with a `Retry-After` header (seconds); `X-RateLimit-Remaining` on every response
+shows what is left. A job counts as one request however many recipients it has.
 
 ### Authentication
 

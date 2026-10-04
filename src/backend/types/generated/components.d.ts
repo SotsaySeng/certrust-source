@@ -172,6 +172,41 @@ export interface MarketingHowItWorksSection extends Struct.ComponentSchema {
   };
 }
 
+export interface MarketingIntegrationItem extends Struct.ComponentSchema {
+  collectionName: 'components_marketing_integration_items';
+  info: {
+    description: "One card in the homepage's 'Works with your systems' grid, linking to an integration manual.";
+    displayName: 'Integration Item';
+  };
+  attributes: {
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    icon: Schema.Attribute.Enumeration<
+      [
+        'table-cells',
+        'clipboard-document-list',
+        'academic-cap',
+        'code-bracket',
+        'puzzle-piece',
+        'key',
+        'bolt',
+        'globe-alt',
+        'link',
+        'arrow-path',
+        'cloud-arrow-up',
+        'squares-plus',
+        'briefcase',
+        'building-library',
+        'calendar-days',
+        'user-group',
+      ]
+    > &
+      Schema.Attribute.Required;
+    tag: Schema.Attribute.String;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface MarketingLinkItem extends Struct.ComponentSchema {
   collectionName: 'components_marketing_link_items';
   info: {
@@ -251,6 +286,7 @@ declare module '@strapi/strapi' {
       'marketing.audience-segment': MarketingAudienceSegment;
       'marketing.feature-item': MarketingFeatureItem;
       'marketing.how-it-works-section': MarketingHowItWorksSection;
+      'marketing.integration-item': MarketingIntegrationItem;
       'marketing.link-item': MarketingLinkItem;
       'marketing.pricing-tier': MarketingPricingTier;
       'settings.usage-limits': SettingsUsageLimits;

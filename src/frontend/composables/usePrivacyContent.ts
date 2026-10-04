@@ -117,6 +117,7 @@ export function usePrivacyContent() {
           '<strong>Security and server logs:</strong> up to 90 days, unless needed to investigate an incident.',
           '<strong>Reports and support emails:</strong> up to 2 years after the matter is closed.',
           '<strong>Issuer verification documents:</strong> while the request is being reviewed, then deleted 90 days after we decide it, or straight away if the Issuer closes its account. We keep the decision itself (verified or not, and when) for as long as the account exists.',
+          '<strong>API integration records:</strong> when an Issuer\'s own system issues credentials through our API, we keep the response to a request sent with an Idempotency-Key for 24 hours, so that a repeated request does not issue twice. For a background issuance job, the list of recipients is deleted when the job finishes, and the result for each recipient (email address, outcome and credential reference) is kept for 30 days so the Issuer can check it.',
           `<strong>Backups:</strong> deleted data can remain in our encrypted backups for up to <strong>${L.backupRetentionDays} days</strong>, until those backups rotate out. Backups are used only to recover from a disaster; data deleted before a restore is not brought back into use.`,
         ],
       },

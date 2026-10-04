@@ -265,7 +265,7 @@ export interface WriteOptions {
 export interface BatchIssueResult {
   results: Array<
     | { success: true; recipient: string; data: Credential }
-    | { success: true; skipped: true; recipient: string; note: string }
+    | { success: true; skipped: true; recipient: string; note: string; existing?: { id: number; credentialId: string } }
     | { success: false; recipient: string; error: string }
   >;
 }
@@ -277,4 +277,42 @@ export interface ApiKeyInfo {
   actsAs: { username: string; email: string };
   issuerProfileId: number | null;
   endpoints: string[];
+}
+
+export interface CreateIssuanceJobInput {
+  /** Numeric id of the achievement to issue */
+  achievementId: number;
+  /** Up to 2,000 recipients */
+  recipients: Array<{ email: string; name?: string; expirationDate?: string; customFields?: Record<string, string | number> }>;
+  /** documentId of the event the credentials are for */
+  eventId?: string;
+  /** Skip recipients who already hold this credential. Default true. */
+  skipExisting?: boolean;
+}
+
+export interface IssuanceJob {
+  documentId: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  achievementId: number;
+  achievementName: string | null;
+  total: number;
+  processed: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
+  error: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** Present on get(): one entry per processed recipient, in order. */
+  results?: Array<{
+    recipient: string;
+    success: boolean;
+    skipped?: boolean;
+    note?: string;
+    error?: string;
+    /** Numeric credential id (use it to revoke) */
+    id?: number | null;
+    credentialId?: string | null;
+  }>;
 }

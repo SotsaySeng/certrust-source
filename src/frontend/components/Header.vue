@@ -50,8 +50,15 @@ const route = useRoute()
 const manageMenuRef = useTemplateRef('manage-menu')
 const showManageMenu = ref(false)
 onClickOutside(manageMenuRef, () => showManageMenu.value = false)
+
+// Integration manuals, for everyone (signed in or not).
+const developersMenuRef = useTemplateRef('developers-menu')
+const showDevelopersMenu = ref(false)
+onClickOutside(developersMenuRef, () => showDevelopersMenu.value = false)
+const isDevelopersActive = computed(() => route.path === '/integrations' || route.path.startsWith('/integrations/'))
 watch(() => route.fullPath, () => {
   showManageMenu.value = false
+  showDevelopersMenu.value = false
   isMobileMenuOpen.value = false
 })
 
@@ -75,7 +82,7 @@ function handleLogout() {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
-        <NuxtLink to="/" class="flex items-center gap-2">
+        <NuxtLink to="/" class="flex items-center gap-2 shrink-0">
           <img
             :src="globalSettings.logo.src"
             :alt="globalSettings.logo.alt"
@@ -83,16 +90,52 @@ function handleLogout() {
           >
         </NuxtLink>
 
-        <!-- Desktop Navigation -->
-        <div class="hidden lg:flex items-center gap-6">
+        <!-- Desktop Navigation. Between lg and xl the bar is tight in the
+             longer languages, so "Home" (the logo already goes there) and
+             the language name are shown from xl up. -->
+        <div class="hidden lg:flex items-center gap-4 xl:gap-6">
           <NuxtLink
             v-for="link in barNavLinks"
             :key="link.name"
             :to="link.href"
             class="text-text-secondary hover:text-text-primary transition-colors font-medium"
+            :class="{ 'hidden xl:inline': link.href === '/' }"
           >
             {{ t(`nav.${link.i18nKey}`) || link.name }}
           </NuxtLink>
+
+          <!-- "Developers" menu: the public integration manuals -->
+          <div ref="developers-menu" class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-1 font-medium transition-colors"
+              :class="isDevelopersActive || showDevelopersMenu ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'"
+              :aria-expanded="showDevelopersMenu"
+              aria-controls="developers-menu-panel"
+              data-testid="developers-menu-button"
+              @click="showDevelopersMenu = !showDevelopersMenu"
+            >
+              {{ t('nav.developers') }}
+              <span class="i-heroicons-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': showDevelopersMenu }" aria-hidden="true" />
+            </button>
+            <div
+              v-if="showDevelopersMenu"
+              id="developers-menu-panel"
+              class="absolute left-0 mt-2 w-72 bg-white rounded-xl shadow-lg ring-1 ring-black/5 py-2 z-50"
+            >
+              <NuxtLink
+                v-for="link in DEVELOPERS_MENU_LINKS"
+                :key="link.href"
+                :to="link.href"
+                class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50"
+                :class="route.path === link.href ? 'text-[#1e7e34] font-medium' : 'text-text-secondary hover:text-text-primary'"
+                @click="showDevelopersMenu = false"
+              >
+                <span :class="link.icon" class="w-5 h-5 shrink-0" aria-hidden="true" />
+                {{ t(link.i18nKey) }}
+              </NuxtLink>
+            </div>
+          </div>
 
           <!-- Issuer "Manage" menu -->
           <div v-if="isAuthenticated && isIssuer" ref="manage-menu" class="relative">
@@ -129,7 +172,7 @@ function handleLogout() {
           </div>
 
           <!-- Auth Buttons -->
-          <div class="flex items-center gap-4 ml-6">
+          <div class="flex items-center gap-3 xl:gap-4 ml-1 xl:ml-6">
             <LanguageSwitcher />
             <template v-if="isAuthenticated && userName">
               <div class="relative">
@@ -230,6 +273,20 @@ function handleLogout() {
         >
           {{ t(`nav.${link.i18nKey}`) || link.name }}
         </NuxtLink>
+        <div class="pt-3 mt-2 border-t" data-testid="developers-menu-mobile">
+          <p class="pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            {{ t('nav.developers') }}
+          </p>
+          <NuxtLink
+            v-for="link in DEVELOPERS_MENU_LINKS"
+            :key="link.href"
+            :to="link.href"
+            class="flex items-center gap-3 py-2 text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <span :class="link.icon" class="w-5 h-5 shrink-0" aria-hidden="true" />
+            {{ t(link.i18nKey) }}
+          </NuxtLink>
+        </div>
         <div v-if="isAuthenticated && isIssuer" class="pt-3 mt-2 border-t">
           <p class="pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
             {{ t('nav.manage') }}

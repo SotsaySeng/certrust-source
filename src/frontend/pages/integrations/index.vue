@@ -26,6 +26,13 @@ const useCases = [
   { icon: 'i-lucide-calendar-check', who: 'Events and workshops', before: 'Building an attendance CSV after every event.', after: 'Check-in or attendance tools issue certificates the same day.' },
 ]
 
+const manuals = [
+  { href: '/integrations/google-sheets', icon: 'i-lucide-table', title: 'Google Sheets', level: 'No technical knowledge', body: 'Add a row with a name and an email, and that person is issued a certificate. The link is written back into the sheet.' },
+  { href: '/integrations/google-forms', icon: 'i-lucide-clipboard-list', title: 'Google Forms', level: 'No technical knowledge', body: 'Everyone who submits your attendance, completion or registration form receives their certificate.' },
+  { href: '/integrations/student-records', icon: 'i-lucide-graduation-cap', title: 'Universities and colleges', level: 'For your IT team', body: 'Issue from your student records system with a nightly export and a ready-made example script.' },
+  { href: '/integrations/guide', icon: 'i-lucide-code', title: 'API guide', level: 'For developers', body: 'Connect any system: API keys, issuing, large groups, safe retries, limits and every endpoint.' },
+]
+
 const stays = [
   'Student, learner and employee records',
   'Grades, transcripts and HR files',
@@ -181,6 +188,41 @@ const safety = [
               {{ s.body }}
             </p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Manuals -->
+    <section class="py-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-4">
+          Choose how to connect
+        </h2>
+        <p class="text-xl text-text-secondary text-center max-w-2xl mx-auto mb-12">
+          Step-by-step manuals, from no technical knowledge at all to a full API.
+        </p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <NuxtLink
+            v-for="m in manuals"
+            :key="m.href"
+            :to="m.href"
+            class="group flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-lg transition-shadow"
+            data-testid="manual-card"
+          >
+            <div class="w-11 h-11 rounded-xl bg-[#28A745]/15 flex items-center justify-center mb-4">
+              <div class="w-6 h-6 text-[#1f7a34]" :class="m.icon" />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">
+              {{ m.title }}
+            </h3>
+            <p class="mt-1 text-xs font-medium uppercase tracking-wide text-[#1f7a34]">
+              {{ m.level }}
+            </p>
+            <p class="mt-3 text-gray-600 text-sm leading-relaxed flex-1">
+              {{ m.body }}
+            </p>
+            <span class="mt-4 text-sm font-medium text-[#1f7a34] group-hover:underline">Open the manual →</span>
+          </NuxtLink>
         </div>
       </div>
     </section>

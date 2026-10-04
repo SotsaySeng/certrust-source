@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "issuance_jobs",
+  "info": {
+    "singularName": "issuance-job",
+    "pluralName": "issuance-jobs",
+    "displayName": "Issuance Job",
+    "description": "A large group of recipients issued in the background. Recipients are cleared when the job finishes; per-recipient results are kept 30 days. Managed through /api/issuance-jobs, not the core REST routes."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "status": {
+      "type": "enumeration",
+      "enum": ["queued", "running", "completed", "failed", "cancelled"],
+      "default": "queued",
+      "required": true
+    },
+    "achievementId": {
+      "type": "integer",
+      "required": true
+    },
+    "achievementName": {
+      "type": "string"
+    },
+    "options": {
+      "type": "json",
+      "description": "skipExisting, eventId, evidence and design overrides, as sent"
+    },
+    "recipients": {
+      "type": "json",
+      "private": true,
+      "description": "Recipients still to process; cleared when the job finishes"
+    },
+    "results": {
+      "type": "json",
+      "description": "One entry per processed recipient, in order"
+    },
+    "total": { "type": "integer", "default": 0 },
+    "processed": { "type": "integer", "default": 0 },
+    "succeeded": { "type": "integer", "default": 0 },
+    "skipped": { "type": "integer", "default": 0 },
+    "failed": { "type": "integer", "default": 0 },
+    "error": { "type": "text" },
+    "startedAt": { "type": "datetime" },
+    "finishedAt": { "type": "datetime" },
+    "apiKey": {
+      "type": "json",
+      "description": "documentId, name and prefix of the API key that created the job, if any"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

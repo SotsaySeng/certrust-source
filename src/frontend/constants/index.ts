@@ -32,4 +32,13 @@ export const MANAGE_MENU_LINKS = [
   { href: '/events', i18nKey: 'nav.events', icon: 'i-heroicons-calendar-days' },
   { href: '/api-keys', i18nKey: 'nav.apiKeys', icon: 'i-heroicons-key' },
 ]
+// Public integration manuals, grouped under the header's "Developers" menu
+// (Header.vue). No sign-in needed for any of them.
+export const DEVELOPERS_MENU_LINKS = [
+  { href: '/integrations', i18nKey: 'nav.dev.overview', icon: 'i-heroicons-puzzle-piece' },
+  { href: '/integrations/google-sheets', i18nKey: 'nav.dev.googleSheets', icon: 'i-heroicons-table-cells' },
+  { href: '/integrations/google-forms', i18nKey: 'nav.dev.googleForms', icon: 'i-heroicons-clipboard-document-list' },
+  { href: '/integrations/student-records', i18nKey: 'nav.dev.studentRecords', icon: 'i-heroicons-academic-cap' },
+  { href: '/integrations/guide', i18nKey: 'nav.dev.apiGuide', icon: 'i-heroicons-code-bracket' },
+]
 export const HELLO_SH_MAIL = 'mailto:hello@schroedinger-hat.org'

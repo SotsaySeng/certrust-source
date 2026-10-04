@@ -1,4 +1,4 @@
-import { addPlatformStatsDefaults } from '../homepage-seed'
+import { addIntegrationsDefaults, addPlatformStatsDefaults } from '../homepage-seed'
 
 /**
  * The back-fill's whole job is to add the stats fields to installs that
@@ -103,5 +103,63 @@ describe('addPlatformStatsDefaults', () => {
     const { strapi, update } = fakeStrapi(null)
     await addPlatformStatsDefaults(strapi, EXISTING)
     expect(update).not.toHaveBeenCalled()
+  })
+})
+
+describe('addIntegrationsDefaults', () => {
+  it('adds the whole section to a record that predates it', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', heroHighlight: 'verify in seconds' })
+    await addIntegrationsDefaults(strapi, EXISTING)
+
+    expect(update).toHaveBeenCalledTimes(1)
+    const { documentId, data } = update.mock.calls[0][0]
+    expect(documentId).toBe('abc123')
+    expect(data.integrationsEnabled).toBe(true)
+    expect(data.integrationsHeader).toBe('Issue from the tools you already use')
+    expect(data.integrations.map((i: any) => i.url)).toEqual([
+      '/integrations/google-sheets',
+      '/integrations/google-forms',
+      '/integrations/student-records',
+      '/integrations/guide',
+    ])
+  })
+
+  it('does nothing once the section exists', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      integrationsEnabled: true,
+      integrationsHeader: 'Custom',
+      integrationsSubheader: 'Custom',
+      integrationsLinkLabel: 'Custom',
+    })
+    await addIntegrationsDefaults(strapi, EXISTING)
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('never puts the cards back after an admin switched the section off or emptied it', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      integrationsEnabled: false,
+      integrationsHeader: 'x',
+      integrationsSubheader: 'x',
+      integrationsLinkLabel: 'x',
+      integrations: [],
+    })
+    await addIntegrationsDefaults(strapi, EXISTING)
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('keeps text an admin cleared to blank, and fills only what is missing', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      integrationsEnabled: true,
+      integrationsHeader: 'Mine',
+      integrationsSubheader: null,
+      integrationsLinkLabel: '',
+    })
+    await addIntegrationsDefaults(strapi, EXISTING)
+    expect(update.mock.calls[0][0].data).toEqual({
+      integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.',
+    })
   })
 })

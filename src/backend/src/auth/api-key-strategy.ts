@@ -14,16 +14,27 @@
  * scopes must list the route (utils/api-key-access.ts); any other route is
  * refused with 403, before the controller runs.
  *
+ * Each key may make API_KEY_RATE_LIMIT requests a minute (default 120);
+ * beyond that it gets 429 with Retry-After. Every response to a key
+ * carries X-RateLimit-Limit / -Remaining / -Reset.
+ *
  * ctx.state.apiKey carries { id, documentId, name, scopes, organizationId }
  * for audit logging and idempotency.
  */
 import { errors } from '@strapi/utils'
 import { isRouteAllowed, keyFromAuthorization } from '../utils/api-key-access'
 import { requestContextStorage } from '../utils/request-context'
+import { createRateLimiter } from '../utils/rate-limit'
 
 export const API_KEY_STRATEGY = 'api-key'
 
-export function createApiKeyStrategy(strapi: any) {
+const RATE_WINDOW_MS = 60_000
+
+export function createApiKeyStrategy(strapi: any, opts: { rateLimit?: number } = {}) {
+  const limiter = createRateLimiter({
+    limit: opts.rateLimit ?? (Number(process.env.API_KEY_RATE_LIMIT) || 120),
+    windowMs: RATE_WINDOW_MS,
+  })
   return {
     name: API_KEY_STRATEGY,
 
@@ -38,6 +49,15 @@ export function createApiKeyStrategy(strapi: any) {
       const route = ctx.state?.route
       if (!route || !isRouteAllowed(route.method, route.path, key.scopes)) {
         throw new errors.ForbiddenError('This API key is not allowed to call this endpoint.')
+      }
+
+      const rate = limiter.take(String(key.id))
+      ctx.set?.('X-RateLimit-Limit', String(rate.limit))
+      ctx.set?.('X-RateLimit-Remaining', String(rate.remaining))
+      ctx.set?.('X-RateLimit-Reset', String(Math.ceil(rate.resetAt / 1000)))
+      if (!rate.allowed) {
+        ctx.set?.('Retry-After', String(Math.max(1, Math.ceil((rate.resetAt - Date.now()) / 1000))))
+        throw new errors.RateLimitError(`Rate limit reached: ${rate.limit} requests a minute per API key. Retry shortly.`)
       }
 
       const permissions = await strapi.plugin('users-permissions').service('permission')

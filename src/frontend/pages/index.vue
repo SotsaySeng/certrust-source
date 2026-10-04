@@ -3,6 +3,7 @@ const {
   sections,
   features,
   audience,
+  integrations,
   heroTitleBefore,
   heroHighlight,
   heroTitleAfter,
@@ -127,6 +128,9 @@ const closingMotion = revealVariants(0)
         />
       </div>
     </section>
+
+    <!-- Works with your systems -->
+    <HomeIntegrations :integrations="integrations" />
 
     <!-- Closing CTA -->
     <section v-motion="closingMotion" class="relative mb-24 text-center rounded-2xl bg-text-primary px-6 py-16 md:py-24 overflow-hidden">

@@ -28,8 +28,10 @@ const toc = [
   { id: 'achievements', label: 'Find the achievement ID', sub: true },
   { id: 'issue', label: 'Issue a credential', sub: true },
   { id: 'batch', label: 'Issue to a whole group', sub: true },
+  { id: 'jobs', label: 'Very large groups: jobs', sub: true },
   { id: 'revoke', label: 'Revoke a credential', sub: true },
   { id: 'retries', label: 'Safe retries', sub: true },
+  { id: 'limits', label: 'Rate limits', sub: true },
   { id: 'errors', label: 'Errors', sub: true },
   { id: 'endpoints', label: 'Endpoints by permission', sub: true },
   { id: 'tools', label: 'SDK and AI assistants', sub: true },
@@ -48,12 +50,13 @@ const errors = [
   { code: '403', meaning: 'The key doesn\'t have the permission for this action, or keys can\'t use this endpoint at all.' },
   { code: '409', meaning: 'A request with the same Idempotency-Key is still running. Wait a moment and retry.' },
   { code: '422', meaning: 'This Idempotency-Key was already used for a different request. Use a new key for a new operation.' },
+  { code: '429', meaning: 'Too many requests with this key in the last minute, or too many jobs in progress. Wait for the number of seconds in the Retry-After header.' },
 ]
 
 const endpoints = [
   { scope: 'Any key', routes: ['GET /api/api-keys/me'] },
-  { scope: 'Read', routes: ['GET /api/credentials', 'GET /api/achievements/creator/{issuerProfileId}', 'GET /api/achievements/{id}/credentials', 'GET /api/events', 'GET /api/events/{id}', 'GET /api/scheduled-issuances', 'GET /api/profiles/me', 'GET /api/profiles/{id}/issued-credentials', 'GET /api/custom-attributes'] },
-  { scope: 'Issue', routes: ['POST /api/credentials/issue', 'POST /api/credentials/batch-issue', 'POST /api/credentials/{id}/renew', 'POST /api/scheduled-issuances', 'POST /api/scheduled-issuances/{id}/cancel'] },
+  { scope: 'Read', routes: ['GET /api/credentials', 'GET /api/achievements/creator/{issuerProfileId}', 'GET /api/achievements/{id}/credentials', 'GET /api/events', 'GET /api/events/{id}', 'GET /api/scheduled-issuances', 'GET /api/profiles/me', 'GET /api/profiles/{id}/issued-credentials', 'GET /api/custom-attributes', 'GET /api/issuance-jobs', 'GET /api/issuance-jobs/{id}'] },
+  { scope: 'Issue', routes: ['POST /api/credentials/issue', 'POST /api/credentials/batch-issue', 'POST /api/credentials/{id}/renew', 'POST /api/scheduled-issuances', 'POST /api/scheduled-issuances/{id}/cancel', 'POST /api/issuance-jobs', 'GET /api/issuance-jobs', 'GET /api/issuance-jobs/{id}', 'POST /api/issuance-jobs/{id}/cancel'] },
   { scope: 'Revoke', routes: ['POST /api/credentials/{id}/revoke'] },
   { scope: 'Manage', routes: ['POST /api/achievements/create', 'PUT /api/achievements/{id}', 'POST /api/events', 'PUT /api/events/{id}'] },
 ]
@@ -147,6 +150,41 @@ const codeBatchResponse = `{
   ]
 }`
 
+const codeJob = computed(() => `curl -X POST ${api.value}/api/issuance-jobs \\
+  -H "Authorization: Bearer $CERTRUST_API_KEY" \\
+  -H "Idempotency-Key: graduation-2026" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "data": {
+      "achievementId": 12,
+      "skipExisting": true,
+      "recipients": [
+        { "name": "Ada Lovelace", "email": "ada@example.edu" },
+        { "name": "Alan Turing", "email": "alan@example.edu" }
+      ]
+    }
+  }'`)
+
+const codeJobPoll = computed(() => `curl ${api.value}/api/issuance-jobs/{documentId} \\
+  -H "Authorization: Bearer $CERTRUST_API_KEY"`)
+
+const codeJobResponse = `{
+  "data": {
+    "documentId": "rg69xy94mbvztzpkf84wpwll",
+    "status": "running",
+    "total": 1200,
+    "processed": 340,
+    "succeeded": 336,
+    "skipped": 3,
+    "failed": 1,
+    "results": [
+      { "recipient": "ada@example.edu", "success": true, "id": 201, "credentialId": "urn:uuid:…" },
+      { "recipient": "alan@example.edu", "success": true, "skipped": true, "note": "Already has this credential", "id": 187, "credentialId": "urn:uuid:…" },
+      { "recipient": "bad-address", "success": false, "error": "…" }
+    ]
+  }
+}`
+
 const codeRevoke = computed(() => `curl -X POST ${api.value}/api/credentials/201/revoke \\
   -H "Authorization: Bearer $CERTRUST_API_KEY" \\
   -H "Content-Type: application/json" \\
@@ -168,7 +206,7 @@ const codeRevoke = computed(() => `curl -X POST ${api.value}/api/credentials/201
             Connect your systems to Certrust
           </h1>
           <p class="text-lg text-gray-600 leading-relaxed">
-            Part 1 is for the person who manages your organisation in Certrust: creating a key and keeping it safe. Part 2 is for whoever connects your system, such as your IT team or software provider.
+            Part 1 is for the person who manages your organisation in Certrust: creating a key and keeping it safe. Part 2 is for whoever connects your system, such as your IT team or software provider. No IT team? The <a href="/integrations/google-sheets" class="text-[#1f7a34] underline">Google Sheets connector</a> needs no development at all.
           </p>
         </div>
 
@@ -300,7 +338,22 @@ const codeRevoke = computed(() => `curl -X POST ${api.value}/api/credentials/201
               <p>Send a whole class or cohort in one request. Each recipient gets their own result, so one bad email doesn't stop the rest. With <code>"skipExisting": true</code>, people who already hold this credential are skipped. That makes it safe to send the full list again, for example from a nightly sync.</p>
               <pre><code>{{ codeBatch }}</code></pre>
               <pre><code>{{ codeBatchResponse }}</code></pre>
-              <p>Send up to 50 recipients per request, and send the next batch when the previous one has returned. Long requests are more likely to be cut off part-way. If one is, resend the same batch with the same Idempotency-Key.</p>
+              <p>A request can carry up to 200 recipients, and we recommend 50: long requests are more likely to be cut off part-way. If one is, resend the same batch with the same Idempotency-Key. For anything larger, use a job.</p>
+            </section>
+
+            <section id="jobs" class="scroll-mt-24">
+              <h3>Very large groups: jobs</h3>
+              <p>For a whole graduating class or a first import, create an issuance job with up to 2,000 recipients. The request returns straight away (status 202) and Certrust works through the list in the background, so nothing depends on one long connection.</p>
+              <pre><code>{{ codeJob }}</code></pre>
+              <p>The response contains the job's <code>documentId</code>. Ask for its progress every few seconds until <code>status</code> is <code>completed</code>, <code>failed</code> or <code>cancelled</code>:</p>
+              <pre><code>{{ codeJobPoll }}</code></pre>
+              <pre><code>{{ codeJobResponse }}</code></pre>
+              <ul>
+                <li>Every recipient gets its own result, in the order you sent them, with the credential's <code>id</code> and <code>credentialId</code>.</li>
+                <li>A job that is interrupted, for example by a Certrust update, carries on where it stopped and never issues to the same person twice.</li>
+                <li><code>POST /api/issuance-jobs/{documentId}/cancel</code> stops a job. Credentials already issued stay issued.</li>
+                <li>An organisation can have 3 jobs in progress at once. Results are kept for 30 days.</li>
+              </ul>
             </section>
 
             <section id="revoke" class="scroll-mt-24">
@@ -319,6 +372,11 @@ const codeRevoke = computed(() => `curl -X POST ${api.value}/api/credentials/201
                 <li>A retry that arrives while the first request is still running gets 409. Wait a moment and retry.</li>
                 <li>Server errors (5xx) are not kept, so retrying after one runs the request again.</li>
               </ul>
+            </section>
+
+            <section id="limits" class="scroll-mt-24">
+              <h3>Rate limits</h3>
+              <p>Each key can make 120 requests a minute. Every response shows where you stand in the <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code> headers. Beyond the limit you get 429 with a <code>Retry-After</code> header giving the seconds to wait. A batch or a job counts as one request however many recipients it has, so use those for volume instead of many single requests.</p>
             </section>
 
             <section id="errors" class="scroll-mt-24">

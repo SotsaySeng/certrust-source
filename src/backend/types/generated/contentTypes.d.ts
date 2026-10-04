@@ -1071,6 +1071,14 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
     heroTitleBefore: Schema.Attribute.String;
     howItWorksHeader: Schema.Attribute.String;
     howItWorksSubheader: Schema.Attribute.Text;
+    integrations: Schema.Attribute.Component<
+      'marketing.integration-item',
+      true
+    >;
+    integrationsEnabled: Schema.Attribute.Boolean;
+    integrationsHeader: Schema.Attribute.String;
+    integrationsLinkLabel: Schema.Attribute.String;
+    integrationsSubheader: Schema.Attribute.Text;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1140,6 +1148,61 @@ export interface ApiIdempotencyRecordIdempotencyRecord
     state: Schema.Attribute.Enumeration<['processing', 'completed']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'processing'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiIssuanceJobIssuanceJob extends Struct.CollectionTypeSchema {
+  collectionName: 'issuance_jobs';
+  info: {
+    description: 'A large group of recipients issued in the background. Recipients are cleared when the job finishes; per-recipient results are kept 30 days. Managed through /api/issuance-jobs, not the core REST routes.';
+    displayName: 'Issuance Job';
+    pluralName: 'issuance-jobs';
+    singularName: 'issuance-job';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    achievementId: Schema.Attribute.Integer & Schema.Attribute.Required;
+    achievementName: Schema.Attribute.String;
+    apiKey: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    createdByUser: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    error: Schema.Attribute.Text;
+    failed: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    finishedAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::issuance-job.issuance-job'
+    > &
+      Schema.Attribute.Private;
+    options: Schema.Attribute.JSON;
+    organization: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::organization.organization'
+    >;
+    processed: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    recipients: Schema.Attribute.JSON & Schema.Attribute.Private;
+    results: Schema.Attribute.JSON;
+    skipped: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    startedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['queued', 'running', 'completed', 'failed', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'queued'>;
+    succeeded: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    total: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2176,6 +2239,7 @@ declare module '@strapi/strapi' {
       'api::global-settings.global-settings': ApiGlobalSettingsGlobalSettings;
       'api::homepage.homepage': ApiHomepageHomepage;
       'api::idempotency-record.idempotency-record': ApiIdempotencyRecordIdempotencyRecord;
+      'api::issuance-job.issuance-job': ApiIssuanceJobIssuanceJob;
       'api::issuer-key.issuer-key': ApiIssuerKeyIssuerKey;
       'api::org-type.org-type': ApiOrgTypeOrgType;
       'api::organization.organization': ApiOrganizationOrganization;

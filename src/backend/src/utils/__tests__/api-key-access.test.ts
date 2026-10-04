@@ -46,6 +46,15 @@ describe('api key access rules', () => {
     expect(isRouteAllowed('GET', '/profiles/me/export', all)).toBe(false)
   })
 
+  it('opens issuance jobs to issue keys, and reading them to read keys, without duplicates', () => {
+    expect(isRouteAllowed('POST', '/issuance-jobs', ['issue'])).toBe(true)
+    expect(isRouteAllowed('POST', '/issuance-jobs', ['read'])).toBe(false)
+    expect(isRouteAllowed('GET', '/issuance-jobs/:id', ['read'])).toBe(true)
+    expect(isRouteAllowed('POST', '/issuance-jobs/:id/cancel', ['read'])).toBe(false)
+    const listed = routesFor(['read', 'issue']).map(r => `${r.method} ${r.path}`)
+    expect(new Set(listed).size).toBe(listed.length)
+  })
+
   it('lists the routes a key can call', () => {
     expect(routesFor(['revoke'])).toEqual([
       { method: 'GET', path: '/api-keys/me' },

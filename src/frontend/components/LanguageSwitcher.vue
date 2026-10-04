@@ -23,7 +23,7 @@ onClickOutside(dropdownRef, () => { isOpen.value = false })
       @click="isOpen = !isOpen"
     >
       <span class="i-lucide-globe w-4 h-4" />
-      <span class="hidden sm:inline">{{ currentLocale?.name }}</span>
+      <span class="hidden xl:inline">{{ currentLocale?.name }}</span>
       <span class="i-lucide-chevron-down w-3 h-3 transition-transform" :class="{ 'rotate-180': isOpen }" />
     </button>
 

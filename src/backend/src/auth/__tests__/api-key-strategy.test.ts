@@ -53,6 +53,18 @@ describe('api-key auth strategy', () => {
     expect(ctx.state.user).toBeUndefined()
   })
 
+  it('limits requests per key and says when to retry', async () => {
+    const strategy = createApiKeyStrategy(makeStrapi(async () => goodKey), { rateLimit: 2 })
+    const headers: Record<string, string> = {}
+    const ctx = () => ({ ...makeCtx('Bearer crt_good'), set: (k: string, v: string) => { headers[k] = v } })
+    expect((await strategy.authenticate(ctx())).authenticated).toBe(true)
+    expect((await strategy.authenticate(ctx())).authenticated).toBe(true)
+    expect(headers['X-RateLimit-Remaining']).toBe('0')
+    await expect(strategy.authenticate(ctx())).rejects.toMatchObject({ name: 'RateLimitError' })
+    expect(headers['X-RateLimit-Limit']).toBe('2')
+    expect(Number(headers['Retry-After'])).toBeGreaterThanOrEqual(1)
+  })
+
   it('still applies the member\'s role permissions', async () => {
     const strategy = createApiKeyStrategy(makeStrapi(async () => goodKey))
     await expect(strategy.verify({ ability }, { scope: ['api::credential.credential.issue'] })).resolves.toBeUndefined()

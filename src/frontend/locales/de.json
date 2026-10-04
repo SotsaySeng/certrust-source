@@ -17,7 +17,15 @@
     "billing": "Abrechnung",
     "revenue": "Umsatz",
     "manage": "Verwalten",
-    "apiKeys": "API-Schlüssel"
+    "apiKeys": "API-Schlüssel",
+    "developers": "Entwickler",
+    "dev": {
+      "overview": "Integrationen im Überblick",
+      "googleSheets": "Google Sheets",
+      "googleForms": "Google Forms",
+      "studentRecords": "Universitäten und Hochschulen",
+      "apiGuide": "API-Anleitung"
+    }
   },
   "common": {
     "loading": "Laden...",

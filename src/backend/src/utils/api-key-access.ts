@@ -40,6 +40,8 @@ const ROUTES: Record<Scope | 'always', RouteRule[]> = {
     { method: 'GET', path: '/profiles/me' },
     { method: 'GET', path: '/profiles/:id/issued-credentials' },
     { method: 'GET', path: '/custom-attributes' },
+    { method: 'GET', path: '/issuance-jobs' },
+    { method: 'GET', path: '/issuance-jobs/:id' },
   ],
   issue: [
     { method: 'POST', path: '/credentials/issue' },
@@ -47,6 +49,10 @@ const ROUTES: Record<Scope | 'always', RouteRule[]> = {
     { method: 'POST', path: '/credentials/:id/renew' },
     { method: 'POST', path: '/scheduled-issuances' },
     { method: 'POST', path: '/scheduled-issuances/:id/cancel' },
+    { method: 'POST', path: '/issuance-jobs' },
+    { method: 'GET', path: '/issuance-jobs' },
+    { method: 'GET', path: '/issuance-jobs/:id' },
+    { method: 'POST', path: '/issuance-jobs/:id/cancel' },
   ],
   revoke: [
     { method: 'POST', path: '/credentials/:id/revoke' },
@@ -95,7 +101,12 @@ export function isRouteAllowed(method: string, path: string, scopes: readonly st
 
 /** Every route a key with these scopes may call, for docs and the UI. */
 export function routesFor(scopes: readonly string[]): RouteRule[] {
+  const seen = new Set<string>()
   return (['always', ...SCOPES] as const)
     .filter(g => g === 'always' || scopes.includes(g))
     .flatMap(g => ROUTES[g])
+    .filter((r) => {
+      const id = `${r.method} ${r.path}`
+      return seen.has(id) ? false : !!seen.add(id)
+    })
 }

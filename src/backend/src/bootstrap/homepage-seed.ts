@@ -1,6 +1,6 @@
 /**
  * First-boot seeding for the homepage singleType: hero, feature grid,
- * how-it-works walkthrough, audience segments, and closing CTA. Seeded
+ * how-it-works walkthrough, audience segments, integrations, and closing CTA. Seeded
  * with the content that was previously hardcoded in
  * composables/useHomeContent.ts + locales/en.json's `home.*` keys, so
  * nothing visually changes on first boot. Idempotent: only seeds if
@@ -80,6 +80,85 @@ export async function addPlatformStatsDefaults(strapi: any, existing: any): Prom
   strapi.log.info(`[Seed] Homepage: added platform-stats defaults (${Object.keys(patch).join(', ')}).`);
 }
 
+/**
+ * Defaults for the "Works with your systems" section: the integration
+ * manuals under /integrations. Written into a fresh install by the create()
+ * below, and into an install that predates the section by
+ * addIntegrationsDefaults().
+ */
+const INTEGRATIONS_DEFAULTS = {
+  integrationsEnabled: true,
+  integrationsHeader: 'Issue from the tools you already use',
+  integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.',
+  integrationsLinkLabel: 'See how integrations work',
+  integrations: [
+    {
+      title: 'Google Sheets',
+      tag: 'No technical knowledge',
+      description: 'Add a row with a name and an email. The certificate is issued and its link appears in the sheet.',
+      icon: 'table-cells',
+      url: '/integrations/google-sheets',
+    },
+    {
+      title: 'Google Forms',
+      tag: 'No technical knowledge',
+      description: 'Everyone who submits your attendance or completion form receives their certificate.',
+      icon: 'clipboard-document-list',
+      url: '/integrations/google-forms',
+    },
+    {
+      title: 'Universities and colleges',
+      tag: 'For your IT team',
+      description: 'Issue from your student records system with a nightly export. Student data stays with you.',
+      icon: 'academic-cap',
+      url: '/integrations/student-records',
+    },
+    {
+      title: 'API for any system',
+      tag: 'For developers',
+      description: 'One request issues a credential. Keys with limited permissions, safe retries and background jobs for large groups.',
+      icon: 'code-bracket',
+      url: '/integrations/guide',
+    },
+  ],
+} as const;
+
+const INTEGRATIONS_TEXT_KEYS = ['integrationsHeader', 'integrationsSubheader', 'integrationsLinkLabel'] as const;
+
+/**
+ * Adds the integrations section to a homepage record that predates it.
+ *
+ * integrationsEnabled doubles as the "already back-filled" marker: it is
+ * NULL only on a record that has never had the section. The cards are
+ * written that one time only, so an admin who later removes or rewrites
+ * them (or switches the section off) is never overridden on a later boot.
+ * The three text fields follow addPlatformStatsDefaults: filled when null,
+ * left alone when an admin has cleared them to ''.
+ */
+export async function addIntegrationsDefaults(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::homepage.homepage').findFirst();
+  if (!full) return;
+
+  const patch: any = {};
+  if (typeof full.integrationsEnabled !== 'boolean') {
+    patch.integrationsEnabled = INTEGRATIONS_DEFAULTS.integrationsEnabled;
+    patch.integrations = INTEGRATIONS_DEFAULTS.integrations.map(item => ({ ...item }));
+  }
+  for (const key of INTEGRATIONS_TEXT_KEYS) {
+    if (full[key] == null) {
+      patch[key] = INTEGRATIONS_DEFAULTS[key];
+    }
+  }
+
+  if (!Object.keys(patch).length) return;
+
+  await strapi.documents('api::homepage.homepage').update({
+    documentId: existing.documentId,
+    data: patch,
+  } as any);
+  strapi.log.info(`[Seed] Homepage: added integrations defaults (${Object.keys(patch).join(', ')}).`);
+}
+
 export async function seedHomepage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::homepage.homepage').findFirst();
@@ -88,6 +167,7 @@ export async function seedHomepage(strapi: any): Promise<void> {
       // Not a plain early return: fields added after this record was first
       // seeded still need back-filling on every existing install.
       await addPlatformStatsDefaults(strapi, existing);
+      await addIntegrationsDefaults(strapi, existing);
       strapi.log.info('[Seed] Homepage already seeded, skipping...');
       return;
     }
@@ -202,6 +282,10 @@ export async function seedHomepage(strapi: any): Promise<void> {
           badgeCalloutFeature2: 'QR code for in-person scanning',
           badgeCalloutFeature3: 'REST API for programmatic checks',
         },
+
+        // "Works with your systems": cards linking to the integration manuals.
+        ...INTEGRATIONS_DEFAULTS,
+        integrations: INTEGRATIONS_DEFAULTS.integrations.map(item => ({ ...item })),
 
         closingHeader: 'Ready to issue your first credential?',
         closingSubheader: 'Create a free organization account and start designing your first template today. It stays free for everyone who receives one.',

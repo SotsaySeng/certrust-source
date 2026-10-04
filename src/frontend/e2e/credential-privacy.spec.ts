@@ -127,9 +127,9 @@ test.describe('credential privacy and reporting', () => {
     const panel = page.getByTestId('issuer-verification')
     await expect(panel).toBeVisible({ timeout: 20000 })
     await panel.locator('#verification-domain').fill('https://www.certrust.test/')
-    await panel.getByRole('button', { name: 'Request' }).click()
-    await expect(panel).toContainText('Request received for certrust.test', { timeout: 20000 })
-    await expect(panel).toContainText('Your sign-up email is on this domain')
+    await panel.getByRole('button', { name: 'Submit for review' }).click()
+    await expect(panel.getByTestId('verification-pending')).toContainText('Under review', { timeout: 20000 })
+    await expect(panel.getByRole('button', { name: 'Update request' })).toBeVisible()
 
     // Promote the issuer to Platform Admin (Strapi admin does this in production).
     const roleId = sql(`select id from up_roles where type='platform-admin';`)

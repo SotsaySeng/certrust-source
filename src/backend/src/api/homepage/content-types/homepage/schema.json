@@ -90,6 +90,21 @@
       "repeatable": false,
       "component": "marketing.how-it-works-section"
     },
+    "integrationsEnabled": {
+      "type": "boolean",
+      "description": "Show the 'Works with your systems' section on the homepage."
+    },
+    "integrationsHeader": { "type": "string" },
+    "integrationsSubheader": { "type": "text" },
+    "integrations": {
+      "type": "component",
+      "repeatable": true,
+      "component": "marketing.integration-item"
+    },
+    "integrationsLinkLabel": {
+      "type": "string",
+      "description": "Text of the link under the cards, which goes to /integrations. Leave empty to hide it."
+    },
     "closingHeader": { "type": "string" },
     "closingSubheader": { "type": "text" },
     "closingButtonLabel": { "type": "string" }

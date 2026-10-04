@@ -148,6 +148,20 @@ export default {
     setTimeout(runIdempotencyPurge, 50_000);
     setInterval(runIdempotencyPurge, 6 * 60 * 60 * 1000);
 
+    // Issuance jobs: resume any job a restart interrupted, and delete
+    // finished jobs after 30 days.
+    const jobs = () => strapi.service('api::issuance-job.issuance-job');
+    setTimeout(() => jobs().kick(), 20_000);
+    const runJobPurge = async () => {
+      try {
+        await jobs().purgeOld();
+      } catch (err: any) {
+        strapi.log.error('[bootstrap] Issuance job purge error:', { error: err.message });
+      }
+    };
+    setTimeout(runJobPurge, 55_000);
+    setInterval(runJobPurge, 24 * 60 * 60 * 1000);
+
     // Billing scanner: trial/renewal reminders, trial expiry, past-due
     // grace. Every 6h rather than daily so a trial that ends mid-day drops
     // to Free within hours; notices are deduped, so extra runs are free.

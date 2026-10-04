@@ -17,7 +17,15 @@
     "billing": "Faturação",
     "revenue": "Receita",
     "manage": "Gerenciar",
-    "apiKeys": "Chaves de API"
+    "apiKeys": "Chaves de API",
+    "developers": "Programadores",
+    "dev": {
+      "overview": "Visão geral das integrações",
+      "googleSheets": "Google Sheets",
+      "googleForms": "Google Forms",
+      "studentRecords": "Universidades e escolas",
+      "apiGuide": "Guia da API"
+    }
   },
   "common": {
     "loading": "Carregando...",

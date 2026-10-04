@@ -50,6 +50,22 @@ export interface AudienceContent {
   stats: AudienceStats | null
 }
 
+export interface IntegrationItem {
+  title: string
+  description: string
+  tag: string
+  icon: string
+  url: string
+}
+
+/** The "Works with your systems" section. Empty `items` hides it. */
+export interface IntegrationsContent {
+  header: string
+  subheader: string
+  linkLabel: string
+  items: IntegrationItem[]
+}
+
 interface HomeContent {
   heroTitleBefore: string
   heroHighlight: string
@@ -63,6 +79,7 @@ interface HomeContent {
   howItWorksSubheader: string
   sections: Section[]
   audience: AudienceContent
+  integrations: IntegrationsContent
   closingHeader: string
   closingSubheader: string
   closingButtonLabel: string
@@ -81,6 +98,7 @@ const DEFAULT_HOME_CONTENT: HomeContent = {
   howItWorksSubheader: '',
   sections: [],
   audience: { header: '', subheader: '', segments: [], stats: null },
+  integrations: { header: '', subheader: '', linkLabel: '', items: [] },
   closingHeader: '',
   closingSubheader: '',
   closingButtonLabel: '',
@@ -114,7 +132,7 @@ function buildSection(raw: any, id: Section['id'], apiUrl: string): Section {
 
 /**
  * Homepage content (hero, feature grid, how-it-works walkthrough, audience
- * segments, closing CTA), fetched from the admin-editable homepage
+ * segments, integrations, closing CTA), fetched from the admin-editable homepage
  * singleType and reshaped into the same Section/CardFeature/AudienceContent
  * shapes this composable always returned, so HomeSection.vue,
  * HomeCardFeature.vue, and HomeAudienceGrid.vue need no changes.
@@ -141,6 +159,7 @@ export default async function useHomeContent(): Promise<HomeContent> {
         'populate[exportSection][populate]': 'illustrationImage',
         'populate[features]': 'true',
         'populate[audienceSegments]': 'true',
+        'populate[integrations]': 'true',
       }).toString()
 
       const result = await $fetch<{ data: any, meta?: any }>(`${apiUrl}/api/homepage?${query}`)
@@ -168,6 +187,23 @@ export default async function useHomeContent(): Promise<HomeContent> {
         stats: result?.meta?.stats ?? null,
       }
 
+      // Switched off in the admin (or not there yet on an older backend):
+      // no items, and the section does not render.
+      const integrations: IntegrationsContent = {
+        header: raw.integrationsHeader ?? '',
+        subheader: raw.integrationsSubheader ?? '',
+        linkLabel: raw.integrationsLinkLabel ?? '',
+        items: raw.integrationsEnabled === false
+          ? []
+          : (raw.integrations ?? []).map((i: any) => ({
+              title: i.title,
+              description: i.description,
+              tag: i.tag ?? '',
+              icon: i.icon,
+              url: i.url,
+            })),
+      }
+
       return {
         heroTitleBefore: raw.heroTitleBefore ?? '',
         heroHighlight: raw.heroHighlight ?? '',
@@ -185,6 +221,7 @@ export default async function useHomeContent(): Promise<HomeContent> {
           buildSection(raw.exportSection, 'export', apiUrl),
         ],
         audience,
+        integrations,
         closingHeader: raw.closingHeader ?? '',
         closingSubheader: raw.closingSubheader ?? '',
         closingButtonLabel: raw.closingButtonLabel ?? '',

@@ -17,7 +17,15 @@
     "billing": "Fatturazione",
     "revenue": "Ricavi",
     "manage": "Gestisci",
-    "apiKeys": "Chiavi API"
+    "apiKeys": "Chiavi API",
+    "developers": "Sviluppatori",
+    "dev": {
+      "overview": "Panoramica integrazioni",
+      "googleSheets": "Google Sheets",
+      "googleForms": "Google Forms",
+      "studentRecords": "Università e istituti",
+      "apiGuide": "Guida API"
+    }
   },
   "common": {
     "loading": "Caricamento...",

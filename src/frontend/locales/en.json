@@ -17,7 +17,15 @@
     "billing": "Billing",
     "revenue": "Revenue",
     "manage": "Manage",
-    "apiKeys": "API keys"
+    "apiKeys": "API keys",
+    "developers": "Developers",
+    "dev": {
+      "overview": "Integrations overview",
+      "googleSheets": "Google Sheets",
+      "googleForms": "Google Forms",
+      "studentRecords": "Universities and colleges",
+      "apiGuide": "API guide"
+    }
   },
   "common": {
     "loading": "Loading...",

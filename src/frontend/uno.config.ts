@@ -52,6 +52,12 @@ export default defineConfig({
     'i-heroicons-paint-brush',
     'i-heroicons-calendar-days',
     'i-heroicons-key',
+    // Header "Developers" menu icons (DEVELOPERS_MENU_LINKS), same reason.
+    'i-heroicons-puzzle-piece',
+    'i-heroicons-table-cells',
+    'i-heroicons-clipboard-document-list',
+    'i-heroicons-academic-cap',
+    'i-heroicons-code-bracket',
   ],
   theme: {
     colors: {
