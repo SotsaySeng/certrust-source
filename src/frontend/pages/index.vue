@@ -54,7 +54,7 @@ const closingMotion = revealVariants(0)
             <span class="relative inline-flex rounded-full size-1.5 bg-primary" />
           </span>
           <span class="font-mono text-[11px] font-medium tracking-widest text-text-secondary uppercase">
-            Open Badges 3.0 · W3C Verifiable Credentials
+            Verifiable digital certificates
           </span>
         </div>
         <h1 class="hero-reveal text-5xl md:text-6xl xl:text-7xl font-display font-bold mb-7 leading-[0.95] tracking-tight text-balance" style="animation-delay: 120ms;">

@@ -1,10 +1,8 @@
 /**
  * First-boot seeding for the homepage singleType: hero, feature grid,
- * how-it-works walkthrough, audience segments, integrations, and closing CTA. Seeded
- * with the content that was previously hardcoded in
- * composables/useHomeContent.ts + locales/en.json's `home.*` keys, so
- * nothing visually changes on first boot. Idempotent: only seeds if
- * api::homepage.homepage has no record yet.
+ * how-it-works walkthrough, audience segments, integrations, and closing CTA.
+ * Idempotent: only seeds if api::homepage.homepage has no record yet. An
+ * existing record gets the back-fills below instead.
  */
 
 import { uploadSeedImage } from './seed-image-upload';
@@ -159,6 +157,152 @@ export async function addIntegrationsDefaults(strapi: any, existing: any): Promi
   strapi.log.info(`[Seed] Homepage: added integrations defaults (${Object.keys(patch).join(', ')}).`);
 }
 
+/**
+ * The homepage's words, as opposed to its settings (stats strip,
+ * integrations) above. Kept in one place because a fresh install gets them
+ * from create() and an install still showing the first version gets them
+ * from applyCopyRefresh().
+ *
+ * Organized around the moment someone needs a certificate rather than the
+ * kind of organization they work for. Icons must be in the feature-item /
+ * audience-segment enum.
+ */
+const homepageCopy = () => ({
+  heroTitleBefore: 'Your workshop ends today. The certificates go out ',
+  heroHighlight: 'tonight',
+  heroTitleAfter: '',
+  heroSubtitle: 'Upload your attendance list, choose a design and send. Each person gets their own certificate by email, and anyone they show it to can scan it to see it came from you and has not been changed. There is nothing to print or sign, and it is free for recipients.',
+  heroButtonLabel: 'Issue your first 50 free',
+
+  featuresHeader: 'From attendance list to verified certificate in one sitting',
+  featuresSubheader: 'All you need to start is a list of names and emails.',
+  features: [
+    {
+      title: 'Start from a finished design',
+      description: 'Pick a certificate or badge design, add your logo and wording, and it is ready to send. You can also build your own in the design editor.',
+      icon: 'pencil-square',
+    },
+    {
+      title: 'Send to one person or a full hall',
+      description: 'Type in a single name, or upload a CSV file and send hundreds at once. Each person gets an email with a private link.',
+      icon: 'rocket-launch',
+    },
+    {
+      title: 'Anyone can check it',
+      description: 'Every certificate is digitally signed and has a public page. An employer opens it and sees who issued it and whether it is still valid, without creating an account.',
+      icon: 'shield-check',
+    },
+  ],
+
+  audienceHeader: 'For the moments when people need proof',
+  audienceSubheader: 'Pick the situation closest to yours.',
+  audienceSegments: [
+    {
+      title: 'After a workshop or event',
+      description: 'Create the event, upload who attended, and each person receives a certificate with the event\'s details on it.',
+      icon: 'users',
+    },
+    {
+      title: 'At the end of a course',
+      description: 'Send completion certificates or diplomas to a whole cohort from one file, on the day or scheduled in advance.',
+      icon: 'academic-cap',
+    },
+    {
+      title: 'For training that expires',
+      description: 'Set an expiry date for first aid, safety or licence training. After that date the certificate shows as expired to anyone who opens it.',
+      icon: 'clipboard-document-check',
+    },
+    {
+      title: 'When an employer has to check',
+      description: 'A recruiter or registrar opens the link or scans the QR code and sees who issued the certificate and whether it has been revoked. Organizations that have proved who they are carry a Verified issuer mark.',
+      icon: 'shield-check',
+    },
+  ],
+
+  howItWorksHeader: 'How it works',
+  howItWorksSubheader: 'Design it, send it, and let people check it.',
+
+  closingHeader: 'Have an event coming up?',
+  closingSubheader: 'Set up your organization today. Your first 50 certificates are free, and recipients never pay.',
+  closingButtonLabel: 'Issue your first 50 free',
+});
+
+/**
+ * The three how-it-works sections, without their illustrationImage: create()
+ * attaches the seeded images and applyCopyRefresh() keeps whatever is there.
+ * The standards are named once on the page, in the callout for IT.
+ */
+const HOW_IT_WORKS_SECTIONS = ['certificateSection', 'recipientSection', 'exportSection'] as const;
+
+const howItWorksCopy = () => ({
+  certificateSection: {
+    title: 'Design',
+    header: 'Make it look like it came from you',
+    feature1: 'Start from a ready-made certificate or badge design, or build your own',
+    feature2: 'Change the logo, wording and layout to match your organization',
+    feature3: 'Six kinds of document: certificates, badges, transcripts, training records, assessments and letters',
+    feature4: 'Save a design once and reuse it for every cohort',
+    badgeCalloutTitle: 'For your IT team',
+    badgeCalloutFeature1: 'Open Badges 3.0',
+    badgeCalloutFeature2: 'W3C Verifiable Credentials v2',
+    badgeCalloutFeature3: 'Ed25519 digital signature',
+  },
+  recipientSection: {
+    title: 'Send',
+    header: 'Upload the list and send them all at once',
+    feature1: 'Upload a CSV of names and emails, and it is checked for mistakes before anything goes out',
+    feature2: 'Send now, or schedule it for the day of the ceremony',
+    feature3: 'Each person gets an email with a private link to their certificate',
+    feature4: 'Recipients need no account and never pay',
+    badgeCalloutTitle: 'Flexible Delivery',
+    badgeCalloutFeature1: 'Instant or scheduled issuance',
+    badgeCalloutFeature2: 'Automatic email delivery',
+    badgeCalloutFeature3: 'Bulk CSV import with validation',
+  },
+  exportSection: {
+    title: 'Prove',
+    header: 'They share it, and anyone can check it',
+    feature1: 'One click adds it to a LinkedIn profile',
+    feature2: 'A link they can send by WhatsApp, email or anywhere else',
+    feature3: 'A public page with a QR code for checking in person',
+    feature4: 'The page shows who issued it and whether it has expired or been revoked',
+    badgeCalloutTitle: 'Verification Options',
+    badgeCalloutFeature1: 'Public verification page',
+    badgeCalloutFeature2: 'QR code for in-person scanning',
+    badgeCalloutFeature3: 'REST API for programmatic checks',
+  },
+});
+
+/** heroTitleBefore of the first homepage copy. */
+const FIRST_HERO_TITLE = 'Skip the paper. Issue certificates people can ';
+
+/**
+ * Replaces the first homepage copy with the current one on an install that
+ * is still showing it. The first headline is the test: once an admin (or
+ * this function) has changed it, nothing here runs again, so later edits
+ * in the Content Manager are never overwritten. Settings and the
+ * integrations section are not touched.
+ */
+export async function applyCopyRefresh(strapi: any, existing: any): Promise<void> {
+  const image = { populate: ['illustrationImage'] };
+  const full: any = await strapi.documents('api::homepage.homepage').findFirst({
+    populate: { certificateSection: image, recipientSection: image, exportSection: image },
+  } as any);
+  if (!full || full.heroTitleBefore !== FIRST_HERO_TITLE) return;
+
+  const sections: any = howItWorksCopy();
+  for (const key of HOW_IT_WORKS_SECTIONS) {
+    const imageId = full[key]?.illustrationImage?.id;
+    if (imageId) sections[key].illustrationImage = imageId;
+  }
+
+  await strapi.documents('api::homepage.homepage').update({
+    documentId: existing.documentId,
+    data: { ...homepageCopy(), ...sections },
+  } as any);
+  strapi.log.info('[Seed] Homepage: replaced the first copy with the current one.');
+}
+
 export async function seedHomepage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::homepage.homepage').findFirst();
@@ -168,6 +312,7 @@ export async function seedHomepage(strapi: any): Promise<void> {
       // seeded still need back-filling on every existing install.
       await addPlatformStatsDefaults(strapi, existing);
       await addIntegrationsDefaults(strapi, existing);
+      await applyCopyRefresh(strapi, existing);
       strapi.log.info('[Seed] Homepage already seeded, skipping...');
       return;
     }
@@ -182,114 +327,23 @@ export async function seedHomepage(strapi: any): Promise<void> {
     const csvImageId = await uploadSeedImage(strapi, 'illustration-csv.svg');
     const planeImageId = await uploadSeedImage(strapi, 'illustration-plane.svg');
 
+    const sections = howItWorksCopy();
     await strapi.documents('api::homepage.homepage').create({
       data: {
-        heroTitleBefore: 'Skip the paper. Issue certificates people can ',
-        heroHighlight: 'verify in seconds',
-        heroTitleAfter: '',
-        heroSubtitle: 'Stop paying to print and ship certificates that end up lost in a drawer. Issue verifiable digital badges in minutes — save money, cut paper waste, and give recipients a credential they can share and prove instantly, anywhere. Always free for the people who receive them.',
-        heroButtonLabel: 'Get started free',
+        ...homepageCopy(),
 
-        featuresHeader: 'One platform for the whole credential lifecycle',
-        featuresSubheader: 'Design a template, issue it to your people, and let them prove it anywhere.',
-        features: [
-          {
-            title: 'Design templates for every use case',
-            description: 'Certificates, badges, transcripts, training records, assessments, or letters — start from a template or build your own.',
-            icon: 'pencil-square',
-          },
-          {
-            title: 'Issue at any scale',
-            description: 'Issue one credential by hand or upload a CSV to issue hundreds at once. Track usage against your plan in real time.',
-            icon: 'rocket-launch',
-          },
-          {
-            title: 'Verify with confidence',
-            description: 'Every credential is cryptographically signed and has a public page anyone can check — no login required.',
-            icon: 'shield-check',
-          },
-        ],
-
-        audienceHeader: 'Built for organizations that certify people',
-        audienceSubheader: 'Government agencies, schools, companies, and nonprofits use Certrust to issue credentials for real programs.',
-        audienceSegments: [
-          {
-            title: 'Government',
-            description: 'Issue verifiable certificates for civic training, licensing programs, and public-sector workshops that citizens can check.',
-            icon: 'building-library',
-          },
-          {
-            title: 'Education',
-            description: 'Universities, schools, and training providers issue diplomas, course completions, and micro-credentials at graduation or course-end.',
-            icon: 'academic-cap',
-          },
-          {
-            title: 'Private & Corporate',
-            description: 'Certify employees and partners after internal training, compliance courses, or professional development programs.',
-            icon: 'briefcase',
-          },
-          {
-            title: 'NGOs & Nonprofits',
-            description: 'Issue certificates for workshops, seminars, and community programs — without a budget for recipient accounts or licenses.',
-            icon: 'heart',
-          },
-        ],
-
-        // Rendered between the audience heading and the audience segments
-        // above. A fresh install starts below the default threshold, so the
-        // strip stays hidden until the platform has something worth showing.
+        // Rendered between the audience heading and the audience segments.
+        // A fresh install starts below the default threshold, so the strip
+        // stays hidden until the platform has something worth showing.
         ...STATS_DEFAULTS,
 
-        howItWorksHeader: 'How it works',
-        howItWorksSubheader: 'From blank template to a credential your recipients can prove, in three steps.',
-
-        certificateSection: {
-          title: 'Design & Create',
-          header: 'Design certificates that look as credible as they are',
-          feature1: 'Start from a professional template or design one from scratch',
-          feature2: 'Personalize branding, text, logos, and layout for your organization',
-          feature3: 'Six template types: certificates, badges, transcripts, training records, assessments, and letters',
-          feature4: 'Every credential is Open Badges 3.0 and W3C Verifiable Credentials compliant',
-          illustrationImage: graduationImageId ?? undefined,
-          badgeCalloutTitle: 'Open Badges 3.0',
-          badgeCalloutFeature1: 'Ed25519 cryptographic signature',
-          badgeCalloutFeature2: 'W3C Verifiable Credentials v2 data model',
-          badgeCalloutFeature3: 'Tamper-evident by design',
-        },
-        recipientSection: {
-          title: 'Issue & Deliver',
-          header: 'Issue in bulk, deliver with one link',
-          feature1: 'Create courses, cohorts, or recipient groups',
-          feature2: 'Upload recipients in bulk via CSV — issue dozens or thousands at once',
-          feature3: 'Recipients are emailed automatically with a private link to their credential',
-          feature4: 'No account needed to receive it, and it’s always free for recipients',
-          illustrationImage: csvImageId ?? undefined,
-          badgeCalloutTitle: 'Flexible Delivery',
-          badgeCalloutFeature1: 'Instant or scheduled issuance',
-          badgeCalloutFeature2: 'Automatic email delivery',
-          badgeCalloutFeature3: 'Bulk CSV import with validation',
-        },
-        exportSection: {
-          title: 'Share & Verify',
-          header: 'Recipients can prove it anywhere, instantly',
-          feature1: 'One-click "Add to LinkedIn" so recipients can showcase it on their profile',
-          feature2: 'Copy-to-clipboard link to share anywhere — WhatsApp, Slack, email, social media',
-          feature3: 'Every credential has a public page with a QR code for instant verification',
-          feature4: 'Anyone can verify a Certrust-issued credential in seconds, no account required',
-          illustrationImage: planeImageId ?? undefined,
-          badgeCalloutTitle: 'Verification Options',
-          badgeCalloutFeature1: 'Public verification page',
-          badgeCalloutFeature2: 'QR code for in-person scanning',
-          badgeCalloutFeature3: 'REST API for programmatic checks',
-        },
+        certificateSection: { ...sections.certificateSection, illustrationImage: graduationImageId ?? undefined },
+        recipientSection: { ...sections.recipientSection, illustrationImage: csvImageId ?? undefined },
+        exportSection: { ...sections.exportSection, illustrationImage: planeImageId ?? undefined },
 
         // "Works with your systems": cards linking to the integration manuals.
         ...INTEGRATIONS_DEFAULTS,
         integrations: INTEGRATIONS_DEFAULTS.integrations.map(item => ({ ...item })),
-
-        closingHeader: 'Ready to issue your first credential?',
-        closingSubheader: 'Create a free organization account and start designing your first template today. It stays free for everyone who receives one.',
-        closingButtonLabel: 'Get started free',
       } as any,
     });
 

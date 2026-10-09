@@ -1,4 +1,7 @@
-import { addIntegrationsDefaults, addPlatformStatsDefaults } from '../homepage-seed'
+import { addIntegrationsDefaults, addPlatformStatsDefaults, applyCopyRefresh } from '../homepage-seed'
+import { applyPricingRefresh } from '../solution-page-seed'
+import featureItem from '../../components/marketing/feature-item.json'
+import audienceSegment from '../../components/marketing/audience-segment.json'
 
 /**
  * The back-fill's whole job is to add the stats fields to installs that
@@ -161,5 +164,68 @@ describe('addIntegrationsDefaults', () => {
     expect(update.mock.calls[0][0].data).toEqual({
       integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.',
     })
+  })
+})
+
+describe('applyCopyRefresh', () => {
+  const FIRST = { documentId: 'abc123', heroTitleBefore: 'Skip the paper. Issue certificates people can ' }
+
+  it('rewrites a homepage that still shows the first headline', async () => {
+    const { strapi, update } = fakeStrapi(FIRST)
+    await applyCopyRefresh(strapi, EXISTING)
+
+    expect(update).toHaveBeenCalledTimes(1)
+    const { documentId, data } = update.mock.calls[0][0]
+    expect(documentId).toBe('abc123')
+    expect(data.heroHighlight).toBe('tonight')
+    expect(data.audienceSegments).toHaveLength(4)
+    expect(data.certificateSection.badgeCalloutTitle).toBe('For your IT team')
+    // Settings and the integrations section belong to the admin.
+    expect(data).not.toHaveProperty('statsEnabled')
+    expect(data).not.toHaveProperty('integrations')
+  })
+
+  it('uses only icons the Content Manager allows', async () => {
+    const { strapi, update } = fakeStrapi(FIRST)
+    await applyCopyRefresh(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    for (const item of data.features) expect(featureItem.attributes.icon.enum).toContain(item.icon)
+    for (const item of data.audienceSegments) expect(audienceSegment.attributes.icon.enum).toContain(item.icon)
+  })
+
+  it('keeps the illustration a section already has', async () => {
+    const { strapi, update } = fakeStrapi({ ...FIRST, recipientSection: { illustrationImage: { id: 77 } } })
+    await applyCopyRefresh(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    expect(data.recipientSection.illustrationImage).toBe(77)
+    expect(data.certificateSection).not.toHaveProperty('illustrationImage')
+  })
+
+  it('leaves a homepage alone once its headline has changed', async () => {
+    for (const heroTitleBefore of ['Your workshop ends today. The certificates go out ', 'Our own headline ']) {
+      const { strapi, update } = fakeStrapi({ documentId: 'abc123', heroTitleBefore })
+      await applyCopyRefresh(strapi, EXISTING)
+      expect(update).not.toHaveBeenCalled()
+    }
+  })
+})
+
+describe('applyPricingRefresh', () => {
+  it('rewrites a pricing page that still shows the first header', async () => {
+    const { strapi, update } = fakeStrapi(null)
+    await applyPricingRefresh(strapi, { documentId: 'sol1', header: 'Plans that grow with your program' })
+
+    expect(update).toHaveBeenCalledTimes(1)
+    const { documentId, data } = update.mock.calls[0][0]
+    expect(documentId).toBe('sol1')
+    expect(data.tiers.map((t: any) => t.tierId)).toEqual(['event', 'pro', 'enterprise'])
+    expect(data.tiers.filter((t: any) => t.highlighted)).toHaveLength(1)
+  })
+
+  it('leaves a pricing page alone once its header has changed', async () => {
+    const { strapi, update } = fakeStrapi(null)
+    await applyPricingRefresh(strapi, { documentId: 'sol1', header: 'Pay for the certificates you send' })
+    await applyPricingRefresh(strapi, { documentId: 'sol1', header: 'Our prices' })
+    expect(update).not.toHaveBeenCalled()
   })
 })

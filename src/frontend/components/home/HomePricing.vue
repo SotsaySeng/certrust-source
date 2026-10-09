@@ -17,6 +17,7 @@ const tierMotions = props.pricing.tiers.map((_, index) => ({
 
 const TIER_ICONS: Record<string, string> = {
   free: 'rocket-launch',
+  event: 'calendar-days',
   pro: 'sparkles',
   enterprise: 'building-library',
 }

@@ -36,7 +36,7 @@ const statItems = computed(() => (props.audience.stats?.items ?? []).map(item =>
   <section class="mb-24 md:mb-32">
     <div v-motion="headerMotion" class="max-w-2xl" :class="audience.stats ? 'mb-10' : 'mb-12'">
       <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
-        01 — Who it's for
+        01 — When you need it
       </p>
       <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-balance">
         {{ audience.header }}
