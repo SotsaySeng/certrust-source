@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * The organization's own billing page: current plan + trial/renewal state,
- * Stripe Checkout for Pro/Enterprise (monthly or yearly), and the Stripe
- * Customer Portal for card/plan changes and cancellation.
+ * Stripe Checkout for Pro/Enterprise (monthly or yearly) or for a one-off
+ * purchase of credentials, and the Stripe Customer Portal for card/plan
+ * changes and cancellation.
  */
 import { apiClient } from '~/api/api-client'
 
@@ -21,6 +22,9 @@ type Interval = 'month' | 'year'
 
 const status = ref<any>(null)
 const plans = ref<any[]>([])
+// The price of one credential and the smallest/largest quantity on sale.
+const pack = ref<any>(null)
+const quantity = ref<number | ''>('')
 const loading = ref(true)
 const error = ref<string | null>(null)
 const actionError = ref<string | null>(null)
@@ -57,6 +61,12 @@ function yearlySavings(tier: Tier): number | null {
 }
 
 const stripeReady = computed(() => status.value?.stripeConfigured)
+
+const packTotal = computed(() => {
+  const q = Number(quantity.value)
+  const p = pack.value
+  return p?.amount != null && Number.isInteger(q) && q >= p.minimum && q <= p.maximum ? p.amount * q : null
+})
 
 const statusChip = computed(() => {
   switch (status.value?.subscriptionStatus) {
@@ -115,6 +125,10 @@ async function load() {
     const [s, p] = await Promise.all([apiClient.getBillingStatus(), apiClient.getBillingPlans()])
     status.value = s
     plans.value = p?.plans ?? []
+    pack.value = p?.pack ?? null
+    if (quantity.value === '' && pack.value?.minimum) {
+      quantity.value = pack.value.minimum
+    }
     if (s?.billingInterval) {
       interval.value = s.billingInterval
     }
@@ -145,6 +159,19 @@ async function choose(tier: Tier) {
   }
 }
 
+async function buyPack() {
+  actionError.value = null
+  busy.value = 'pack'
+  try {
+    const { url } = await apiClient.startPackCheckout(Number(quantity.value))
+    window.location.href = url
+  }
+  catch (err) {
+    actionError.value = err instanceof Error ? err.message : t('billing.actionError')
+    busy.value = null
+  }
+}
+
 async function manage() {
   actionError.value = null
   busy.value = 'portal'
@@ -160,11 +187,14 @@ async function manage() {
 
 onMounted(async () => {
   const result = route.query.checkout
-  if (result === 'success' || result === 'cancel') {
+  if (result === 'success' || result === 'cancel' || result === 'pack') {
     checkoutResult.value = result
     router.replace({ query: {} })
   }
   await load()
+  if (checkoutResult.value === 'pack') {
+    setTimeout(load, 3000)
+  }
   // The webhook usually lands a second or two after Stripe redirects back.
   if (checkoutResult.value === 'success' && !status.value?.hasSubscription) {
     setTimeout(load, 3000)
@@ -186,6 +216,9 @@ onMounted(async () => {
 
       <div v-if="checkoutResult === 'success'" class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
         {{ t('billing.checkoutSuccess') }}
+      </div>
+      <div v-else-if="checkoutResult === 'pack'" class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+        {{ t('billing.pack.success') }}
       </div>
       <div v-else-if="checkoutResult === 'cancel'" class="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-text-secondary">
         {{ t('billing.checkoutCanceled') }}
@@ -222,6 +255,9 @@ onMounted(async () => {
               </div>
               <p class="mt-2 text-text-secondary">
                 {{ planDetail }}
+              </p>
+              <p v-if="status.purchasedCredentials" class="mt-1 text-text-secondary">
+                {{ t('billing.pack.owned', { count: status.purchasedCredentials }) }}
               </p>
             </div>
             <button
@@ -310,6 +346,55 @@ onMounted(async () => {
                 </template>
               </button>
             </div>
+          </div>
+
+          <!-- Pay per credential -->
+          <div
+            v-if="pack?.available && pack.amount != null"
+            class="mt-6 bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg flex flex-col md:flex-row md:items-end justify-between gap-6"
+          >
+            <div class="min-w-0">
+              <h3 class="text-lg font-semibold text-text-primary mb-2">
+                {{ t('billing.pack.title') }}
+              </h3>
+              <p class="text-sm text-text-secondary mb-4 max-w-xl">
+                {{ t('billing.pack.blurb') }}
+              </p>
+              <p class="text-text-primary font-medium">
+                {{ t('billing.pack.unitPrice', { price: formatMoney(pack.amount, pack.currency) }) }}
+              </p>
+            </div>
+            <form class="flex flex-col gap-2 md:w-64 shrink-0" @submit.prevent="buyPack">
+              <label for="pack-quantity" class="text-sm text-text-secondary">
+                {{ t('billing.pack.quantity') }}
+              </label>
+              <input
+                id="pack-quantity"
+                v-model.number="quantity"
+                type="number"
+                inputmode="numeric"
+                step="1"
+                required
+                :min="pack.minimum"
+                :max="pack.maximum"
+                aria-describedby="pack-range"
+                class="w-full rounded-lg border border-gray-200 px-3 py-2"
+              >
+              <p id="pack-range" class="text-xs text-text-secondary">
+                {{ t('billing.pack.range', { min: pack.minimum, max: pack.maximum }) }}
+              </p>
+              <p class="text-text-secondary" aria-live="polite">
+                {{ t('billing.pack.total') }}:
+                <span v-if="packTotal != null" class="text-2xl font-bold text-text-primary">{{ formatMoney(packTotal, pack.currency) }}</span>
+              </p>
+              <button
+                type="submit"
+                :disabled="!stripeReady || busy !== null"
+                class="inline-flex items-center justify-center px-4 py-2 bg-[#28A745] text-black rounded-full hover:bg-[#28A745]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ busy === 'pack' ? t('common.loading') : t('billing.pack.buy') }}
+              </button>
+            </form>
           </div>
 
           <p class="mt-6 text-sm text-text-secondary">

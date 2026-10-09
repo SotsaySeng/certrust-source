@@ -469,6 +469,17 @@
     "checkoutCanceled": "Le paiement a été annulé. Aucun montant n'a été débité.",
     "footnote": "Prix en USD. Résiliable à tout moment : vos données sont conservées et vos certificats émis restent vérifiables.",
     "compare": "Comparer les offres",
+    "pack": {
+      "title": "Paiement par certificat",
+      "blurb": "Pour un seul événement. Vous payez une fois, sans abonnement. Les certificats achetés s'ajoutent à votre limite et n'expirent pas.",
+      "unitPrice": "{price} par certificat",
+      "quantity": "Nombre de certificats",
+      "range": "De {min} à {max}",
+      "total": "Total",
+      "buy": "Acheter des certificats",
+      "owned": "Certificats achetés : {count}",
+      "success": "Merci ! Votre paiement a été reçu. Vos nouveaux certificats peuvent mettre quelques secondes à apparaître."
+    },
     "banner": {
       "trialEnding": "Votre essai se termine dans {days} jours ({date}). Choisissez une offre pour conserver vos limites.",
       "trialEndsTomorrow": "Votre essai se termine demain. Choisissez une offre pour conserver vos limites.",

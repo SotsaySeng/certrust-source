@@ -533,6 +533,14 @@ export interface ApiBillingSettingsBillingSettings
       'api::billing-settings.billing-settings'
     > &
       Schema.Attribute.Private;
+    packMinimum: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<50>;
     pastDueGraceDays: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
@@ -1313,6 +1321,15 @@ export interface ApiOrganizationOrganization
     name: Schema.Attribute.String & Schema.Attribute.Required;
     pastDueSince: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
+    purchasedCredentials: Schema.Attribute.Integer &
+      Schema.Attribute.Private &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
     slug: Schema.Attribute.UID<'name'>;
     stripeCustomerId: Schema.Attribute.String & Schema.Attribute.Private;
     stripeSubscriptionId: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1361,6 +1378,7 @@ export interface ApiPaymentPayment extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    credits: Schema.Attribute.Integer;
     currency: Schema.Attribute.String & Schema.Attribute.DefaultTo<'usd'>;
     interval: Schema.Attribute.Enumeration<['month', 'year']>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;

@@ -42,6 +42,12 @@
       "default": 7,
       "min": 0,
       "description": "Days a past-due organization keeps its paid tier (with daily reminders) before dropping to Free."
+    },
+    "packMinimum": {
+      "type": "integer",
+      "default": 50,
+      "min": 1,
+      "description": "Smallest number of credentials an organization can buy in one pay-per-credential purchase. The price per credential lives in Stripe (STRIPE_PRICE_CREDENTIAL)."
     }
   }
 }

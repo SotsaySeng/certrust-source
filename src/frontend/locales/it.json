@@ -469,6 +469,17 @@
     "checkoutCanceled": "Il pagamento è stato annullato. Non ti è stato addebitato nulla.",
     "footnote": "Prezzi in USD. Annulla quando vuoi: i tuoi dati restano e le credenziali emesse restano verificabili.",
     "compare": "Confronta i piani",
+    "pack": {
+      "title": "Paga per credenziale",
+      "blurb": "Per un singolo evento. Paghi una volta, senza abbonamento. Le credenziali acquistate si aggiungono al tuo limite e non scadono.",
+      "unitPrice": "{price} per credenziale",
+      "quantity": "Numero di credenziali",
+      "range": "Da {min} a {max}",
+      "total": "Totale",
+      "buy": "Acquista credenziali",
+      "owned": "Credenziali acquistate: {count}",
+      "success": "Grazie! Abbiamo ricevuto il tuo pagamento. Le nuove credenziali possono richiedere qualche secondo per comparire."
+    },
     "banner": {
       "trialEnding": "La tua prova termina tra {days} giorni ({date}). Scegli un piano per mantenere i tuoi limiti.",
       "trialEndsTomorrow": "La tua prova termina domani. Scegli un piano per mantenere i tuoi limiti.",

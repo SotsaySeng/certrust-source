@@ -5,8 +5,8 @@
 //   node deploy/cloudflare/stripe-setup.js test   # src/backend/.env, sk_/rk_test_ key
 //   node deploy/cloudflare/stripe-setup.js live   # src/backend/.env.production, sk_/rk_live_ key
 //
-// Idempotent: prices are found by lookup_key (certrust_<tier>_<interval>ly)
-// and the portal configuration by metadata.certrust, so re-running only
+// Idempotent: prices are found by lookup_key (certrust_<tier>_<interval>ly,
+// certrust_credential) and the portal configuration by metadata.certrust, so re-running only
 // fills gaps and refreshes the portal settings. Prints ids only, never keys.
 // A price's amount cannot change once created: to reprice, create a new
 // lookup key (or archive the old price in the dashboard) and re-run.
@@ -50,6 +50,10 @@ const PLANS = [
   },
 ]
 
+// One-off price for a single credential. Organizations buy it with a
+// quantity; the smallest quantity is Billing Settings' packMinimum.
+const CREDENTIAL = { lookupKey: 'certrust_credential', amount: 20, envName: 'STRIPE_PRICE_CREDENTIAL' }
+
 async function main() {
   console.log(`Stripe ${MODE} mode -> ${path.relative(ROOT, ENV_FILE)}`)
   const ids = {}
@@ -85,6 +89,28 @@ async function main() {
     }
     portalProducts.push({ product: productId, prices: productPrices })
   }
+
+  const found = await stripe.prices.list({ lookup_keys: [CREDENTIAL.lookupKey], active: true, limit: 1 })
+  let credential = found.data[0]
+  if (!credential) {
+    const product = await stripe.products.create({
+      name: 'Certrust credentials',
+      description: 'Credentials bought for one event. Paid once, they do not expire.',
+      metadata: { kind: 'credential_pack' },
+    })
+    credential = await stripe.prices.create({
+      product: product.id,
+      currency: 'usd',
+      unit_amount: CREDENTIAL.amount,
+      lookup_key: CREDENTIAL.lookupKey,
+      nickname: 'One credential',
+    })
+  }
+  if (credential.unit_amount !== CREDENTIAL.amount || credential.currency !== 'usd' || credential.recurring) {
+    throw new Error(`${CREDENTIAL.lookupKey} exists as ${credential.unit_amount} ${credential.currency}${credential.recurring ? ' recurring' : ''}, expected ${CREDENTIAL.amount} usd one-off`)
+  }
+  ids[CREDENTIAL.envName] = credential.id
+  console.log(`${CREDENTIAL.envName}=${credential.id}  (${CREDENTIAL.amount / 100} USD per credential)`)
 
   const portalParams = {
     name: 'Certrust',

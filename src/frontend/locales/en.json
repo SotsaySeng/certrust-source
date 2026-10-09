@@ -469,6 +469,17 @@
     "checkoutCanceled": "Checkout was canceled. You haven't been charged.",
     "footnote": "Prices are in USD. Cancel any time: you keep your data and your issued credentials keep verifying.",
     "compare": "Compare plans",
+    "pack": {
+      "title": "Pay per credential",
+      "blurb": "For a single event. You pay once and there is no subscription. The credentials you buy are added to your limit and do not expire.",
+      "unitPrice": "{price} per credential",
+      "quantity": "Number of credentials",
+      "range": "From {min} to {max}",
+      "total": "Total",
+      "buy": "Buy credentials",
+      "owned": "Purchased credentials: {count}",
+      "success": "Thank you! Your payment was received. It can take a few seconds for your new credentials to appear."
+    },
     "banner": {
       "trialEnding": "Your trial ends in {days} days ({date}). Choose a plan to keep your limits.",
       "trialEndsTomorrow": "Your trial ends tomorrow. Choose a plan to keep your limits.",

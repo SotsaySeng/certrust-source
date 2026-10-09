@@ -7,6 +7,26 @@ describe('Organization Usage Service', () => {
     jest.clearAllMocks()
   })
 
+  describe('getCredentialLimit', () => {
+    const settings = { free: { credentialLimit: 50 }, enterprise: { credentialLimit: null } }
+
+    it('adds purchased credentials to the tier limit', async () => {
+      global.strapi = { documents: () => ({ findFirst: jest.fn().mockResolvedValue(settings) }) } as any
+      service = usageFactory()
+
+      expect(await service.getCredentialLimit({ tier: 'free', purchasedCredentials: 120 })).toBe(170)
+      expect(await service.getCredentialLimit({ tier: 'free' })).toBe(50)
+      expect(await service.getCredentialLimit({ tier: 'free', purchasedCredentials: null })).toBe(50)
+    })
+
+    it('stays unlimited on a tier with no limit', async () => {
+      global.strapi = { documents: () => ({ findFirst: jest.fn().mockResolvedValue(settings) }) } as any
+      service = usageFactory()
+
+      expect(await service.getCredentialLimit({ tier: 'enterprise', purchasedCredentials: 120 })).toBeNull()
+    })
+  })
+
   describe('getTierLimit', () => {
     it('reads the credential limit (default dimension) from the tier-settings singleType', async () => {
       const findFirst = jest.fn().mockResolvedValue({

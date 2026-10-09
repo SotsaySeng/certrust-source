@@ -3,7 +3,7 @@
  * routes/billing.ts for auth.
  */
 
-import { getStripe, isStripeConfigured, PAID_TIERS, INTERVALS, priceIdFor, constructWebhookEvent } from '../lib/stripe'
+import { getStripe, isStripeConfigured, PAID_TIERS, INTERVALS, priceIdFor, packPriceId, PACK_MAX, constructWebhookEvent } from '../lib/stripe'
 import { rowsToCsv } from '../services/metrics'
 
 const UNPARSED = Symbol.for('unparsedBody')
@@ -33,31 +33,39 @@ export default ({ strapi }: { strapi: any }) => {
     },
 
     async plans(ctx: any) {
+      // packMinimum is an admin setting, so it is read fresh rather than
+      // cached with the Stripe prices.
+      const withMinimum = async (value: any) => ({
+        ...value,
+        pack: { ...value.pack, minimum: (await billing().getSettings()).packMinimum, maximum: PACK_MAX },
+      })
       if (plansCache && Date.now() - plansCache.at < PLANS_TTL_MS) {
-        ctx.body = plansCache.value
+        ctx.body = await withMinimum(plansCache.value)
         return
+      }
+      const loadPrice = async (id: string | null) => {
+        if (!id || !isStripeConfigured()) return { amount: null, currency: 'usd' }
+        try {
+          const price = await getStripe().prices.retrieve(id)
+          return { amount: price.unit_amount, currency: price.currency }
+        } catch (err: any) {
+          strapi.log.warn(`[billing] could not load price ${id}: ${err.message}`)
+          return { amount: null, currency: 'usd' }
+        }
       }
       const plans: any[] = []
       for (const tier of PAID_TIERS) {
         for (const interval of INTERVALS) {
           const id = priceIdFor(tier, interval)
-          let amount: number | null = null
-          let currency = 'usd'
-          if (id && isStripeConfigured()) {
-            try {
-              const price = await getStripe().prices.retrieve(id)
-              amount = price.unit_amount
-              currency = price.currency
-            } catch (err: any) {
-              strapi.log.warn(`[billing] could not load price ${id}: ${err.message}`)
-            }
-          }
-          plans.push({ tier, interval, available: Boolean(id) && isStripeConfigured(), amount, currency })
+          plans.push({ tier, interval, available: Boolean(id) && isStripeConfigured(), ...(await loadPrice(id)) })
         }
       }
-      const value = { stripeConfigured: isStripeConfigured(), plans }
+      // The price of one credential; a pack is that price times a quantity.
+      const packId = packPriceId()
+      const pack = { available: Boolean(packId) && isStripeConfigured(), ...(await loadPrice(packId)) }
+      const value = { stripeConfigured: isStripeConfigured(), plans, pack }
       if (isStripeConfigured()) plansCache = { at: Date.now(), value }
-      ctx.body = value
+      ctx.body = await withMinimum(value)
     },
 
     async checkout(ctx: any) {
@@ -65,6 +73,12 @@ export default ({ strapi }: { strapi: any }) => {
       if (!org) return
       const { tier, interval } = ctx.request.body ?? {}
       ctx.body = { url: await billing().createCheckout(org, ctx.state.user, tier, interval) }
+    },
+
+    async checkoutPack(ctx: any) {
+      const org = await ownOrg(ctx)
+      if (!org) return
+      ctx.body = { url: await billing().createPackCheckout(org, ctx.state.user, ctx.request.body?.quantity) }
     },
 
     async portal(ctx: any) {

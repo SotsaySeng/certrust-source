@@ -47,6 +47,8 @@ export function computeMetrics({ orgs, payments, year, now = new Date() }: Metri
     const key = p.organizationDocumentId
     if (!key) continue
     totalByOrg.set(key, (totalByOrg.get(key) ?? 0) + p.amount)
+    // A one-off credential pack is revenue, but not what the org pays per period.
+    if (p.credits) continue
     const prev = latestByOrg.get(key)
     if (!prev || new Date(p.paidAt) > new Date(prev.paidAt)) latestByOrg.set(key, p)
   }

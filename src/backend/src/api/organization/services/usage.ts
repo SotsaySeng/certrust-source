@@ -112,6 +112,16 @@ export default () => ({
   },
 
   /**
+   * The credential limit for one organization: its tier's limit plus the
+   * credentials it bought (purchasedCredentials, written by the billing
+   * webhook). null = unlimited, whatever was bought.
+   */
+  async getCredentialLimit(organization: { tier?: string | null, purchasedCredentials?: number | null }): Promise<number | null> {
+    const limit = await this.getTierLimit(organization.tier, 'credential');
+    return limit == null ? null : limit + (organization.purchasedCredentials || 0);
+  },
+
+  /**
    * Live count of credentials issued by any profile belonging to this
    * organization - the entire replacement for a stored
    * current_month_usage counter. credential has no direct `organization`

@@ -21,6 +21,8 @@ import { errors } from '@strapi/utils'
 import {
   getStripe,
   isStripeConfigured,
+  packPriceId,
+  PACK_MAX,
   planForPriceId,
   priceIdFor,
   type BillingInterval,
@@ -33,6 +35,8 @@ const { ApplicationError, ValidationError } = errors
 const ORG_UID = 'api::organization.organization'
 const PAYMENT_UID = 'api::payment.payment'
 const DAY_MS = 24 * 60 * 60 * 1000
+/** metadata.kind on a Checkout session that buys credentials, not a plan. */
+const PACK_KIND = 'credential_pack'
 
 export interface BillingSettings {
   trialDays: number
@@ -41,6 +45,7 @@ export interface BillingSettings {
   trialReminderDays: number[]
   renewalReminderDays: number[]
   pastDueGraceDays: number
+  packMinimum: number
 }
 
 export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
@@ -50,6 +55,7 @@ export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
   trialReminderDays: [7, 3, 1],
   renewalReminderDays: [30, 7, 1],
   pastDueGraceDays: 7,
+  packMinimum: 50,
 }
 
 const toDays = (value: unknown, fallback: number[]): number[] => {
@@ -120,6 +126,8 @@ export default ({ strapi }: { strapi: any }) => ({
       trialReminderDays: toDays(s.trialReminderDays, DEFAULT_BILLING_SETTINGS.trialReminderDays),
       renewalReminderDays: toDays(s.renewalReminderDays, DEFAULT_BILLING_SETTINGS.renewalReminderDays),
       pastDueGraceDays: Number.isFinite(s.pastDueGraceDays) ? s.pastDueGraceDays : DEFAULT_BILLING_SETTINGS.pastDueGraceDays,
+      // Records saved before packs existed hold null here.
+      packMinimum: Number.isInteger(s.packMinimum) && s.packMinimum > 0 ? s.packMinimum : DEFAULT_BILLING_SETTINGS.packMinimum,
     }
   },
 
@@ -236,6 +244,7 @@ export default ({ strapi }: { strapi: any }) => ({
       canManageBilling: Boolean(org.stripeCustomerId),
       // A manually granted plan: paid tier with no Stripe subscription behind it.
       isManualPlan: status === 'none' && org.tier !== 'free',
+      purchasedCredentials: org.purchasedCredentials || 0,
       banner,
       stripeConfigured: isStripeConfigured(),
       trialRequiresCard: settings.trialRequiresCard,
@@ -301,6 +310,42 @@ export default ({ strapi }: { strapi: any }) => ({
     return session.url
   },
 
+  /**
+   * One-off purchase of `quantity` credentials at the per-credential
+   * price. The quantity is fixed here and carried in the session's
+   * metadata, so the webhook can grant it from the payload alone.
+   */
+  async createPackCheckout(org: any, user: any, quantity: unknown): Promise<string> {
+    if (!isStripeConfigured()) throw new ApplicationError('Online payments are not set up yet.')
+    const price = packPriceId()
+    if (!price) throw new ApplicationError('Buying credentials is not available yet.')
+    const { packMinimum } = await this.getSettings()
+    if (!Number.isInteger(quantity) || (quantity as number) < packMinimum || (quantity as number) > PACK_MAX) {
+      throw new ValidationError(`quantity must be a whole number from ${packMinimum} to ${PACK_MAX}`)
+    }
+
+    const customer = await this.ensureCustomer(org, user.email)
+    const metadata = { orgDocumentId: org.documentId, kind: PACK_KIND, credits: String(quantity) }
+    const base = this.frontendUrl()
+    const session = await getStripe().checkout.sessions.create({
+      mode: 'payment',
+      customer,
+      client_reference_id: org.documentId,
+      line_items: [{ price, quantity: quantity as number }],
+      // Cards settle before checkout.session.completed fires, so that one
+      // event is enough to grant the credentials. Delayed methods (bank
+      // debits) would also need checkout.session.async_payment_succeeded.
+      payment_method_types: ['card'],
+      metadata,
+      payment_intent_data: { metadata },
+      allow_promotion_codes: true,
+      success_url: `${base}/billing?checkout=pack`,
+      cancel_url: `${base}/billing?checkout=cancel`,
+    })
+    if (!session.url) throw new ApplicationError('Stripe did not return a checkout URL.')
+    return session.url
+  },
+
   async createPortal(org: any): Promise<string> {
     if (!isStripeConfigured()) throw new ApplicationError('Online payments are not set up yet.')
     if (!org.stripeCustomerId) throw new ApplicationError('This organization has no billing account yet.')
@@ -358,6 +403,7 @@ export default ({ strapi }: { strapi: any }) => ({
   },
 
   async onCheckoutCompleted(session: any) {
+    if (session.metadata?.kind === PACK_KIND) return this.onPackPurchased(session)
     const org = (await this.findOrg(session.client_reference_id)) ?? (await this.findOrgByCustomer(customerIdOf(session.customer)))
     if (!org) return
     const customer = customerIdOf(session.customer)
@@ -366,6 +412,47 @@ export default ({ strapi }: { strapi: any }) => ({
       ...(customer ? { stripeCustomerId: customer } : {}),
       ...(subscription ? { stripeSubscriptionId: subscription } : {}),
     })
+  },
+
+  /**
+   * A paid pay-per-credential checkout: add the credentials to the
+   * organization and record the payment. usage.getCredentialLimit() adds
+   * purchasedCredentials on top of the tier's limit.
+   */
+  async onPackPurchased(session: any) {
+    // 'no_payment_required' = a 100% promotion code.
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') return
+    const credits = Number.parseInt(session.metadata?.credits, 10)
+    const org = await this.resolveOrg(session.metadata, session.customer)
+    if (!org || !(credits > 0)) {
+      strapi.log.warn(`[billing] credential pack ${session.id}: no matching organization or quantity`)
+      return
+    }
+    // The ledger row is written last, so finding it means this session's
+    // credentials were already granted (a retry after recordEvent failed).
+    if (await strapi.db.query(PAYMENT_UID).findOne({ where: { stripeInvoiceId: session.id } })) return
+
+    // ponytail: read-then-write, not an atomic increment. Two packs paid by
+    // the same organization in the same instant could lose one; switch to a
+    // SQL increment if that ever happens.
+    await this.updateOrg(org.documentId, { purchasedCredentials: (org.purchasedCredentials || 0) + credits })
+
+    const amount = session.amount_total ?? 0
+    if (amount > 0) {
+      await strapi.db.query(PAYMENT_UID).create({
+        data: {
+          stripeInvoiceId: session.id,
+          organizationDocumentId: org.documentId,
+          organizationName: org.name,
+          amount,
+          currency: session.currency ?? 'usd',
+          status: 'paid',
+          paidAt: unixToDate(session.created) ?? new Date(),
+          credits,
+        },
+      })
+    }
+    this.notifyInBackground(org, { kind: 'pack_purchased', amount, currency: session.currency, credits })
   },
 
   async applySubscription(sub: any) {

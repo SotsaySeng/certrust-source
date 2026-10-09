@@ -12,6 +12,7 @@ export type BillingEmailKind =
   | 'past_due_reminder'
   | 'downgraded'
   | 'payment_received'
+  | 'pack_purchased'
 
 export interface BillingEmailParams {
   kind: BillingEmailKind
@@ -22,6 +23,7 @@ export interface BillingEmailParams {
   tier?: string | null
   amount?: number | null
   currency?: string | null
+  credits?: number
 }
 
 const escapeHtml = (s: string) =>
@@ -77,6 +79,11 @@ export function generateBillingEmail(p: BillingEmailParams): { subject: string; 
       subject = 'Your organization has moved to the Free plan'
       body = `${org}'s paid subscription has ended, so it is now on the Free plan. Everything you created is still there and every credential you issued still verifies. Upgrade any time to get your higher limits back.`
       cta = 'Upgrade now'
+      break
+    case 'pack_purchased':
+      subject = `Payment received: ${p.credits} Certrust credentials`
+      body = `Thank you. We received ${formatMoney(p.amount, p.currency)} from ${org}. ${p.credits} credentials have been added to your organization's limit. They do not expire, so any you don't use now are there for your next event.`
+      cta = 'View billing'
       break
     case 'payment_received':
     default:

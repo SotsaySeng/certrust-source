@@ -116,7 +116,7 @@ export default factories.createCoreController('api::organization.organization', 
       const { tier } = profileWithOrg.organization;
       const usage = strapi.service('api::organization.usage');
       const [credential, designTemplate, achievement] = await Promise.all([
-        usage.getTierLimit(tier, 'credential'),
+        usage.getCredentialLimit(profileWithOrg.organization),
         usage.getTierLimit(tier, 'designTemplate'),
         usage.getTierLimit(tier, 'achievement'),
       ]);

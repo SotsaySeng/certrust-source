@@ -109,10 +109,9 @@ export default {
     }
 
     const organizationId = issuer.organization.id;
-    const tier = issuer.organization.tier;
 
     const usage = strapi.service('api::organization.usage');
-    const limit = await usage.getTierLimit(tier);
+    const limit = await usage.getCredentialLimit(issuer.organization);
 
     // null = unlimited (enterprise, or an unrecognized tier - fail open
     // rather than block issuance over a config problem).
@@ -123,7 +122,7 @@ export default {
     const currentCount = await usage.countOrganizationCredentials(organizationId);
     if (currentCount >= limit) {
       throw new errors.ApplicationError(
-        `This organization has reached its "${tier}" tier limit of ${limit} credentials. Upgrade the organization's tier to issue more.`
+        `This organization has reached its limit of ${limit} credentials. Buy more credentials or upgrade the plan on the Billing page to issue more.`
       );
     }
   },

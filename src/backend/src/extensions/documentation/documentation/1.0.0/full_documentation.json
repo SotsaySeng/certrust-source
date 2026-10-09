@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-10-04T01:58:11.539Z"
+    "x-generation-date": "2026-10-08T23:16:59.275Z"
   },
   "openapi": "3.0.0",
   "x-strapi-config": {
@@ -24,7 +24,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:1353/api",
+      "url": "http://localhost:1337/api",
       "description": "Development server"
     }
   ],
@@ -10624,6 +10624,9 @@
                   "stripeSubscriptionId": {
                     "type": "string"
                   },
+                  "purchasedCredentials": {
+                    "type": "integer"
+                  },
                   "createdAt": {
                     "type": "string",
                     "format": "date-time"
@@ -11936,6 +11939,9 @@
               "stripeSubscriptionId": {
                 "type": "string"
               },
+              "purchasedCredentials": {
+                "type": "integer"
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -12959,6 +12965,9 @@
               },
               "stripeSubscriptionId": {
                 "type": "string"
+              },
+              "purchasedCredentials": {
+                "type": "integer"
               },
               "createdAt": {
                 "type": "string",
@@ -14589,6 +14598,9 @@
                       "stripeSubscriptionId": {
                         "type": "string"
                       },
+                      "purchasedCredentials": {
+                        "type": "integer"
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -16209,6 +16221,9 @@
               "stripeSubscriptionId": {
                 "type": "string"
               },
+              "purchasedCredentials": {
+                "type": "integer"
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -17598,6 +17613,9 @@
               },
               "stripeSubscriptionId": {
                 "type": "string"
+              },
+              "purchasedCredentials": {
+                "type": "integer"
               },
               "createdAt": {
                 "type": "string",
@@ -19514,6 +19532,9 @@
                         "stripeSubscriptionId": {
                           "type": "string"
                         },
+                        "purchasedCredentials": {
+                          "type": "integer"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -21288,6 +21309,9 @@
                   },
                   "stripeSubscriptionId": {
                     "type": "string"
+                  },
+                  "purchasedCredentials": {
+                    "type": "integer"
                   },
                   "createdAt": {
                     "type": "string",
@@ -23080,6 +23104,9 @@
                   "stripeSubscriptionId": {
                     "type": "string"
                   },
+                  "purchasedCredentials": {
+                    "type": "integer"
+                  },
                   "createdAt": {
                     "type": "string",
                     "format": "date-time"
@@ -24783,6 +24810,9 @@
                       },
                       "stripeSubscriptionId": {
                         "type": "string"
+                      },
+                      "purchasedCredentials": {
+                        "type": "integer"
                       },
                       "createdAt": {
                         "type": "string",
@@ -26721,6 +26751,9 @@
                           },
                           "stripeSubscriptionId": {
                             "type": "string"
+                          },
+                          "purchasedCredentials": {
+                            "type": "integer"
                           },
                           "createdAt": {
                             "type": "string",
@@ -30348,6 +30381,9 @@
               "stripeSubscriptionId": {
                 "type": "string"
               },
+              "purchasedCredentials": {
+                "type": "integer"
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -31398,6 +31434,9 @@
                 "stripeSubscriptionId": {
                   "type": "string"
                 },
+                "purchasedCredentials": {
+                  "type": "integer"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -31663,6 +31702,9 @@
               },
               "stripeSubscriptionId": {
                 "type": "string"
+              },
+              "purchasedCredentials": {
+                "type": "integer"
               },
               "locale": {
                 "type": "string"
@@ -32412,6 +32454,9 @@
                     "stripeSubscriptionId": {
                       "type": "string"
                     },
+                    "purchasedCredentials": {
+                      "type": "integer"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -32610,6 +32655,9 @@
           },
           "stripeSubscriptionId": {
             "type": "string"
+          },
+          "purchasedCredentials": {
+            "type": "integer"
           },
           "createdAt": {
             "type": "string",
@@ -33911,6 +33959,9 @@
               },
               "stripeSubscriptionId": {
                 "type": "string"
+              },
+              "purchasedCredentials": {
+                "type": "integer"
               },
               "createdAt": {
                 "type": "string",
@@ -35492,6 +35543,9 @@
                   },
                   "stripeSubscriptionId": {
                     "type": "string"
+                  },
+                  "purchasedCredentials": {
+                    "type": "integer"
                   },
                   "createdAt": {
                     "type": "string",

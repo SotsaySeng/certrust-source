@@ -123,6 +123,80 @@ describe('billing webhook handling', () => {
   })
 })
 
+describe('credential packs', () => {
+  let orgs: any[]
+  const packSession = (extra: any = {}) => ({
+    id: 'cs_1',
+    mode: 'payment',
+    customer: 'cus_1',
+    payment_status: 'paid',
+    amount_total: 2400,
+    currency: 'usd',
+    created: 1780000000,
+    metadata: { orgDocumentId: 'org1', kind: 'credential_pack', credits: '120' },
+    ...extra,
+  })
+  const completed = (id: string, session: any) => ({ id, type: 'checkout.session.completed', data: { object: session } })
+
+  beforeEach(() => {
+    orgs = [{ documentId: 'org1', name: 'Org One', tier: 'free', subscriptionStatus: 'none', billingEmail: 'billing@org.one', members: [], purchasedCredentials: 30 }]
+  })
+
+  it('adds the credentials, records the payment and emails once', async () => {
+    const { strapi, payments, send } = makeStrapi(orgs)
+    const billing = billingFactory({ strapi })
+
+    await billing.handleEvent(completed('evt_p1', packSession()))
+    expect(orgs[0].purchasedCredentials).toBe(150)
+    expect(orgs[0].tier).toBe('free') // a pack never changes the plan
+    expect(payments).toHaveLength(1)
+    expect(payments[0]).toMatchObject({ stripeInvoiceId: 'cs_1', amount: 2400, status: 'paid', credits: 120, organizationDocumentId: 'org1' })
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][0].subject).toMatch(/120 Certrust credentials/)
+  })
+
+  it('grants a session only once, even under a new event id', async () => {
+    const { strapi, payments } = makeStrapi(orgs)
+    const billing = billingFactory({ strapi })
+
+    await billing.handleEvent(completed('evt_p1', packSession()))
+    expect((await billing.handleEvent(completed('evt_p1', packSession()))).duplicate).toBe(true)
+    await billing.handleEvent(completed('evt_p2', packSession()))
+    expect(orgs[0].purchasedCredentials).toBe(150)
+    expect(payments).toHaveLength(1)
+  })
+
+  it('grants nothing for an unpaid session', async () => {
+    const { strapi, payments } = makeStrapi(orgs)
+    const billing = billingFactory({ strapi })
+
+    await billing.handleEvent(completed('evt_p3', packSession({ payment_status: 'unpaid' })))
+    expect(orgs[0].purchasedCredentials).toBe(30)
+    expect(payments).toHaveLength(0)
+  })
+
+  it('refuses a quantity under the minimum, over the maximum or not whole', async () => {
+    const { strapi } = makeStrapi(orgs)
+    const billing = billingFactory({ strapi })
+    process.env.STRIPE_SECRET_KEY = 'sk_test_x'
+    process.env.STRIPE_PRICE_CREDENTIAL = 'price_pack'
+    try {
+      for (const quantity of [49, 10001, 60.5, '60', undefined]) {
+        await expect(billing.createPackCheckout(orgs[0], { email: 'a@b.test' }, quantity)).rejects.toThrow(/whole number from 50 to 10000/)
+      }
+    } finally {
+      delete process.env.STRIPE_SECRET_KEY
+      delete process.env.STRIPE_PRICE_CREDENTIAL
+    }
+  })
+
+  it('reports purchased credentials in the billing status', () => {
+    const { strapi } = makeStrapi(orgs)
+    const billing = billingFactory({ strapi })
+    expect(billing.statusFor(orgs[0], DEFAULT_BILLING_SETTINGS).purchasedCredentials).toBe(30)
+  })
+})
+
 describe('webhook signature', () => {
   it('accepts a correctly signed payload and rejects a tampered one', () => {
     const secret = 'whsec_test'

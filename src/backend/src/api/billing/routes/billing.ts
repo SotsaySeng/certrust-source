@@ -23,6 +23,7 @@ export default {
     { method: 'GET', path: '/billing/status', handler: (ctx: any) => c().status(ctx), config: authed },
     { method: 'GET', path: '/billing/plans', handler: (ctx: any) => c().plans(ctx), config: authed },
     { method: 'POST', path: '/billing/checkout', handler: (ctx: any) => c().checkout(ctx), config: authed },
+    { method: 'POST', path: '/billing/checkout-pack', handler: (ctx: any) => c().checkoutPack(ctx), config: authed },
     { method: 'POST', path: '/billing/portal', handler: (ctx: any) => c().portal(ctx), config: authed },
     { method: 'POST', path: '/billing/webhook', handler: (ctx: any) => c().webhook(ctx), config: { auth: false } },
 

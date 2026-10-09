@@ -53,6 +53,17 @@ export function planForPriceId(priceId: string | null | undefined): { tier: Paid
   return null
 }
 
+/**
+ * Pay-per-credential packs: one one-off Price for a single credential,
+ * bought with quantity = pack size. The smallest pack is Billing Settings'
+ * packMinimum; PACK_MAX only stops typos, since past it a plan is cheaper.
+ */
+export const PACK_MAX = 10000
+
+export function packPriceId(): string | null {
+  return process.env.STRIPE_PRICE_CREDENTIAL || null
+}
+
 /** Only for tests - drops the memoized client so a new key is picked up. */
 export function resetStripeClient() {
   client = null

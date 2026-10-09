@@ -56,6 +56,10 @@
     },
     "periodEnd": {
       "type": "datetime"
+    },
+    "credits": {
+      "type": "integer",
+      "description": "Credentials bought, on a one-off pay-per-credential payment. For those rows stripeInvoiceId holds the Checkout session id (cs_...) and tier/interval are empty."
     }
   }
 }

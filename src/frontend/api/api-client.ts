@@ -996,6 +996,11 @@ export class ApiClient {
     return this.post<{ url: string }>('/api/billing/checkout', { tier, interval })
   }
 
+  /** Returns { url } of a Stripe Checkout session that buys `quantity` credentials, paid once. */
+  async startPackCheckout(quantity: number) {
+    return this.post<{ url: string }>('/api/billing/checkout-pack', { quantity })
+  }
+
   /** Returns { url } of the Stripe Customer Portal (change card/plan, cancel, invoices). */
   async openBillingPortal() {
     return this.post<{ url: string }>('/api/billing/portal', {})

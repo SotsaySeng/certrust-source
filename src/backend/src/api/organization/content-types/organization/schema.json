@@ -132,6 +132,12 @@
     "stripeSubscriptionId": {
       "type": "string",
       "private": true
+    },
+    "purchasedCredentials": {
+      "type": "integer",
+      "default": 0,
+      "min": 0,
+      "private": true
     }
   }
 }

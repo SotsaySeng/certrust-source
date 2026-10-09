@@ -469,6 +469,17 @@
     "checkoutCanceled": "Der Bezahlvorgang wurde abgebrochen. Es wurde nichts berechnet.",
     "footnote": "Preise in USD. Jederzeit kündbar: Ihre Daten bleiben erhalten und ausgestellte Nachweise bleiben überprüfbar.",
     "compare": "Tarife vergleichen",
+    "pack": {
+      "title": "Pro Nachweis bezahlen",
+      "blurb": "Für eine einzelne Veranstaltung. Sie zahlen einmal, ohne Abonnement. Gekaufte Nachweise werden zu Ihrem Limit addiert und verfallen nicht.",
+      "unitPrice": "{price} pro Nachweis",
+      "quantity": "Anzahl der Nachweise",
+      "range": "Von {min} bis {max}",
+      "total": "Gesamt",
+      "buy": "Nachweise kaufen",
+      "owned": "Gekaufte Nachweise: {count}",
+      "success": "Vielen Dank! Ihre Zahlung ist eingegangen. Es kann einige Sekunden dauern, bis Ihre neuen Nachweise erscheinen."
+    },
     "banner": {
       "trialEnding": "Ihre Testphase endet in {days} Tagen ({date}). Wählen Sie einen Tarif, um Ihre Limits zu behalten.",
       "trialEndsTomorrow": "Ihre Testphase endet morgen. Wählen Sie einen Tarif, um Ihre Limits zu behalten.",

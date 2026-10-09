@@ -37,6 +37,13 @@ describe('computeMetrics', () => {
     expect(m.subsByPlan).toEqual({ pro: { month: 1, year: 0 }, enterprise: { month: 0, year: 1 } })
   })
 
+  it('counts a credential pack as revenue but never as recurring revenue', () => {
+    const pack = { organizationDocumentId: 'a', amount: 2400, status: 'paid', paidAt: '2026-09-15T00:00:00Z', credits: 120 }
+    const withPack = computeMetrics({ orgs, payments: [...payments, pack], year: 2026, now })
+    expect(withPack.revenueThisYear).toBe(m.revenueThisYear + 2400)
+    expect(withPack.mrr).toBe(m.mrr)
+  })
+
   it('counts trials, conversion (excluding running trials) and churn', () => {
     expect(m.activeTrials).toBe(1)
     expect(m.trialsEndingSoon).toBe(1)

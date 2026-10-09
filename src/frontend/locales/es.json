@@ -469,6 +469,17 @@
     "checkoutCanceled": "El pago se canceló. No se te ha cobrado nada.",
     "footnote": "Precios en USD. Cancela cuando quieras: conservas tus datos y tus credenciales emitidas siguen verificándose.",
     "compare": "Comparar planes",
+    "pack": {
+      "title": "Pago por credencial",
+      "blurb": "Para un solo evento. Pagas una vez, sin suscripción. Las credenciales que compras se suman a tu límite y no caducan.",
+      "unitPrice": "{price} por credencial",
+      "quantity": "Número de credenciales",
+      "range": "De {min} a {max}",
+      "total": "Total",
+      "buy": "Comprar credenciales",
+      "owned": "Credenciales compradas: {count}",
+      "success": "¡Gracias! Hemos recibido tu pago. Tus nuevas credenciales pueden tardar unos segundos en aparecer."
+    },
     "banner": {
       "trialEnding": "Tu prueba termina en {days} días ({date}). Elige un plan para mantener tus límites.",
       "trialEndsTomorrow": "Tu prueba termina mañana. Elige un plan para mantener tus límites.",
