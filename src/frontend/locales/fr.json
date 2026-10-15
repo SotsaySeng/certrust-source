@@ -20,6 +20,7 @@
     "apiKeys": "Clés API",
     "developers": "Développeurs",
     "dev": {
+      "gettingStarted": "Guide de démarrage",
       "overview": "Aperçu des intégrations",
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",

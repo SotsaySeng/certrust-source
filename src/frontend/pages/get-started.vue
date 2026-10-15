@@ -35,7 +35,11 @@ useHead({
       </h2>
       <GetStartedList :list />
     </div>
-    <div class="flex justify-center mb-8">
+    <div class="flex flex-wrap justify-center gap-4 mb-8">
+      <NuxtLink to="/guide/issue-your-first-certificate" class="inline-flex items-center px-6 py-3 rounded-xl bg-[#28A745] text-white font-semibold text-lg shadow hover:bg-[#1f7a34] transition-colors">
+        Step-by-step guide and video
+        <span class="i-heroicons-play-circle ml-2 w-5 h-5" />
+      </NuxtLink>
       <NuxtLink :href="HELLO_SH_MAIL" class="inline-flex items-center px-6 py-3 rounded-xl bg-[#D9F2DE] text-gray-900 font-semibold text-lg shadow hover:bg-[#C5EBCE] transition-colors">
         Contact Us
         <span class="i-heroicons-arrow-right ml-2 w-5 h-5" />

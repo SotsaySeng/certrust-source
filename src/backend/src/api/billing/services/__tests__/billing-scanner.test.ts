@@ -70,3 +70,22 @@ describe('billing scanner processOrg', () => {
     expect(billing.updateOrg).toHaveBeenCalledWith('o7', { tier: 'free' })
   })
 })
+
+describe('billing scanner expireLocalTrials', () => {
+  it('moves expired local trials to Free without emailing, and skips Stripe trials', async () => {
+    const now = new Date('2026-10-15T12:00:00Z')
+    const billing = { updateOrg: jest.fn(), notify: jest.fn() }
+    const findMany = jest.fn().mockResolvedValue([
+      { documentId: 'local', tier: 'pro', subscriptionStatus: 'trialing', trialEndsAt: '2026-10-09T00:00:00Z' },
+      { documentId: 'stripe', tier: 'pro', subscriptionStatus: 'trialing', stripeSubscriptionId: 'sub', trialEndsAt: '2026-10-09T00:00:00Z' },
+    ])
+    const strapi: any = { service: () => billing, db: { query: () => ({ findMany }) }, log: { info: jest.fn(), error: jest.fn() } }
+    const scanner = scannerFactory({ strapi })
+
+    expect(await scanner.expireLocalTrials(now)).toBe(1)
+    expect(findMany.mock.calls[0][0].where).toEqual({ subscriptionStatus: 'trialing', trialEndsAt: { $lte: now } })
+    expect(billing.updateOrg).toHaveBeenCalledTimes(1)
+    expect(billing.updateOrg).toHaveBeenCalledWith('local', { tier: 'free', subscriptionStatus: 'none', trialUsed: true })
+    expect(billing.notify).not.toHaveBeenCalled()
+  })
+})

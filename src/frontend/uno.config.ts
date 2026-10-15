@@ -53,6 +53,7 @@ export default defineConfig({
     'i-heroicons-calendar-days',
     'i-heroicons-key',
     // Header "Developers" menu icons (DEVELOPERS_MENU_LINKS), same reason.
+    'i-heroicons-book-open',
     'i-heroicons-puzzle-piece',
     'i-heroicons-table-cells',
     'i-heroicons-clipboard-document-list',

@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test'
 import { waitForHydration } from './support/journey'
 
 const MANUALS = [
+  { label: 'Getting started guide', path: '/guide/issue-your-first-certificate', heading: 'Issue your first certificate' },
   { label: 'Integrations overview', path: '/integrations', heading: 'Issue credentials from the systems you already use' },
   { label: 'Google Sheets', path: '/integrations/google-sheets', heading: 'Add a row, issue a certificate' },
   { label: 'Google Forms', path: '/integrations/google-forms', heading: 'Submit a form, receive a certificate' },
@@ -23,6 +24,25 @@ test.describe('developers menu and integration manuals', () => {
       await page.locator('#developers-menu-panel').getByRole('link', { name: manual.label, exact: true }).click()
       await expect(page).toHaveURL(new RegExp(`${manual.path}$`))
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(manual.heading)
+    }
+  })
+
+  test('the getting started guide has its video, all nine steps and every screenshot', async ({ page, request }) => {
+    await page.goto('/guide/issue-your-first-certificate')
+    await waitForHydration(page)
+    await expect(page.getByRole('heading', { level: 2, name: /^\d\. / })).toHaveCount(9)
+
+    const video = page.getByTestId('guide-video')
+    const src = (await video.getAttribute('src'))!
+    expect((await request.get(src)).status()).toBe(200)
+    expect((await request.get((await video.getAttribute('poster'))!)).status()).toBe(200)
+
+    // Screenshots are lazy-loaded: scroll each into view, then check it really decoded.
+    const images = page.locator('section img')
+    await expect(images).toHaveCount(11)
+    for (let i = 0; i < 11; i++) {
+      await images.nth(i).scrollIntoViewIfNeeded()
+      await expect.poll(() => images.nth(i).evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true)
     }
   })
 

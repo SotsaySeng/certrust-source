@@ -1,13 +1,15 @@
 <script setup lang="ts">
-// Shared layout for the step-by-step integration manuals under
-// /integrations (Google Sheets, Google Forms, student records). The page
+// Shared layout for the step-by-step manuals: the integration guides under
+// /integrations (Google Sheets, Google Forms, student records) and /guide. The page
 // supplies the content as plain HTML in the default slot; the typography
 // for headings, lists, tables, code and notes lives here.
-defineProps<{
-  /** Shown after "Integrations ·" above the title */
+withDefaults(defineProps<{
+  /** Shown after the breadcrumb ("Integrations ·") above the title */
   section: string
   title: string
-}>()
+  crumb?: string
+  crumbTo?: string
+}>(), { crumb: 'Integrations', crumbTo: '/integrations' })
 </script>
 
 <template>
@@ -15,8 +17,8 @@ defineProps<{
     <section class="py-16">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 manual">
         <p class="text-sm font-medium uppercase tracking-wide text-[#1f7a34] mb-3">
-          <NuxtLink to="/integrations" class="hover:underline">
-            Integrations
+          <NuxtLink :to="crumbTo" class="hover:underline">
+            {{ crumb }}
           </NuxtLink>
           · {{ section }}
         </p>

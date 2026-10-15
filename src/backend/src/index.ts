@@ -178,7 +178,17 @@ export default {
     // included) and drops orgs to Free when their launch trial ends, all
     // without anyone being able to pay.
     if (process.env.BILLING_SCANNER_ENABLED?.toLowerCase() === 'false') {
-      strapi.log.info('[bootstrap] Billing scanner disabled via BILLING_SCANNER_ENABLED=false.');
+      // No emails, but expired local trials still drop to Free.
+      strapi.log.info('[bootstrap] Billing scanner disabled via BILLING_SCANNER_ENABLED=false (silent trial expiry only).');
+      const runTrialExpiry = async () => {
+        try {
+          await strapi.service('api::billing.billing-scanner').expireLocalTrials();
+        } catch (err: any) {
+          strapi.log.error('[bootstrap] Trial expiry error:', { error: err.message });
+        }
+      };
+      setTimeout(runTrialExpiry, 40_000);
+      setInterval(runTrialExpiry, 6 * 60 * 60 * 1000);
     } else {
       setTimeout(runBillingCheck, 40_000);
       setInterval(runBillingCheck, 6 * 60 * 60 * 1000);

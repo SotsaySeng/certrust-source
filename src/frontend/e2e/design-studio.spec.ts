@@ -148,6 +148,51 @@ test.describe('design studio', () => {
     await expect(page.getByText('You have unsaved changes from your last visit.')).toHaveCount(0)
   })
 
+  test('clicking another element selects it without leaving it stuck to the cursor', async ({ page }) => {
+    // Regression: with one element selected (e.g. after typing in its Text
+    // box), clicking another element on the canvas started a drag that never
+    // ended, and the element followed the cursor off the page with no button
+    // held.
+    await signIn(page, ORG.email, ORG.password)
+    await openEditor(page, designId)
+    const texts = designRow(DESIGN_NAME).layout.elements.filter((e: any) => e.type === 'text' && !e.locked && !e.hidden)
+    const [a, b, c] = texts.map((e: any) => page.locator(`[data-el-id="${e.id}"]`))
+    const press = async (element: typeof a, dx = 0) => {
+      const box = (await element.boundingBox())!
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.waitForTimeout(150)
+      if (dx) {
+        await page.mouse.move(box.x + box.width / 2 + dx, box.y + box.height / 2, { steps: 8 })
+      }
+      await page.mouse.up()
+    }
+
+    await press(a)
+    const textBox = page.locator('#ds-text-content')
+    await textBox.press('End')
+    await textBox.pressSequentially('!')
+
+    // Whole pixels: the drop re-render shifts a box by a fraction of one.
+    const at = async (element: typeof a) => {
+      const box = (await element.boundingBox())!
+      return [Math.round(box.x), Math.round(box.y)]
+    }
+    const before = await at(b)
+    await press(b)
+    await page.mouse.move(5, 5, { steps: 10 })
+    expect(await at(b)).toEqual(before)
+
+    // Press-and-drag on an unselected element still moves it, and stops on release.
+    const start = await at(c)
+    await press(c, 60)
+    const dropped = await at(c)
+    expect(dropped[0] - start[0]).toBeGreaterThan(30)
+    await page.mouse.move(5, 5, { steps: 10 })
+    expect(await at(c)).toEqual(dropped)
+    await expect(page.getByText('outside the page')).toHaveCount(0)
+  })
+
   test('adds a custom attribute and places it on the design', async ({ page }) => {
     await signIn(page, ORG.email, ORG.password)
     await openEditor(page, designId)

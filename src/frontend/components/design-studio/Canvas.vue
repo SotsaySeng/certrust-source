@@ -329,7 +329,14 @@ async function onPointerDown(ev: PointerEvent) {
     if (store.editingTextId && store.editingTextId !== id) {
       finishTextEdit()
     }
+    // Moveable applies a new target on its own render, after Vue's. A drag
+    // started before that stays bound to the old target and loses its
+    // pointerup when the target swaps, so the element then follows the
+    // cursor with no button held. Register the wait before Vue passes the
+    // new target down, and start the drag once it has been applied.
+    let targetApplied: Promise<void> | null = null
     if (!store.selectedIds.includes(id)) {
+      targetApplied = moveableRef.value?.waitToChangeTarget?.() ?? null
       store.select(id, additive)
     }
     else if (additive) {
@@ -338,11 +345,21 @@ async function onPointerDown(ev: PointerEvent) {
     }
     const el = store.element(id)
     if (el && !el.locked) {
+      let released = false
+      window.addEventListener('pointerup', () => {
+        released = true
+      }, { once: true })
       await nextTick()
       await nextTick()
       targets.value = Array.from(stage.value!.querySelectorAll<HTMLElement>('.el-target'))
       await nextTick()
-      moveableRef.value?.dragStart?.(ev)
+      if (targetApplied) {
+        await targetApplied
+      }
+      // A click that ended while Moveable caught up only selects.
+      if (!released) {
+        moveableRef.value?.dragStart?.(ev)
+      }
     }
     return
   }

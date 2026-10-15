@@ -110,6 +110,24 @@ export default ({ strapi }: { strapi: any }) => ({
     return { notified, changed }
   },
 
+  /**
+   * Trial expiry without any emails, for when the full scanner is switched
+   * off (BILLING_SCANNER_ENABLED=false). Without it a local trial never
+   * ends and the org keeps the paid tier for free. The in-app trial_ended
+   * banner (billing.statusFor) still tells the org what happened.
+   */
+  async expireLocalTrials(now = new Date()): Promise<number> {
+    const orgs: any[] = await strapi.db.query('api::organization.organization').findMany({
+      where: { subscriptionStatus: 'trialing', trialEndsAt: { $lte: now } },
+    })
+    const expired = orgs.filter((org) => !org.stripeSubscriptionId)
+    for (const org of expired) {
+      await this.billing().updateOrg(org.documentId, { tier: 'free', subscriptionStatus: 'none', trialUsed: true })
+    }
+    strapi.log.info(`[billing-scanner] silent trial expiry: ${expired.length} org(s) moved to Free`)
+    return expired.length
+  },
+
   async runDailyCheck(now = new Date()): Promise<{ checked: number; notified: number; changed: number; errors: number }> {
     const billing = this.billing()
     const settings: BillingSettings = await billing.getSettings()
