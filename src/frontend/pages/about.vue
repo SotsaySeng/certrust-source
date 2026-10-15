@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// Operator details and the AGPL source link must stay on this page (legal).
+const { operator, operatorType, address, sourceCodeUrl, upstreamUrl } = LEGAL
+
 const pageDescription = ref('Certrust is built by training providers and education experts. Issue verifiable digital certificates and badges for your courses, workshops and events — and let anyone check they are real.')
 
 useSeoMeta({
@@ -64,7 +67,7 @@ const faqs = [
         </h2>
         <div class="grid md:grid-cols-3 gap-6">
           <div v-for="a in audiences" :key="a.title" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div :class="[a.icon, 'w-8 h-8 text-[#28A745] mb-4']" />
+            <div class="w-8 h-8 text-[#28A745] mb-4" :class="[a.icon]" />
             <h3 class="text-xl font-bold mb-2">
               {{ a.title }}
             </h3>
@@ -128,6 +131,25 @@ const faqs = [
               {{ f.a }}
             </p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who runs Certrust (legal: operator + AGPL source) -->
+    <section class="py-16 bg-gradient-to-b from-[#D9F2DE]/20 to-white" data-testid="about-legal">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-8">
+          Who Runs Certrust
+        </h2>
+        <div class="space-y-4 text-lg text-gray-600 leading-relaxed">
+          <p>
+            Certrust is operated by {{ operator }}, {{ operatorType }} based in {{ address }}. Zettabyte Lab is the platform's technology consultant: it designs, develops, maintains and supports Certrust.
+          </p>
+          <p>
+            Certrust is built on <a :href="upstreamUrl" target="_blank" rel="noopener" class="text-[#1f7a34] underline">Certo</a>, an open-source project by Schrödinger Hat, and stays open source under the GNU AGPL-3.0: the
+            <a :href="sourceCodeUrl" target="_blank" rel="noopener" class="text-[#1f7a34] underline">source code of the version running here</a>
+            is public, so anyone can check how credentials are signed and verified.
+          </p>
         </div>
       </div>
     </section>
