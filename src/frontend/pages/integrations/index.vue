@@ -29,6 +29,7 @@ const useCases = [
 const manuals = [
   { href: '/integrations/google-sheets', icon: 'i-lucide-table', title: 'Google Sheets', level: 'No technical knowledge', body: 'Add a row with a name and an email, and that person is issued a certificate. The link is written back into the sheet.' },
   { href: '/integrations/google-forms', icon: 'i-lucide-clipboard-list', title: 'Google Forms', level: 'No technical knowledge', body: 'Everyone who submits your attendance, completion or registration form receives their certificate.' },
+  { href: '/guide/connect-ai-assistant', icon: 'i-lucide-sparkles', title: 'MCP connection with Claude and ChatGPT', level: 'No technical knowledge', body: 'Ask your AI assistant in plain words to issue, find or check certificates.' },
   { href: '/integrations/student-records', icon: 'i-lucide-graduation-cap', title: 'Universities and colleges', level: 'For your IT team', body: 'Issue from your student records system with a nightly export and a ready-made example script.' },
   { href: '/integrations/guide', icon: 'i-lucide-code', title: 'API guide', level: 'For developers', body: 'Connect any system: API keys, issuing, large groups, safe retries, limits and every endpoint.' },
 ]
@@ -201,7 +202,7 @@ const safety = [
         <p class="text-xl text-text-secondary text-center max-w-2xl mx-auto mb-12">
           Step-by-step manuals, from no technical knowledge at all to a full API.
         </p>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           <NuxtLink
             v-for="m in manuals"
             :key="m.href"

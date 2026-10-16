@@ -1,5 +1,5 @@
-import { addIntegrationsDefaults, addPlatformStatsDefaults, applyCopyRefresh } from '../homepage-seed'
-import { applyPricingRefresh } from '../solution-page-seed'
+import { addIntegrationsDefaults, addPlatformStatsDefaults, applyAiAssistantRefresh, applyCopyRefresh } from '../homepage-seed'
+import { applyConnectionsRefresh, applyPricingRefresh } from '../solution-page-seed'
 import featureItem from '../../components/marketing/feature-item.json'
 import audienceSegment from '../../components/marketing/audience-segment.json'
 
@@ -122,6 +122,7 @@ describe('addIntegrationsDefaults', () => {
     expect(data.integrations.map((i: any) => i.url)).toEqual([
       '/integrations/google-sheets',
       '/integrations/google-forms',
+      '/guide/connect-ai-assistant',
       '/integrations/student-records',
       '/integrations/guide',
     ])
@@ -162,8 +163,71 @@ describe('addIntegrationsDefaults', () => {
     })
     await addIntegrationsDefaults(strapi, EXISTING)
     expect(update.mock.calls[0][0].data).toEqual({
-      integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.',
+      integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, or use an MCP connection with Claude and ChatGPT. Certificates go out without retyping a single name.',
     })
+  })
+})
+
+const FIRST_SUBHEADER = 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.'
+const FIRST_CARDS = [
+  { id: 1, title: 'Google Sheets', url: '/integrations/google-sheets', icon: 'table-cells' },
+  { id: 2, title: 'Google Forms', url: '/integrations/google-forms', icon: 'clipboard-document-list' },
+  { id: 3, title: 'Universities and colleges', url: '/integrations/student-records', icon: 'academic-cap' },
+  { id: 4, title: 'API for any system', url: '/integrations/guide', icon: 'code-bracket', description: 'One request issues a credential. Keys with limited permissions, safe retries and background jobs for large groups.' },
+]
+
+describe('applyAiAssistantRefresh', () => {
+  it('adds the MCP connection card after Google Forms on an unedited install', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', integrationsSubheader: FIRST_SUBHEADER, integrations: FIRST_CARDS })
+    await applyAiAssistantRefresh(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    expect(data.integrations.map((i: any) => i.url)).toEqual([
+      '/integrations/google-sheets',
+      '/integrations/google-forms',
+      '/guide/connect-ai-assistant',
+      '/integrations/student-records',
+      '/integrations/guide',
+    ])
+    expect(data.integrations[2].icon).toBe('sparkles')
+    expect(data.integrations[4].description).toMatch(/MCP server/)
+    expect(data.integrations.some((i: any) => 'id' in i)).toBe(false)
+    expect(data.integrationsSubheader).toMatch(/MCP connection with Claude and ChatGPT/)
+  })
+
+  it('keeps an API card description an admin rewrote', async () => {
+    const cards = FIRST_CARDS.map(c => c.url === '/integrations/guide' ? { ...c, description: 'Ours' } : c)
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', integrationsSubheader: FIRST_SUBHEADER, integrations: cards })
+    await applyAiAssistantRefresh(strapi, EXISTING)
+    expect(update.mock.calls[0][0].data.integrations.at(-1).description).toBe('Ours')
+  })
+
+  it('never runs once the subheader changed (already applied or edited)', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', integrationsSubheader: 'Edited', integrations: FIRST_CARDS })
+    await applyAiAssistantRefresh(strapi, EXISTING)
+    expect(update).not.toHaveBeenCalled()
+  })
+})
+
+describe('applyConnectionsRefresh', () => {
+  const tiers = [
+    { id: 1, tierId: 'event', extraFeature: 'Buy 50 or more' },
+    { id: 2, tierId: 'pro', extraFeature: 'Google Sheets connector and priority email support' },
+    { id: 3, tierId: 'enterprise', extraFeature: 'Integration API and a dedicated account manager' },
+  ]
+
+  it('updates the paid cards still showing the first wording', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', tiers })
+    await applyConnectionsRefresh(strapi, EXISTING)
+    const next = update.mock.calls[0][0].data.tiers
+    expect(next[0]).toEqual({ tierId: 'event', extraFeature: 'Buy 50 or more' })
+    expect(next[1].extraFeature).toMatch(/MCP connection with Claude and ChatGPT/)
+    expect(next[2].extraFeature).toMatch(/dedicated account manager/)
+  })
+
+  it('leaves edited cards alone and does nothing when none match', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', tiers: tiers.map(t => ({ ...t, extraFeature: 'Edited' })) })
+    await applyConnectionsRefresh(strapi, EXISTING)
+    expect(update).not.toHaveBeenCalled()
   })
 })
 

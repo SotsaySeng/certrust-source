@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { IntegrationsContent } from '~/composables/useHomeContent'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   integrations: IntegrationsContent
-}>()
+  eyebrow?: string
+}>(), { eyebrow: '04 — Works with your systems' })
 
 const revealVariants = useRevealMotion()
 // Precomputed once so v-motion gets a referentially stable object across
@@ -12,13 +13,21 @@ const headerMotion = revealVariants(0)
 const itemMotions = props.integrations.items.map((_, index) => revealVariants(index * 80))
 
 const isExternal = (url: string) => /^https?:\/\//.test(url)
+
+// Four cards fill one row of four; any other count uses rows of three, and
+// the overview link fills the gap left in the last row (if there is one)
+// instead of sitting under the grid.
+const count = props.integrations.items.length
+const columns = count % 4 === 0 ? 4 : 3
+const gap = (columns - (count % columns)) % columns
+const linkInGrid = gap > 0 && !!props.integrations.linkLabel
 </script>
 
 <template>
   <section v-if="integrations.items.length" class="mb-24 md:mb-32" data-testid="home-integrations">
     <div v-motion="headerMotion" class="max-w-2xl mb-12">
       <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
-        04 — Works with your systems
+        {{ eyebrow }}
       </p>
       <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-balance">
         {{ integrations.header }}
@@ -27,7 +36,7 @@ const isExternal = (url: string) => /^https?:\/\//.test(url)
         {{ integrations.subheader }}
       </p>
     </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-text-primary/10 border border-text-primary/10 rounded-2xl overflow-hidden">
+    <div class="grid sm:grid-cols-2 gap-px bg-text-primary/10 border border-text-primary/10 rounded-2xl overflow-hidden" :class="columns === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'">
       <NuxtLink
         v-for="(item, index) in integrations.items"
         :key="item.url"
@@ -54,9 +63,21 @@ const isExternal = (url: string) => /^https?:\/\//.test(url)
           <span class="i-heroicons-arrow-right ml-1.5 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
         </span>
       </NuxtLink>
+      <NuxtLink
+        v-if="linkInGrid"
+        to="/integrations"
+        class="group flex flex-col justify-center p-6 md:p-7 bg-secondary/30 hover:bg-secondary/60 transition-colors duration-300"
+        :class="gap === 2 ? 'lg:col-span-2' : ''"
+        data-testid="home-integrations-overview"
+      >
+        <span class="inline-flex items-center text-lg font-bold text-text-primary group-hover:text-primary transition-colors">
+          {{ integrations.linkLabel }}
+          <span class="i-heroicons-arrow-right ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+        </span>
+      </NuxtLink>
     </div>
     <NuxtLink
-      v-if="integrations.linkLabel"
+      v-if="integrations.linkLabel && !linkInGrid"
       to="/integrations"
       class="group mt-8 inline-flex items-center font-medium text-text-primary hover:text-primary transition-colors"
     >

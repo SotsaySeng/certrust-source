@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-10-16T01:01:35.826Z"
+    "x-generation-date": "2026-10-16T04:29:22.715Z"
   },
   "openapi": "3.0.0",
   "x-strapi-config": {
@@ -29658,7 +29658,8 @@
               "briefcase",
               "building-library",
               "calendar-days",
-              "user-group"
+              "user-group",
+              "sparkles"
             ]
           }
         }

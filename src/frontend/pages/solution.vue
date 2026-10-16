@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const pricing = await useSolutionContent()
+// The homepage's "Works with your systems" cards (Sheets, Forms, the MCP
+// connection, the API): what the paid plans connect to.
+const { integrations } = await useHomeContent()
 const pageDescription = ref('Plans and pricing for issuing Open Badges 3.0 and W3C Verifiable Credentials with Certrust.')
 
 useSeoMeta({
@@ -25,6 +28,9 @@ useHead({
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-20">
       <HomePricing :pricing="pricing" />
+      <div class="mt-24">
+        <HomeIntegrations :integrations="integrations" eyebrow="Included in Year-round and Institution-wide" />
+      </div>
     </div>
   </div>
 </template>

@@ -26,10 +26,23 @@
     "icon": {
       "type": "enumeration",
       "enum": [
-        "table-cells", "clipboard-document-list", "academic-cap", "code-bracket",
-        "puzzle-piece", "key", "bolt", "globe-alt", "link", "arrow-path",
-        "cloud-arrow-up", "squares-plus", "briefcase", "building-library",
-        "calendar-days", "user-group"
+        "table-cells",
+        "clipboard-document-list",
+        "academic-cap",
+        "code-bracket",
+        "puzzle-piece",
+        "key",
+        "bolt",
+        "globe-alt",
+        "link",
+        "arrow-path",
+        "cloud-arrow-up",
+        "squares-plus",
+        "briefcase",
+        "building-library",
+        "calendar-days",
+        "user-group",
+        "sparkles"
       ],
       "required": true,
       "description": "Heroicons name, rendered via BaseIcon.vue (collection='heroicons'). An enum, like audience-segment's, so an icon that doesn't exist can't be typed."

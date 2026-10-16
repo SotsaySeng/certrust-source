@@ -198,6 +198,7 @@ export interface MarketingIntegrationItem extends Struct.ComponentSchema {
         'building-library',
         'calendar-days',
         'user-group',
+        'sparkles',
       ]
     > &
       Schema.Attribute.Required;

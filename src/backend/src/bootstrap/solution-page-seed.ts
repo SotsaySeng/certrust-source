@@ -13,6 +13,15 @@
  * Settings and the real prices in Stripe, so edit these in the Content
  * Manager when either changes.
  */
+// What paid plans add over pay-per-certificate: the API, Google Sheets and
+// Forms and the MCP connection all need API access (Pro and Enterprise).
+const PRO_EXTRA_FEATURE = 'Google Sheets, Google Forms, the API and an MCP connection with Claude and ChatGPT. Priority email support';
+const ENTERPRISE_EXTRA_FEATURE = 'All Year-round connections, plus a dedicated account manager';
+// The cards' extra lines before that; an install still showing them gets
+// applyConnectionsRefresh().
+const FIRST_PRO_EXTRA_FEATURE = 'Google Sheets connector and priority email support';
+const FIRST_ENTERPRISE_EXTRA_FEATURE = 'Integration API and a dedicated account manager';
+
 const pricingCopy = () => ({
   header: 'Pay for the certificates you send',
   subheader: 'Your first 50 are free. After that, buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.',
@@ -46,7 +55,7 @@ const pricingCopy = () => ({
       credentialsLimit: '1,000',
       designTemplatesLimit: '50',
       achievementsLimit: '1,000',
-      extraFeature: 'Google Sheets connector and priority email support',
+      extraFeature: PRO_EXTRA_FEATURE,
       ctaLabel: 'Start free',
       ctaHref: '/register',
       highlighted: false,
@@ -60,7 +69,7 @@ const pricingCopy = () => ({
       credentialsLimit: 'Unlimited',
       designTemplatesLimit: 'Unlimited',
       achievementsLimit: 'Unlimited',
-      extraFeature: 'Integration API and a dedicated account manager',
+      extraFeature: ENTERPRISE_EXTRA_FEATURE,
       ctaLabel: 'Start free',
       ctaHref: '/register',
       highlighted: false,
@@ -87,12 +96,44 @@ export async function applyPricingRefresh(strapi: any, existing: any): Promise<v
   strapi.log.info('[Seed] Solution page: replaced the first pricing copy with the current one.');
 }
 
+/**
+ * Updates the Year-round and Institution-wide cards' extra line on an
+ * install that still shows the first wording (Enterprise looked like the
+ * only plan with the API, which Pro has too). A card whose line was edited
+ * in the Content Manager is left alone, and once updated this never
+ * matches again.
+ */
+export async function applyConnectionsRefresh(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::solution-page.solution-page').findFirst({ populate: { tiers: true } } as any);
+  const tiers: any[] = full?.tiers ?? [];
+  const replace: Record<string, [string, string]> = {
+    pro: [FIRST_PRO_EXTRA_FEATURE, PRO_EXTRA_FEATURE],
+    enterprise: [FIRST_ENTERPRISE_EXTRA_FEATURE, ENTERPRISE_EXTRA_FEATURE],
+  };
+  let changed = false;
+  const next = tiers.map(({ id, ...tier }) => {
+    const rule = replace[tier.tierId];
+    if (rule && tier.extraFeature === rule[0]) {
+      changed = true;
+      return { ...tier, extraFeature: rule[1] };
+    }
+    return tier;
+  });
+  if (!changed) return;
+  await strapi.documents('api::solution-page.solution-page').update({
+    documentId: existing.documentId,
+    data: { tiers: next },
+  } as any);
+  strapi.log.info('[Seed] Solution page: plan cards now list Sheets, Forms, the API and the MCP connection.');
+}
+
 export async function seedSolutionPage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::solution-page.solution-page').findFirst();
 
     if (existing) {
       await applyPricingRefresh(strapi, existing);
+      await applyConnectionsRefresh(strapi, existing);
       strapi.log.info('[Seed] Solution page already seeded, skipping...');
       return;
     }

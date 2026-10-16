@@ -78,6 +78,20 @@ export async function addPlatformStatsDefaults(strapi: any, existing: any): Prom
   strapi.log.info(`[Seed] Homepage: added platform-stats defaults (${Object.keys(patch).join(', ')}).`);
 }
 
+// Integrations copy before the MCP connection was added; still on an
+// install means it was never edited, so applyAiAssistantRefresh() may update it.
+const FIRST_INTEGRATIONS_SUBHEADER = 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.';
+const FIRST_API_CARD_DESCRIPTION = 'One request issues a credential. Keys with limited permissions, safe retries and background jobs for large groups.';
+const AI_SUBHEADER = 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, or use an MCP connection with Claude and ChatGPT. Certificates go out without retyping a single name.';
+const API_CARD_DESCRIPTION = 'One request issues a credential. Keys with limited permissions, safe retries, background jobs for large groups, and an MCP server for your own AI agents.';
+const AI_ASSISTANT_CARD = {
+  title: 'MCP connection with Claude and ChatGPT',
+  tag: 'No technical knowledge',
+  description: 'Ask your AI assistant in plain words: issue the workshop certificates, find who received a badge, check a certificate.',
+  icon: 'sparkles',
+  url: '/guide/connect-ai-assistant',
+} as const;
+
 /**
  * Defaults for the "Works with your systems" section: the integration
  * manuals under /integrations. Written into a fresh install by the create()
@@ -87,7 +101,7 @@ export async function addPlatformStatsDefaults(strapi: any, existing: any): Prom
 const INTEGRATIONS_DEFAULTS = {
   integrationsEnabled: true,
   integrationsHeader: 'Issue from the tools you already use',
-  integrationsSubheader: 'Keep your records where they are. Connect a spreadsheet, a form or your student records system, and certificates go out on their own.',
+  integrationsSubheader: AI_SUBHEADER,
   integrationsLinkLabel: 'See how integrations work',
   integrations: [
     {
@@ -104,6 +118,7 @@ const INTEGRATIONS_DEFAULTS = {
       icon: 'clipboard-document-list',
       url: '/integrations/google-forms',
     },
+    { ...AI_ASSISTANT_CARD },
     {
       title: 'Universities and colleges',
       tag: 'For your IT team',
@@ -114,7 +129,7 @@ const INTEGRATIONS_DEFAULTS = {
     {
       title: 'API for any system',
       tag: 'For developers',
-      description: 'One request issues a credential. Keys with limited permissions, safe retries and background jobs for large groups.',
+      description: API_CARD_DESCRIPTION,
       icon: 'code-bracket',
       url: '/integrations/guide',
     },
@@ -155,6 +170,36 @@ export async function addIntegrationsDefaults(strapi: any, existing: any): Promi
     data: patch,
   } as any);
   strapi.log.info(`[Seed] Homepage: added integrations defaults (${Object.keys(patch).join(', ')}).`);
+}
+
+/**
+ * Adds the MCP connection card (after Google Forms) and the matching copy to
+ * an install that still has the first integrations subheader. That text is
+ * the test: once it differs (this ran, or an admin rewrote it) nothing here
+ * runs again, so later Content Manager edits are kept. The API card's text
+ * is only replaced while it is also unedited.
+ */
+export async function applyAiAssistantRefresh(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::homepage.homepage').findFirst({ populate: { integrations: true } } as any);
+  if (!full || full.integrationsSubheader !== FIRST_INTEGRATIONS_SUBHEADER) return;
+
+  const strip = ({ id, ...item }: any) => item;
+  const items: any[] = (full.integrations ?? []).map(strip);
+  if (!items.some(item => item.url === AI_ASSISTANT_CARD.url)) {
+    const forms = items.findIndex(item => item.url === '/integrations/google-forms');
+    items.splice(forms >= 0 ? forms + 1 : items.length, 0, { ...AI_ASSISTANT_CARD });
+  }
+  for (const item of items) {
+    if (item.url === '/integrations/guide' && item.description === FIRST_API_CARD_DESCRIPTION) {
+      item.description = API_CARD_DESCRIPTION;
+    }
+  }
+
+  await strapi.documents('api::homepage.homepage').update({
+    documentId: existing.documentId,
+    data: { integrationsSubheader: AI_SUBHEADER, integrations: items },
+  } as any);
+  strapi.log.info('[Seed] Homepage: added the MCP connection integration.');
 }
 
 /**
@@ -312,6 +357,7 @@ export async function seedHomepage(strapi: any): Promise<void> {
       // seeded still need back-filling on every existing install.
       await addPlatformStatsDefaults(strapi, existing);
       await addIntegrationsDefaults(strapi, existing);
+      await applyAiAssistantRefresh(strapi, existing);
       await applyCopyRefresh(strapi, existing);
       strapi.log.info('[Seed] Homepage already seeded, skipping...');
       return;
