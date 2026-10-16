@@ -83,6 +83,21 @@ export interface ApiKeyInfo {
   expiresAt: string | null
   revokedAt: string | null
   createdBy: { username: string, email: string } | null
+  /** 'oauth' = an AI app connected through "Connect Certrust" (its access token rotates hourly). */
+  kind?: 'key' | 'oauth'
+  /** OAuth connections end if the app doesn't refresh before this. */
+  connectionExpiresAt?: string | null
+}
+
+export interface OAuthConsentInfo {
+  clientName: string
+  /** Where the browser goes back to: the real identity of the app. */
+  redirectHost: string
+  requestedScopes: ApiKeyScope[]
+  /** Set when the request was already invalid: send the browser straight there. */
+  errorRedirect: string | null
+  organization: { name: string } | null
+  apiAccess: boolean
 }
 
 export class ApiClient {
@@ -977,6 +992,18 @@ export class ApiClient {
 
   async revokeApiKey(documentId: string) {
     return this.post<{ data: { revoked: boolean } }>(`/api/api-keys/${encodeURIComponent(documentId)}/revoke`, {})
+  }
+
+  // ---- Connecting AI apps (OAuth consent, api::oauth-client) ----
+
+  /** What an app asking to connect is, for the consent screen. `params` = the /oauth/authorize query. */
+  async getOAuthConsent(params: Record<string, string>) {
+    return (await this.get<{ data: OAuthConsentInfo }>(`/api/oauth/consent?${new URLSearchParams(params)}`)).data
+  }
+
+  /** The member's decision; returns where to send the browser back to. */
+  async decideOAuthConsent(params: Record<string, string>, approve: boolean, scopes: ApiKeyScope[] = []) {
+    return (await this.post<{ data: { redirect: string } }>('/api/oauth/consent', { params, approve, scopes })).data
   }
 
   // ---- Billing (api::billing) ----

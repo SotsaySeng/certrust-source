@@ -14,55 +14,17 @@ export default defineEventHandler((event) => {
 
 ## Overview
 
-Certrust is an open-source platform for issuing and verifying Open Badges 3.0 and W3C Verifiable Credentials.
+Certrust issues and verifies Open Badges 3.0 / W3C Verifiable Credentials for organizations.
+The API lives at \`${api}/api\`. Verifying a credential (\`GET /api/credentials/:id/verify\`) needs no authentication; everything an organization does needs a token.
 
-The API lives at \`${api}/api\`.
-Public endpoints (e.g. \`GET /api/credentials/:id/verify\`) require no authentication.
-Write endpoints require a Bearer token.
+## AI assistants (MCP)
 
-## Getting an API Token
+Certrust's MCP server is at \`${api}/mcp\` (Streamable HTTP).
 
-1. Log in to the Certrust admin panel at \`${api}/admin\`
-2. Go to **Settings → API Tokens**
-3. Click **Create new API Token**
-4. Choose a name, expiry, and permission level (\`Full access\` or \`Custom\`)
-5. Copy the token — it is shown only once
+- **OAuth (recommended for assistants people use, e.g. Claude, ChatGPT):** the server answers an unauthenticated request with \`401\` and \`WWW-Authenticate: Bearer resource_metadata="${api}/.well-known/oauth-protected-resource/mcp"\`. Register with dynamic client registration (\`POST ${api}/oauth/register\`), then use the authorization code flow with PKCE (S256). A member of the organization approves the connection and picks its permissions. Access tokens last one hour; refresh tokens rotate.
+- **API key:** send an organization API key as \`Authorization: Bearer crt_...\`.
 
-## Authentication
-
-Pass the token in the \`Authorization\` header:
-
-\`\`\`
-Authorization: Bearer YOUR_API_TOKEN
-\`\`\`
-
-## Token Endpoint (programmatic login)
-
-Alternatively, obtain a short-lived JWT by posting user credentials:
-
-\`\`\`
-POST ${api}/api/auth/local
-Content-Type: application/json
-
-{ "identifier": "user@example.com", "password": "your-password" }
-\`\`\`
-
-Response includes \`jwt\` (use as Bearer token) and \`user\` details.
-
-## Scopes
-
-Certrust uses Strapi role-based permissions. Common roles:
-
-| Role | Can do |
-|---|---|
-| **Issuer** | issue, revoke, renew credentials; manage achievements |
-| **Authenticated** | read credentials and achievements |
-| **Public** | verify credentials (no token needed) |
-
-## MCP Server
-
-For AI agents, use the \`@certrust/mcp\` MCP server instead of raw API calls.
-See: \`${site}/.well-known/mcp/server-card.json\`
+Local stdio apps can use the \`@certrust/mcp\` bridge:
 
 \`\`\`json
 {
@@ -70,22 +32,27 @@ See: \`${site}/.well-known/mcp/server-card.json\`
     "certrust": {
       "command": "npx",
       "args": ["-y", "@certrust/mcp"],
-      "env": {
-        "CERTRUST_API_URL": "${api}",
-        "CERTRUST_API_TOKEN": "YOUR_API_TOKEN"
-      }
+      "env": { "CERTRUST_API_KEY": "crt_..." }
     }
   }
 }
 \`\`\`
 
+## API keys (integrations)
+
+1. Sign in at \`${site}\` and open **Manage > API keys** (Pro and Enterprise plans).
+2. Create a key with only the permissions it needs: \`read\`, \`issue\`, \`revoke\`, \`manage\`.
+3. Send it as \`Authorization: Bearer crt_...\`. It is shown once.
+
+A key acts as the member who created it, is limited to 120 requests a minute, and supports \`Idempotency-Key\` on writes.
+
 ## Resources
 
-- OAuth Protected Resource Metadata: \`${site}/.well-known/oauth-protected-resource\`
-- OAuth AS Metadata: \`${site}/.well-known/oauth-authorization-server\`
+- Setup guide: \`${site}/integrations/guide\`
+- OAuth Protected Resource Metadata: \`${api}/.well-known/oauth-protected-resource/mcp\`
+- OAuth Authorization Server Metadata: \`${api}/.well-known/oauth-authorization-server\`
+- MCP Server Card: \`${site}/.well-known/mcp/server-card.json\`
 - API Catalog: \`${site}/.well-known/api-catalog\`
 - Agent Skills: \`${site}/.well-known/agent-skills/index.json\`
-- MCP Server Card: \`${site}/.well-known/mcp/server-card.json\`
-- API documentation (Swagger UI): \`${api}/documentation\`
 `
 })

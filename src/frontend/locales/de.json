@@ -25,7 +25,8 @@
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",
       "studentRecords": "Universitäten und Hochschulen",
-      "apiGuide": "API-Anleitung"
+      "apiGuide": "API-Anleitung",
+      "aiAssistant": "KI-Assistenten verbinden"
     }
   },
   "common": {
@@ -1161,13 +1162,34 @@
       "title": "„{name}“ widerrufen?",
       "body": "Alles, was diesen Schlüssel nutzt, funktioniert sofort nicht mehr. Das kann nicht rückgängig gemacht werden.",
       "confirm": "Schlüssel widerrufen",
-      "error": "Der Schlüssel konnte nicht widerrufen werden. Bitte versuchen Sie es erneut."
+      "error": "Der Schlüssel konnte nicht widerrufen werden. Bitte versuchen Sie es erneut.",
+      "disconnect": "Trennen"
     },
     "usage": {
       "title": "Einen Schlüssel verwenden",
       "body": "Senden Sie den Schlüssel als Bearer-Token. Zum Beispiel, um einen Nachweis auszustellen:",
       "idempotency": "Fügen Sie einen Idempotency-Key-Header hinzu (ein beliebiger eindeutiger Wert, etwa Studierenden- und Kurs-ID), dann stellt eine wiederholte Anfrage nie doppelt aus: Certrust gibt das erste Ergebnis zurück."
     },
-    "guideLink": "Einrichtungsanleitung lesen (auf Englisch)"
+    "guideLink": "Einrichtungsanleitung lesen (auf Englisch)",
+    "connectedApp": "Verbundene App",
+    "aiGuideLink": "Stattdessen Claude oder ChatGPT verbinden"
+  },
+  "oauth": {
+    "title": "App verbinden",
+    "heading": "{app} mit Certrust verbinden",
+    "returnsTo": "Danach geht es zurück zu {host}",
+    "intro": "{app} möchte mit {org} arbeiten. Wähle, was die App tun darf:",
+    "permissions": "Berechtigungen",
+    "actsAs": "Die App handelt in deinem Namen und kann nur tun, was du in deiner Organisation tun kannst.",
+    "emails": "Beim Ausstellen werden echte E-Mails an Empfänger gesendet und dein Kontingent genutzt.",
+    "disconnect": "Du kannst die Verbindung jederzeit unter Verwalten > API-Schlüssel trennen.",
+    "approve": "{app} erlauben",
+    "deny": "Abbrechen",
+    "backToApp": "Zurück zur App",
+    "notInPlan": "Das Verbinden von KI-Apps ist in den Tarifen Pro und Enterprise enthalten.",
+    "noOrganization": "Du musst einer Organisation angehören, um eine App zu verbinden.",
+    "errorTitle": "Die Verbindung konnte nicht gestartet werden",
+    "loadError": "Die Verbindungsanfrage konnte nicht geladen werden. Bitte starte sie erneut in der App.",
+    "submitError": "Die Verbindung konnte nicht abgeschlossen werden. Bitte versuche es erneut."
   }
 }

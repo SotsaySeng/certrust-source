@@ -45,11 +45,11 @@ const steps = [
       data-testid="guide-video"
     />
 
-    <nav class="mt-8 rounded-xl border border-gray-100 bg-gray-50 p-5" aria-label="Steps">
+    <nav class="steps mt-8 rounded-xl border border-gray-100 bg-gray-50 p-5" aria-label="Steps">
       <p class="font-semibold text-gray-900">
         Steps
       </p>
-      <ol class="mt-2 grid gap-x-6 sm:grid-cols-2">
+      <ol class="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2" style="list-style: none; padding-left: 0">
         <li v-for="(s, i) in steps" :key="s.id">
           <a :href="`#${s.id}`" class="text-[#1f7a34] hover:underline">{{ i + 1 }}. {{ s.title }}</a>
         </li>
@@ -182,6 +182,10 @@ const steps = [
 /* Step links jump here; keep the heading clear of the sticky header. */
 section {
   scroll-margin-top: 6rem;
+}
+/* The step list is a grid: no stacked-list spacing between items. */
+nav.steps li + li {
+  margin-top: 0;
 }
 section img {
   margin-top: 1rem;

@@ -51,6 +51,28 @@
     },
     "revokedAt": {
       "type": "datetime"
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "key",
+        "oauth"
+      ],
+      "default": "key",
+      "description": "'oauth' = an app connected through OAuth (Connect in Claude etc.); its access token rotates hourly, expiresAt is that token's expiry"
+    },
+    "oauthClient": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::oauth-client.oauth-client"
+    },
+    "refreshTokenHash": {
+      "type": "string",
+      "private": true
+    },
+    "refreshExpiresAt": {
+      "type": "datetime",
+      "description": "OAuth connections end when this passes without a refresh"
     }
   }
 }

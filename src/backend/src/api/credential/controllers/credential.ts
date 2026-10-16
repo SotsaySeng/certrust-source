@@ -274,9 +274,10 @@ export default factories.createCoreController('api::credential.credential', ({ s
         return ctx.badRequest('newExpirationDate must be a valid future date')
       }
 
+      // issue() needs the achievement's creator (the new credential's issuer).
       const existing: any = await strapi.entityService.findOne('api::credential.credential', id, {
-        populate: ['achievement', 'issuer', 'recipient'],
-      })
+        populate: { achievement: { populate: { creator: { populate: ['organization'] } } }, issuer: true, recipient: true },
+      } as any)
       if (!existing) {
         return ctx.notFound('Credential not found')
       }
@@ -307,7 +308,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
         entityType: 'credential',
         entityId: String(id),
         actorId: ctx.state.user?.id,
-        metadata: { newCredentialId: newCredential?.credentialId, newExpirationDate },
+        metadata: { newCredentialId: newCredential?.credential?.credentialId, newExpirationDate },
       })
 
       return { success: true, credential: newCredential }

@@ -54,7 +54,9 @@ function status(key: ApiKeyInfo): 'active' | 'revoked' | 'expired' | 'paused' {
   if (key.revokedAt) {
     return 'revoked'
   }
-  if (key.expiresAt && new Date(key.expiresAt).getTime() <= Date.now()) {
+  // A connected app's own token rotates hourly; the connection ends when it stops refreshing.
+  const expiry = key.kind === 'oauth' ? key.connectionExpiresAt : key.expiresAt
+  if (expiry && new Date(expiry).getTime() <= Date.now()) {
     return 'expired'
   }
   return apiAccess.value ? 'active' : 'paused'
@@ -163,6 +165,10 @@ onMounted(loadKeys)
         <NuxtLink to="/integrations/guide" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-[#1f7a34] hover:underline" data-testid="api-keys-guide-link">
           <div class="i-heroicons-book-open w-4 h-4" />
           {{ t('apiKeys.guideLink') }}
+        </NuxtLink>
+        <NuxtLink to="/guide/connect-ai-assistant" class="mt-3 ml-4 inline-flex items-center gap-1 text-sm font-medium text-[#1f7a34] hover:underline" data-testid="api-keys-ai-guide-link">
+          <div class="i-heroicons-sparkles w-4 h-4" />
+          {{ t('apiKeys.aiGuideLink') }}
         </NuxtLink>
       </div>
 
@@ -273,8 +279,12 @@ onMounted(loadKeys)
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="font-medium text-text-primary">{{ key.name }}</span>
                   <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium" :class="STATUS_CLASS[status(key)]">{{ t(`apiKeys.status.${status(key)}`) }}</span>
+                  <span v-if="key.kind === 'oauth'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800" data-testid="api-key-connected-app">
+                    <div class="i-heroicons-sparkles w-3 h-3" />
+                    {{ t('apiKeys.connectedApp') }}
+                  </span>
                 </div>
-                <div class="mt-1 text-sm text-text-secondary font-mono">
+                <div v-if="key.kind !== 'oauth'" class="mt-1 text-sm text-text-secondary font-mono">
                   {{ key.prefix }}…
                 </div>
                 <div class="mt-2 flex flex-wrap gap-1">
@@ -283,7 +293,7 @@ onMounted(loadKeys)
                 <div class="mt-2 text-xs text-text-secondary">
                   {{ t('apiKeys.meta.created', { date: formatDate(key.createdAt), by: key.createdBy?.username || '—' }) }}
                   · {{ key.lastUsedAt ? t('apiKeys.meta.lastUsed', { date: formatDate(key.lastUsedAt) }) : t('apiKeys.meta.neverUsed') }}
-                  <template v-if="key.expiresAt">
+                  <template v-if="key.kind !== 'oauth' && key.expiresAt">
                     · {{ t('apiKeys.meta.expires', { date: formatDate(key.expiresAt) }) }}
                   </template>
                 </div>
@@ -294,7 +304,7 @@ onMounted(loadKeys)
                 class="self-start sm:self-center text-sm font-medium text-red-600 hover:text-red-800"
                 @click="keyPendingRevoke = key; revokeError = null"
               >
-                {{ t('apiKeys.revoke.action') }}
+                {{ key.kind === 'oauth' ? t('apiKeys.revoke.disconnect') : t('apiKeys.revoke.action') }}
               </button>
             </li>
           </ul>

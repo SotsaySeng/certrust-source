@@ -4,6 +4,12 @@ import { apiClient } from '~/api/api-client'
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+// Where to go after signing in: ?redirect=/some/path (same-site paths only,
+// so the link can't send people off to another site).
+const afterLogin = computed(() => {
+  const r = route.query.redirect
+  return typeof r === 'string' && r.startsWith('/') && !r.startsWith('//') && !r.startsWith('/\\') ? r : '/dashboard'
+})
 const email = ref('')
 const password = ref('')
 const authStore = ref(null)
@@ -68,7 +74,7 @@ async function handleSubmit() {
       const success = await authStore.value.login(email.value, password.value)
 
       if (success) {
-        router.push('/dashboard')
+        router.push(afterLogin.value)
       }
       else {
         authError.value = authStore.value.error
@@ -117,7 +123,7 @@ onMounted(() => {
 
       // If user is already authenticated, redirect to dashboard
       if (authStore.value.isAuthenticated) {
-        router.push('/dashboard')
+        router.push(afterLogin.value)
       }
     }
     catch (error) {

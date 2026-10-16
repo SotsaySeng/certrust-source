@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "oauth_clients",
+  "info": {
+    "singularName": "oauth-client",
+    "pluralName": "oauth-clients",
+    "displayName": "OAuth Client",
+    "description": "Apps (e.g. Claude, ChatGPT) registered through OAuth dynamic client registration so organizations can connect them to Certrust. Connections themselves are API keys with kind 'oauth'."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "clientId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "clientName": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "redirectUris": {
+      "type": "json",
+      "required": true
+    },
+    "secretHash": {
+      "type": "string",
+      "private": true,
+      "description": "SHA-256 of the client secret; empty for public clients (token_endpoint_auth_method none)"
+    },
+    "tokenEndpointAuthMethod": {
+      "type": "enumeration",
+      "enum": ["none", "client_secret_post", "client_secret_basic"],
+      "default": "none"
+    }
+  }
+}

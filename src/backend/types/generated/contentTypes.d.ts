@@ -449,6 +449,8 @@ export interface ApiApiKeyApiKey extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.Private &
       Schema.Attribute.Unique;
+    kind: Schema.Attribute.Enumeration<['key', 'oauth']> &
+      Schema.Attribute.DefaultTo<'key'>;
     lastUsedAt: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -461,12 +463,18 @@ export interface ApiApiKeyApiKey extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 80;
       }>;
+    oauthClient: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::oauth-client.oauth-client'
+    >;
     organization: Schema.Attribute.Relation<
       'manyToOne',
       'api::organization.organization'
     >;
     prefix: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    refreshExpiresAt: Schema.Attribute.DateTime;
+    refreshTokenHash: Schema.Attribute.String & Schema.Attribute.Private;
     revokedAt: Schema.Attribute.DateTime;
     scopes: Schema.Attribute.JSON & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -1243,6 +1251,47 @@ export interface ApiIssuerKeyIssuerKey extends Struct.CollectionTypeSchema {
     profile: Schema.Attribute.Relation<'oneToOne', 'api::profile.profile'>;
     publicKeyJwk: Schema.Attribute.JSON & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiOauthClientOauthClient extends Struct.CollectionTypeSchema {
+  collectionName: 'oauth_clients';
+  info: {
+    description: "Apps (e.g. Claude, ChatGPT) registered through OAuth dynamic client registration so organizations can connect them to Certrust. Connections themselves are API keys with kind 'oauth'.";
+    displayName: 'OAuth Client';
+    pluralName: 'oauth-clients';
+    singularName: 'oauth-client';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    clientId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    clientName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 120;
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::oauth-client.oauth-client'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    redirectUris: Schema.Attribute.JSON & Schema.Attribute.Required;
+    secretHash: Schema.Attribute.String & Schema.Attribute.Private;
+    tokenEndpointAuthMethod: Schema.Attribute.Enumeration<
+      ['none', 'client_secret_post', 'client_secret_basic']
+    > &
+      Schema.Attribute.DefaultTo<'none'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2259,6 +2308,7 @@ declare module '@strapi/strapi' {
       'api::idempotency-record.idempotency-record': ApiIdempotencyRecordIdempotencyRecord;
       'api::issuance-job.issuance-job': ApiIssuanceJobIssuanceJob;
       'api::issuer-key.issuer-key': ApiIssuerKeyIssuerKey;
+      'api::oauth-client.oauth-client': ApiOauthClientOauthClient;
       'api::org-type.org-type': ApiOrgTypeOrgType;
       'api::organization.organization': ApiOrganizationOrganization;
       'api::payment.payment': ApiPaymentPayment;

@@ -25,7 +25,8 @@
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",
       "studentRecords": "Universités et écoles",
-      "apiGuide": "Guide de l'API"
+      "apiGuide": "Guide de l'API",
+      "aiAssistant": "Connecter un assistant IA"
     }
   },
   "common": {
@@ -1161,13 +1162,34 @@
       "title": "Révoquer « {name} » ?",
       "body": "Tout ce qui utilise cette clé cesse immédiatement de fonctionner. Cette action est irréversible.",
       "confirm": "Révoquer la clé",
-      "error": "Impossible de révoquer la clé. Veuillez réessayer."
+      "error": "Impossible de révoquer la clé. Veuillez réessayer.",
+      "disconnect": "Déconnecter"
     },
     "usage": {
       "title": "Utiliser une clé",
       "body": "Envoyez la clé comme jeton Bearer. Par exemple, pour délivrer un certificat :",
       "idempotency": "Ajoutez un en-tête Idempotency-Key (n'importe quelle valeur unique, comme l'identifiant de l'étudiant et du cours) et une requête répétée ne délivre jamais deux fois : Certrust renvoie le premier résultat."
     },
-    "guideLink": "Lire le guide de configuration (en anglais)"
+    "guideLink": "Lire le guide de configuration (en anglais)",
+    "connectedApp": "App connectée",
+    "aiGuideLink": "Connecter plutôt Claude ou ChatGPT"
+  },
+  "oauth": {
+    "title": "Connecter une app",
+    "heading": "Connecter {app} à Certrust",
+    "returnsTo": "Vous serez renvoyé vers {host}",
+    "intro": "{app} souhaite travailler avec {org}. Choisissez ce qu’elle peut faire :",
+    "permissions": "Autorisations",
+    "actsAs": "Elle agit en votre nom et ne peut faire que ce que vous pouvez faire dans votre organisation.",
+    "emails": "L’émission envoie de vrais e-mails aux destinataires et utilise votre quota de certificats.",
+    "disconnect": "Vous pouvez la déconnecter à tout moment dans Gérer > Clés API.",
+    "approve": "Autoriser {app}",
+    "deny": "Annuler",
+    "backToApp": "Retour à l’app",
+    "notInPlan": "La connexion d’apps d’IA est incluse dans les offres Pro et Enterprise.",
+    "noOrganization": "Vous devez appartenir à une organisation pour connecter une app.",
+    "errorTitle": "La connexion n’a pas pu démarrer",
+    "loadError": "Impossible de charger la demande de connexion. Réessayez depuis l’app.",
+    "submitError": "Impossible de finaliser la connexion. Veuillez réessayer."
   }
 }

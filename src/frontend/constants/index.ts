@@ -36,6 +36,7 @@ export const MANAGE_MENU_LINKS = [
 // (Header.vue). No sign-in needed for any of them.
 export const DEVELOPERS_MENU_LINKS = [
   { href: '/guide/issue-your-first-certificate', i18nKey: 'nav.dev.gettingStarted', icon: 'i-heroicons-book-open' },
+  { href: '/guide/connect-ai-assistant', i18nKey: 'nav.dev.aiAssistant', icon: 'i-heroicons-sparkles' },
   { href: '/integrations', i18nKey: 'nav.dev.overview', icon: 'i-heroicons-puzzle-piece' },
   { href: '/integrations/google-sheets', i18nKey: 'nav.dev.googleSheets', icon: 'i-heroicons-table-cells' },
   { href: '/integrations/google-forms', i18nKey: 'nav.dev.googleForms', icon: 'i-heroicons-clipboard-document-list' },

@@ -31,7 +31,7 @@ No authentication required. `{id}` is the credential URN (`urn:uuid:...`) or num
 
 ## MCP Tool
 
-`verify_credential` — available via `@certrust/mcp`
+`verify_credential` — on the Certrust MCP server (`https://api.certrust.app/mcp`, or the `@certrust/mcp` stdio bridge)
 
 ```json
 { "credential_id": "urn:uuid:abc-123" }

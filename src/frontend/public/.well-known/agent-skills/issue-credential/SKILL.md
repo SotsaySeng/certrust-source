@@ -31,7 +31,7 @@ Content-Type: application/json
 
 ## MCP Tool
 
-`issue_credential` — available via `@certrust/mcp`
+`issue_credential` — on the Certrust MCP server (`https://api.certrust.app/mcp`, or the `@certrust/mcp` stdio bridge)
 
 ```json
 {

@@ -127,6 +127,9 @@ export default defineNuxtConfig({
     '/credentials/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // Design Studio: signed-in, canvas-heavy editor - render in the browser only.
     '/design-templates/**': { ssr: false },
+    // "Connect an app" consent screen: never inside another site's frame,
+    // so nobody can trick a member into clicking Allow (clickjacking).
+    '/oauth/**': { headers: { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': 'frame-ancestors \'none\'', 'X-Robots-Tag': 'noindex' } },
   },
   runtimeConfig: {
     public: {

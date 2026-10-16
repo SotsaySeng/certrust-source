@@ -25,7 +25,8 @@
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",
       "studentRecords": "Universidades e escolas",
-      "apiGuide": "Guia da API"
+      "apiGuide": "Guia da API",
+      "aiAssistant": "Conectar um assistente de IA"
     }
   },
   "common": {
@@ -1161,13 +1162,34 @@
       "title": "Revogar \"{name}\"?",
       "body": "Tudo o que usa esta chave deixa de funcionar imediatamente. Esta ação não pode ser anulada.",
       "confirm": "Revogar chave",
-      "error": "Não foi possível revogar a chave. Tente novamente."
+      "error": "Não foi possível revogar a chave. Tente novamente.",
+      "disconnect": "Desconectar"
     },
     "usage": {
       "title": "Usar uma chave",
       "body": "Envie a chave como token Bearer. Por exemplo, para emitir uma credencial:",
       "idempotency": "Adicione um cabeçalho Idempotency-Key (qualquer valor único, como o ID do aluno e do curso) e um pedido repetido nunca emite duas vezes: o Certrust devolve o primeiro resultado."
     },
-    "guideLink": "Ler o guia de configuração (em inglês)"
+    "guideLink": "Ler o guia de configuração (em inglês)",
+    "connectedApp": "App conectado",
+    "aiGuideLink": "Conectar o Claude ou o ChatGPT"
+  },
+  "oauth": {
+    "title": "Conectar um app",
+    "heading": "Conectar {app} ao Certrust",
+    "returnsTo": "Você voltará para {host}",
+    "intro": "{app} quer trabalhar com {org}. Escolha o que ele pode fazer:",
+    "permissions": "Permissões",
+    "actsAs": "Ele age como você, então só pode fazer o que você pode fazer na sua organização.",
+    "emails": "Emitir envia e-mails reais aos destinatários e usa sua cota de credenciais.",
+    "disconnect": "Você pode desconectá-lo a qualquer momento em Gerenciar > Chaves de API.",
+    "approve": "Permitir {app}",
+    "deny": "Cancelar",
+    "backToApp": "Voltar ao app",
+    "notInPlan": "Conectar apps de IA está incluído nos planos Pro e Enterprise.",
+    "noOrganization": "Você precisa pertencer a uma organização para conectar um app.",
+    "errorTitle": "Não foi possível iniciar a conexão",
+    "loadError": "Não foi possível carregar o pedido de conexão. Tente novamente pelo app.",
+    "submitError": "Não foi possível concluir a conexão. Tente novamente."
   }
 }

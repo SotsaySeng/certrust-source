@@ -1,117 +1,89 @@
 # @certrust/mcp
 
-MCP server for the [Certrust](https://github.com/Schroedinger-Hat/certo) credential platform.
+Connect AI assistants to [Certrust](https://certrust.app): issue, verify and manage Open Badges 3.0 / Verifiable Credentials in plain language.
 
-Lets AI assistants (Claude Desktop, Cursor, GitHub Copilot, etc.) issue, verify, and manage
-Open Badges 3.0 / Verifiable Credentials via natural language.
+Certrust's MCP server is **remote**: `https://api.certrust.app/mcp` (Streamable HTTP). This package is a small stdio bridge to it, for apps that only run MCP servers locally from a settings file. If your app can add a remote server, use the URL directly and skip this package.
+
+## Connect
+
+### Claude, ChatGPT and other assistants (OAuth)
+
+Add a custom connector with the URL `https://api.certrust.app/mcp` and choose **Connect**. A member of your organization signs in to Certrust, picks what the assistant may do, and approves. No key to copy. The connection shows under **Manage > API keys** as a *Connected app*, where it can be disconnected.
+
+### Claude Code
+
+```bash
+claude mcp add --transport http certrust https://api.certrust.app/mcp
+```
+
+### Claude Desktop, Cursor, VS Code (this package)
+
+Create an API key in Certrust under **Manage > API keys** with only the permissions the assistant needs, then:
+
+```json
+{
+  "mcpServers": {
+    "certrust": {
+      "command": "npx",
+      "args": ["-y", "@certrust/mcp"],
+      "env": { "CERTRUST_API_KEY": "crt_..." }
+    }
+  }
+}
+```
+
+(VS Code: put the same under `"servers"` in `.vscode/mcp.json`, with `"type": "stdio"`.)
+
+### Your own agents
+
+Call `https://api.certrust.app/mcp` with `Authorization: Bearer crt_...`.
+
+Connecting AI apps and API keys are included in the Pro and Enterprise plans.
 
 ## Tools
 
-| Tool | Description | Auth required |
+A connection only sees the tools its permissions allow.
+
+| Tool | Permission | What it does |
 |---|---|---|
-| `verify_credential` | Verify a credential by URN or ID | No |
-| `list_achievements` | List available badge definitions | No |
-| `list_credentials` | List credentials for the authenticated user | Yes |
-| `issue_credential` | Issue a credential to a recipient | Yes |
-| `revoke_credential` | Revoke a credential | Yes |
-| `renew_credential` | Renew a credential with a new expiry date | Yes |
-| `get_credential` | Get full credential details + verification | No |
-| `run_expiration_check` | Trigger expiration notification scan | Yes (admin) |
-| `export_profile_data` | Export all profile data | Yes |
+| `whoami` | any | The organization, member and permissions in use |
+| `verify_credential` | any | Check a credential is genuine, not revoked, not expired |
+| `list_achievements` | read | Certificate and badge types your organization issues |
+| `list_credentials` | read | Issued credentials, filter by status, achievement, recipient |
+| `list_events` | read | Your events, to show on certificates |
+| `issue_credential` | issue | Issue one credential (emails the recipient) |
+| `issue_credentials_bulk` | issue | Issue to up to 2,000 people as a background job |
+| `get_issuance_job` | issue | Progress of a bulk job |
+| `renew_credential` | issue | Re-issue with a new expiry date |
+| `revoke_credential` | revoke | Revoke a credential (cannot be undone) |
 
-## Setup
+Everything goes through the Certrust API as the member who created the key or approved the connection, so the same organization rules, rate limit (120 requests a minute) and audit log apply. `issue_credential` sends an `Idempotency-Key`, so a retried call within 24 hours returns the first credential instead of issuing a duplicate.
 
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "certrust": {
-      "command": "npx",
-      "args": ["-y", "@certrust/mcp"],
-      "env": {
-        "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_KEY": "crt_..."
-      }
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to your Cursor MCP config (`~/.cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "certrust": {
-      "command": "npx",
-      "args": ["-y", "@certrust/mcp"],
-      "env": {
-        "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_KEY": "crt_..."
-      }
-    }
-  }
-}
-```
-
-### VS Code (GitHub Copilot)
-
-Add to `.vscode/mcp.json` in your workspace:
-
-```json
-{
-  "servers": {
-    "certrust": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@certrust/mcp"],
-      "env": {
-        "CERTRUST_API_URL": "https://your-certrust-instance.example.com",
-        "CERTRUST_API_KEY": "crt_..."
-      }
-    }
-  }
-}
-```
-
-## Configuration
+## Configuration (this package)
 
 | Variable | Description | Default |
 |---|---|---|
-| `CERTRUST_API_URL` | Base URL of your Certrust backend | `http://localhost:1337` |
-| `CERTRUST_API_KEY` | Organization API key (`crt_...`) | _(empty — only public tools work)_ |
+| `CERTRUST_API_KEY` | Organization API key (`crt_...`) | required |
+| `CERTRUST_API_URL` | Your Certrust backend, if self-hosted | `https://api.certrust.app` |
 | `CERTRUST_API_TOKEN` | Older name; read when `CERTRUST_API_KEY` is not set | |
-
-To create an API key: sign in to Certrust → **Manage → API keys** → Create key (paid plans). Give it only the permissions the assistant needs: `read` and `issue` for issuing, `revoke` to revoke. The key acts with the permissions of the member who created it and stops working if they leave the organization.
-
-`issue_credential` sends an `Idempotency-Key` built from the achievement and recipient email, so an assistant that retries the tool call within 24 hours gets the first credential back instead of issuing a duplicate. `export_profile_data` and `run_expiration_check` need a signed-in user token; API keys can't call them.
 
 ## Example prompts
 
 ```
-"Verify credential urn:uuid:abc123"
-
-"List all available achievements"
-
-"Issue the 'Web Development' badge to alice@example.com, expiring 2027-12-31"
-
-"Revoke credential 42 — reason: employee left the company"
-
-"Show me all expired credentials"
-
-"Run the expiration notification check"
+"Is credential urn:uuid:abc123 genuine?"
+"Which achievements can we issue?"
+"Issue the Web Development certificate to alice@example.com, expiring 2027-12-31"
+"Here is the attendee list from Friday's workshop: issue everyone the workshop badge"
+"Who received the safety badge this month?"
+"Revoke credential 42, reason: issued in error"
 ```
 
 ## Development
 
+The tools themselves live in the backend (`src/backend/src/mcp/`). This package only forwards messages.
+
 ```bash
 cd mcp
 npm install
-npm run dev     # run via tsx (no build needed)
 npm run build   # compile to dist/
 ```

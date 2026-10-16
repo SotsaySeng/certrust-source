@@ -10,6 +10,7 @@
  */
 import { errors } from '@strapi/utils'
 import { generateKey, hashKey, normalizeScopes, type Scope } from '../../../utils/api-key-access'
+import { ACCESS_TOKEN_TTL_S, REFRESH_PREFIX, REFRESH_TOKEN_TTL_MS, randomToken, sha256 } from '../../../utils/oauth'
 
 const UID = 'api::api-key.api-key'
 const MAX_KEYS_PER_ORGANIZATION = 20
@@ -26,10 +27,45 @@ export interface ResolvedKey {
   user: any
 }
 
+// Keys that still count against the per-organization limit: not revoked,
+// and for OAuth connections, not lapsed (refresh token unused for 30 days).
+function activeWhere(organizationId: number) {
+  return {
+    organization: { id: organizationId },
+    revokedAt: { $null: true },
+    $or: [{ kind: { $null: true } }, { kind: 'key' }, { refreshExpiresAt: { $gt: new Date() } }],
+  }
+}
+
+async function assertRoomForKey(strapi: any, organizationId: number) {
+  const active = await strapi.db.query(UID).count({ where: activeWhere(organizationId) })
+  if (active >= MAX_KEYS_PER_ORGANIZATION) {
+    throw new errors.ValidationError(`An organization can have up to ${MAX_KEYS_PER_ORGANIZATION} active keys and connected apps. Revoke one you no longer use first.`)
+  }
+}
+
+/** A fresh access token (an ordinary crt_ key) + refresh token for an OAuth connection. */
+function mintOAuthTokens() {
+  const { key, prefix, hash } = generateKey()
+  const refreshToken = randomToken(REFRESH_PREFIX)
+  return {
+    tokens: { access_token: key, token_type: 'Bearer', expires_in: ACCESS_TOKEN_TTL_S, refresh_token: refreshToken },
+    data: {
+      prefix,
+      keyHash: hash,
+      expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL_S * 1000),
+      refreshTokenHash: sha256(refreshToken),
+      refreshExpiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+    },
+  }
+}
+
 function publicView(row: any) {
   return {
     documentId: row.documentId,
     name: row.name,
+    kind: row.kind === 'oauth' ? 'oauth' : 'key',
+    connectionExpiresAt: row.kind === 'oauth' ? row.refreshExpiresAt ?? null : undefined,
     prefix: row.prefix,
     scopes: row.scopes ?? [],
     createdAt: row.createdAt,
@@ -64,12 +100,7 @@ export default ({ strapi }: { strapi: any }) => ({
         throw new errors.ValidationError('The expiry date must be in the future.')
       }
     }
-    const active = await strapi.db.query(UID).count({
-      where: { organization: { id: input.organizationId }, revokedAt: { $null: true } },
-    })
-    if (active >= MAX_KEYS_PER_ORGANIZATION) {
-      throw new errors.ValidationError(`An organization can have up to ${MAX_KEYS_PER_ORGANIZATION} active keys. Revoke one you no longer use first.`)
-    }
+    await assertRoomForKey(strapi, input.organizationId)
 
     const { key, prefix, hash } = generateKey()
     const created = await strapi.documents(UID).create({
@@ -80,6 +111,45 @@ export default ({ strapi }: { strapi: any }) => ({
       populate: { createdByUser: { select: ['username', 'email'] } },
     })
     return { key, apiKey: publicView(row) }
+  },
+
+  /**
+   * A new OAuth connection: an API key row (kind 'oauth') named after the
+   * app, acting as the member who approved it, with the scopes they chose.
+   */
+  async createOAuthConnection(input: { organizationId: number, userId: number, clientId: number, name: string, scopes: Scope[] }) {
+    await assertRoomForKey(strapi, input.organizationId)
+    const { tokens, data } = mintOAuthTokens()
+    const created = await strapi.documents(UID).create({
+      data: {
+        ...data,
+        name: input.name.slice(0, 80) || 'Connected app',
+        kind: 'oauth',
+        scopes: input.scopes,
+        organization: input.organizationId,
+        createdByUser: input.userId,
+        oauthClient: input.clientId,
+      },
+    })
+    return { tokens: { ...tokens, scope: input.scopes.join(' ') }, documentId: created.documentId }
+  },
+
+  /**
+   * Swap a refresh token for new tokens (both rotate). Null when the token
+   * is unknown, revoked, lapsed or belongs to another client. Whether the
+   * organization may still use the API is checked when the access token is
+   * used (resolve), as for any key.
+   */
+  async refreshOAuthConnection(refreshToken: string, clientId: number) {
+    const row = await strapi.db.query(UID).findOne({
+      where: { refreshTokenHash: sha256(refreshToken), kind: 'oauth' },
+      populate: { oauthClient: { select: ['id'] } },
+    })
+    if (!row || row.revokedAt || row.oauthClient?.id !== clientId) return null
+    if (!row.refreshExpiresAt || new Date(row.refreshExpiresAt).getTime() <= Date.now()) return null
+    const { tokens, data } = mintOAuthTokens()
+    await strapi.db.query(UID).update({ where: { id: row.id }, data })
+    return { ...tokens, scope: (normalizeScopes(row.scopes) ?? []).join(' ') }
   },
 
   /** Revoke one of the organization's keys. False if it isn't theirs. */
@@ -106,7 +176,9 @@ export default ({ strapi }: { strapi: any }) => ({
       populate: { organization: true, createdByUser: true },
     })
     if (!row || row.revokedAt) return invalid
-    if (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now()) return { error: 'API key expired' }
+    if (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now()) {
+      return { error: row.kind === 'oauth' ? 'Access token expired' : 'API key expired' }
+    }
     if (!row.organization || !row.createdByUser || row.organization.closedAt) return invalid
 
     const user = await strapi.plugin('users-permissions').service('user').fetchAuthenticatedUser(row.createdByUser.id)

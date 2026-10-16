@@ -17,6 +17,7 @@ import { startDevMailCatcher } from './bootstrap/dev-mail-catcher';
 import { assertPersistentStorage } from './bootstrap/persistence-guard';
 import { registerMonitoringRoutes } from './monitoring/routes';
 import { createApiKeyStrategy } from './auth/api-key-strategy';
+import { registerMcpRoutes } from './mcp/routes';
 
 /**
  * Main entry point for the Strapi application
@@ -38,6 +39,8 @@ export default {
     // (server.initRouting()) partway through its own bootstrap(), before
     // this app's bootstrap({ strapi }) hook runs - see monitoring/routes.ts.
     registerMonitoringRoutes(strapi);
+    // POST /mcp + the OAuth endpoints AI apps use to connect (see mcp/routes.ts).
+    registerMcpRoutes(strapi);
 
     // Organization API keys (Bearer crt_...). Plugins register first, so
     // this runs after the admin API-token and users-permissions strategies.

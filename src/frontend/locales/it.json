@@ -25,7 +25,8 @@
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",
       "studentRecords": "Università e istituti",
-      "apiGuide": "Guida API"
+      "apiGuide": "Guida API",
+      "aiAssistant": "Collega un assistente IA"
     }
   },
   "common": {
@@ -1161,13 +1162,34 @@
       "title": "Revocare \"{name}\"?",
       "body": "Tutto ciò che usa questa chiave smette subito di funzionare. L'operazione non può essere annullata.",
       "confirm": "Revoca chiave",
-      "error": "Impossibile revocare la chiave. Riprova."
+      "error": "Impossibile revocare la chiave. Riprova.",
+      "disconnect": "Scollega"
     },
     "usage": {
       "title": "Usare una chiave",
       "body": "Invia la chiave come token Bearer. Ad esempio, per emettere una credenziale:",
       "idempotency": "Aggiungi un'intestazione Idempotency-Key (qualsiasi valore univoco, ad esempio studente e corso) e una richiesta ripetuta non emette mai due volte: Certrust restituisce il primo risultato."
     },
-    "guideLink": "Leggi la guida alla configurazione (in inglese)"
+    "guideLink": "Leggi la guida alla configurazione (in inglese)",
+    "connectedApp": "App collegata",
+    "aiGuideLink": "Collega invece Claude o ChatGPT"
+  },
+  "oauth": {
+    "title": "Collega un’app",
+    "heading": "Collega {app} a Certrust",
+    "returnsTo": "Verrai riportato a {host}",
+    "intro": "{app} vuole lavorare con {org}. Scegli cosa può fare:",
+    "permissions": "Permessi",
+    "actsAs": "Agisce come te, quindi può fare solo ciò che puoi fare tu nella tua organizzazione.",
+    "emails": "L’emissione invia email reali ai destinatari e usa la tua quota di credenziali.",
+    "disconnect": "Puoi scollegarla in qualsiasi momento da Gestisci > Chiavi API.",
+    "approve": "Consenti {app}",
+    "deny": "Annulla",
+    "backToApp": "Torna all’app",
+    "notInPlan": "Il collegamento di app di IA è incluso nei piani Pro ed Enterprise.",
+    "noOrganization": "Devi far parte di un’organizzazione per collegare un’app.",
+    "errorTitle": "Impossibile avviare il collegamento",
+    "loadError": "Impossibile caricare la richiesta di collegamento. Riprova dall’app.",
+    "submitError": "Impossibile completare il collegamento. Riprova."
   }
 }

@@ -25,7 +25,8 @@
       "googleSheets": "Google Sheets",
       "googleForms": "Google Forms",
       "studentRecords": "Universities and colleges",
-      "apiGuide": "API guide"
+      "apiGuide": "API guide",
+      "aiAssistant": "Connect an AI assistant"
     }
   },
   "common": {
@@ -1161,13 +1162,34 @@
       "title": "Revoke \"{name}\"?",
       "body": "Anything using this key stops working straight away. This can't be undone.",
       "confirm": "Revoke key",
-      "error": "Could not revoke the key. Please try again."
+      "error": "Could not revoke the key. Please try again.",
+      "disconnect": "Disconnect"
     },
     "usage": {
       "title": "Using a key",
       "body": "Send the key as a Bearer token. For example, to issue a credential:",
       "idempotency": "Add an Idempotency-Key header (any unique value, such as a student and course ID) and a retried request never issues twice: Certrust returns the first result."
     },
-    "guideLink": "Read the setup guide"
+    "guideLink": "Read the setup guide",
+    "connectedApp": "Connected app",
+    "aiGuideLink": "Connect Claude or ChatGPT instead"
+  },
+  "oauth": {
+    "title": "Connect an app",
+    "heading": "Connect {app} to Certrust",
+    "returnsTo": "You will be sent back to {host}",
+    "intro": "{app} wants to work with {org}. Choose what it may do:",
+    "permissions": "Permissions",
+    "actsAs": "It acts as you, so it can only do what you can do in your organization.",
+    "emails": "Issuing sends real emails to recipients and uses your credential allowance.",
+    "disconnect": "You can disconnect it at any time under Manage > API keys.",
+    "approve": "Allow {app}",
+    "deny": "Cancel",
+    "backToApp": "Back to the app",
+    "notInPlan": "Connecting AI apps is included in the Pro and Enterprise plans.",
+    "noOrganization": "You need to belong to an organization to connect an app.",
+    "errorTitle": "This connection could not be started",
+    "loadError": "Could not load the connection request. Please try again from the app.",
+    "submitError": "Could not complete the connection. Please try again."
   }
 }

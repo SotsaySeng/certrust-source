@@ -17,15 +17,18 @@ Certrust lets organizations issue tamper-proof digital credentials (badges, cert
 
 ## API
 
-- [OpenAPI / Swagger UI](http://localhost:3000/api/documentation)
-- [API base URL](http://localhost:3000/api/v1)
-- [Verify a credential](http://localhost:3000/api/credentials/{id}/verify) — GET, no auth required
-- [Health check](http://localhost:3000/api/health)
-- [Prometheus metrics](http://localhost:3000/api/metrics)
+- [OpenAPI / Swagger UI](https://api.certrust.app/documentation)
+- [API base URL](https://api.certrust.app/api/v1)
+- [Verify a credential](https://api.certrust.app/api/credentials/{id}/verify) — GET, no auth required
+- [Health check](https://api.certrust.app/api/health)
+- [Integration setup guide](https://certrust.app/integrations/guide) — API keys, issuing, rate limits, errors
 
 ## MCP Server (for AI assistants)
 
-Use Certrust from Claude Desktop, Cursor, or VS Code Copilot:
+Certrust's MCP server is remote: `https://api.certrust.app/mcp` (Streamable HTTP).
+Connect with OAuth 2.1 (dynamic client registration + PKCE; a member approves the connection and its permissions) or send an organization API key as `Authorization: Bearer crt_...`. Pro and Enterprise plans.
+
+For apps that only run local (stdio) servers, `@certrust/mcp` bridges to it:
 
 ```json
 {
@@ -33,27 +36,26 @@ Use Certrust from Claude Desktop, Cursor, or VS Code Copilot:
     "certrust": {
       "command": "npx",
       "args": ["-y", "@certrust/mcp"],
-      "env": {
-        "CERTRUST_API_URL": "http://localhost:3000",
-        "CERTRUST_API_KEY": "crt_... (Manage > API keys)"
-      }
+      "env": { "CERTRUST_API_KEY": "crt_... (Manage > API keys)" }
     }
   }
 }
 ```
 
+Setup guide: https://certrust.app/integrations/guide#ai-assistants
+
 ## Documentation
 
-- [Overview](https://github.com/Schroedinger-Hat/certo/blob/main/docs/overview.md)
-- [Architecture](https://github.com/Schroedinger-Hat/certo/blob/main/docs/architecture.md)
-- [Self-Hosting Guide](https://github.com/Schroedinger-Hat/certo/blob/main/docs/self-hosting.md)
-- [Kubernetes / Helm](https://github.com/Schroedinger-Hat/certo/blob/main/docs/kubernetes.md)
-- [Backup & Restore](https://github.com/Schroedinger-Hat/certo/blob/main/docs/self-hosting.md#backup--restore)
-- [Monitoring](https://github.com/Schroedinger-Hat/certo/blob/main/docs/monitoring.md)
-- [Security](https://github.com/Schroedinger-Hat/certo/blob/main/docs/security.md)
-- [Open Badges](https://github.com/Schroedinger-Hat/certo/blob/main/docs/open-badges.md)
+- [Overview](https://github.com/SotsaySeng/certrust-source/blob/main/docs/overview.md)
+- [Architecture](https://github.com/SotsaySeng/certrust-source/blob/main/docs/architecture.md)
+- [Self-Hosting Guide](https://github.com/SotsaySeng/certrust-source/blob/main/docs/self-hosting.md)
+- [Kubernetes / Helm](https://github.com/SotsaySeng/certrust-source/blob/main/docs/kubernetes.md)
+- [Backup & Restore](https://github.com/SotsaySeng/certrust-source/blob/main/docs/self-hosting.md#backup--restore)
+- [Monitoring](https://github.com/SotsaySeng/certrust-source/blob/main/docs/monitoring.md)
+- [Security](https://github.com/SotsaySeng/certrust-source/blob/main/docs/security.md)
+- [Open Badges](https://github.com/SotsaySeng/certrust-source/blob/main/docs/open-badges.md)
 
 ## Source
 
-- [GitHub repository](https://github.com/Schroedinger-Hat/certo)
+- [GitHub repository](https://github.com/SotsaySeng/certrust-source)
 - License: AGPL-3.0

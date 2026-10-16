@@ -20,7 +20,7 @@ Content-Type: application/json
 
 ## MCP Tool
 
-`revoke_credential` — available via `@certrust/mcp`
+`revoke_credential` — on the Certrust MCP server (`https://api.certrust.app/mcp`, or the `@certrust/mcp` stdio bridge)
 
 ```json
 {

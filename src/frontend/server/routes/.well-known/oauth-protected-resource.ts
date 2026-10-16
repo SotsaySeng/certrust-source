@@ -1,31 +1,19 @@
 /**
  * GET /.well-known/oauth-protected-resource
  *
- * OAuth 2.0 Protected Resource Metadata per RFC 9728.
- * Tells agents which authorization server issues tokens for Certrust's API.
- * https://www.rfc-editor.org/rfc/rfc9728
+ * RFC 9728 metadata for Certrust's MCP server, advertised from the website
+ * too so agents that start here find it. The MCP endpoint and its
+ * authorization server are the backend (api.certrust.app), which serves the
+ * authoritative copy at /.well-known/oauth-protected-resource/mcp.
  */
 export default defineEventHandler((event) => {
   const { site, api } = publicUrls(event)
   return {
-    resource: `${api}/api`,
-    // The authorization server metadata is served by this site
-    // (/.well-known/oauth-authorization-server), so this site is its issuer.
-    authorization_servers: [
-      site,
-    ],
-    // Strapi uses bearer tokens — API tokens or user JWTs
+    resource: `${api}/mcp`,
+    authorization_servers: [api],
+    scopes_supported: ['read', 'issue', 'revoke', 'manage'],
     bearer_methods_supported: ['header'],
-    scopes_supported: [
-      'credential:read',
-      'credential:write',
-      'credential:revoke',
-      'achievement:read',
-      'achievement:write',
-      'profile:read',
-      'profile:export',
-    ],
-    resource_documentation: `${api}/documentation`,
-    resource_signing_alg_values_supported: ['HS256', 'RS256'],
+    resource_name: 'Certrust',
+    resource_documentation: `${site}/integrations/guide`,
   }
 })

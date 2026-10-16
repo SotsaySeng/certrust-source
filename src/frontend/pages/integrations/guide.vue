@@ -2,6 +2,17 @@
 const config = useRuntimeConfig()
 const api = computed(() => String(config.public.apiUrl || 'https://api.certrust.app').replace(/\/$/, ''))
 const sourceCodeUrl = LEGAL.sourceCodeUrl
+const mcpUrl = computed(() => `${api.value}/mcp`)
+const codeClaudeCode = computed(() => `claude mcp add --transport http certrust ${mcpUrl.value}`)
+const codeStdio = computed(() => `{
+  "mcpServers": {
+    "certrust": {
+      "command": "npx",
+      "args": ["-y", "@certrust/mcp"],
+      "env": { "CERTRUST_API_KEY": "crt_..." }
+    }
+  }
+}`)
 
 const pageDescription = ref('Step-by-step guide to connecting your systems to Certrust with API keys: creating a key, choosing permissions, issuing credentials over the API and retrying safely.')
 
@@ -34,7 +45,11 @@ const toc = [
   { id: 'limits', label: 'Rate limits', sub: true },
   { id: 'errors', label: 'Errors', sub: true },
   { id: 'endpoints', label: 'Endpoints by permission', sub: true },
-  { id: 'tools', label: 'SDK and AI assistants', sub: true },
+  { id: 'tools', label: 'SDK', sub: true },
+  { id: 'ai-assistants', label: 'Part 3: Connect an AI assistant' },
+  { id: 'ai-connect', label: 'Claude, ChatGPT and others', sub: true },
+  { id: 'ai-developer', label: 'Developer tools and local apps', sub: true },
+  { id: 'ai-safety', label: 'What the assistant can do', sub: true },
 ]
 
 const permissions = [
@@ -417,13 +432,56 @@ const codeRevoke = computed(() => `curl -X POST ${api.value}/api/credentials/201
             </section>
 
             <section id="tools" class="scroll-mt-24">
-              <h3>SDK and AI assistants</h3>
+              <h3>SDK</h3>
               <p>
-                A JavaScript/TypeScript SDK (with <code>apiKey</code> and <code>idempotencyKey</code> options) and an MCP server for AI assistants such as Claude are in the
-                <a :href="sourceCodeUrl" target="_blank" rel="noopener">open-source repository</a>,
-                in the <code>sdk/</code> and <code>mcp/</code> folders. For the MCP server, set <code>CERTRUST_API_KEY</code> to your key.
+                A JavaScript/TypeScript SDK (with <code>apiKey</code> and <code>idempotencyKey</code> options) is in the
+                <a :href="sourceCodeUrl" target="_blank" rel="noopener">open-source repository</a>, in the <code>sdk/</code> folder.
               </p>
               <p>Questions? Contact us from the details at the bottom of this page.</p>
+            </section>
+
+            <div id="ai-assistants" class="scroll-mt-24 pt-6 border-t border-gray-200">
+              <h2 class="text-3xl font-bold text-gray-900">
+                Part 3: Connect an AI assistant
+              </h2>
+              <p class="mt-3 text-gray-600">
+                Let an AI assistant work with Certrust for you: "issue the workshop certificate to everyone on this list", "who received the safety badge this month?", "is this certificate genuine?".
+                Certrust is an MCP server (Model Context Protocol, the standard AI assistants use to connect to other software). Its address is <code>{{ mcpUrl }}</code>. Included in the Pro and Enterprise plans.
+              </p>
+              <p class="mt-3 text-gray-600">
+                Not a developer? The <NuxtLink to="/guide/connect-ai-assistant" class="text-[#1f7a34] underline">
+                  step-by-step guide for connecting an assistant
+                </NuxtLink> explains it with screenshots.
+              </p>
+            </div>
+
+            <section id="ai-connect" class="scroll-mt-24">
+              <h3>Claude, ChatGPT and others</h3>
+              <ol>
+                <li>In your assistant, add a custom connector (in Claude: <strong>Settings &gt; Connectors &gt; Add custom connector</strong>) with the address <code>{{ mcpUrl }}</code>.</li>
+                <li>Choose <strong>Connect</strong>. You are taken to Certrust; sign in if asked.</li>
+                <li>Check the app's name and the website it returns to, choose what it may do (start with <strong>Read</strong> and <strong>Issue</strong>), and select <strong>Allow</strong>.</li>
+              </ol>
+              <p>No key to copy: the assistant receives its own access, which renews itself. It appears under <strong>Manage &gt; API keys</strong> as a <em>Connected app</em>; choose <strong>Disconnect</strong> there to cut it off at once.</p>
+            </section>
+
+            <section id="ai-developer" class="scroll-mt-24">
+              <h3>Developer tools and local apps</h3>
+              <p>Claude Code (you will be asked to sign in to Certrust the first time):</p>
+              <pre><code>{{ codeClaudeCode }}</code></pre>
+              <p>Apps that run MCP servers on your computer from a settings file (Claude Desktop, Cursor, VS Code) can use the <code>@certrust/mcp</code> package with an API key from Part 1:</p>
+              <pre><code>{{ codeStdio }}</code></pre>
+              <p>Your own agents can call <code>{{ mcpUrl }}</code> directly with the key as a Bearer token.</p>
+            </section>
+
+            <section id="ai-safety" class="scroll-mt-24">
+              <h3>What the assistant can do</h3>
+              <p>Exactly what the permissions you chose allow, and only in your organisation, the same as an API key. It can look up achievements, events and issued credentials, issue one credential or a whole group, renew and revoke credentials, and verify any credential.</p>
+              <ul>
+                <li><strong>Issuing is real.</strong> Recipients get an email straight away and it uses your credential allowance. Assistants are told to confirm names, emails and the achievement with you first; read what they propose before you agree.</li>
+                <li><strong>Revoking can't be undone.</strong> Leave out the <strong>Revoke</strong> permission unless you need it.</li>
+                <li><strong>Everything is recorded.</strong> Each action is kept in Certrust's audit log with the connected app's name.</li>
+              </ul>
             </section>
           </div>
         </div>

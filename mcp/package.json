@@ -1,7 +1,7 @@
 {
   "name": "@certrust/mcp",
-  "version": "0.1.0",
-  "description": "MCP server for the Certrust credential platform — issue, verify, and manage Open Badges 3.0 credentials from any AI assistant",
+  "version": "1.0.0",
+  "description": "Connect AI assistants to Certrust: issue, verify and manage Open Badges 3.0 credentials. A stdio bridge to the hosted MCP endpoint (https://api.certrust.app/mcp).",
   "type": "module",
   "bin": {
     "certrust-mcp": "./dist/index.js"
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -21,5 +22,12 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.19.1",
     "typescript": "^5.4.5"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

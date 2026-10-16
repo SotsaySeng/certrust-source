@@ -61,6 +61,9 @@ const AUTHENTICATED_PERMISSIONS = [
   'api::api-key.api-key.create',
   'api::api-key.api-key.revoke',
   'api::api-key.api-key.me',
+  // Connecting an AI app through OAuth (consent screen; same checks as creating a key)
+  'api::oauth-client.oauth-client.describe',
+  'api::oauth-client.oauth-client.decide',
   // Background issuance jobs (scoped to the caller's organization)
   'api::issuance-job.issuance-job.create',
   'api::issuance-job.issuance-job.list',
@@ -190,6 +193,9 @@ const ISSUER_PERMISSIONS = [
   'api::api-key.api-key.create',
   'api::api-key.api-key.revoke',
   'api::api-key.api-key.me',
+  // Connecting an AI app through OAuth (consent screen; same checks as creating a key)
+  'api::oauth-client.oauth-client.describe',
+  'api::oauth-client.oauth-client.decide',
   // Background issuance jobs (scoped to the caller's organization)
   'api::issuance-job.issuance-job.create',
   'api::issuance-job.issuance-job.list',

@@ -27,7 +27,7 @@ No authentication required for published achievements.
 
 ## MCP Tool
 
-`list_achievements` — available via `@certrust/mcp`
+`list_achievements` — on the Certrust MCP server (`https://api.certrust.app/mcp`, or the `@certrust/mcp` stdio bridge)
 
 ```json
 {}
