@@ -41,7 +41,7 @@ const faqs = [
   { q: 'How do recipients get their certificate?', a: 'By email, with a link to view, download and share it.' },
   { q: 'Can I issue to many people at once?', a: 'Yes. Upload a CSV or connect a Google Sheet and issue to a whole cohort in one go.' },
   { q: 'Can I use my own branding?', a: 'Yes. Add your logo and design each certificate or badge yourself.' },
-  { q: 'How does pricing work?', a: 'You can start free and only pay for the credentials you issue. See Plans & Pricing for details.' }
+  { q: 'How does pricing work?', a: 'Buy certificates for a single event, or choose a monthly or yearly plan. Recipients never pay. See Plans & Pricing for details.' }
 ]
 </script>
 
@@ -161,14 +161,14 @@ const faqs = [
           Give Your Participants Something They Can Actually Prove
         </h2>
         <p class="text-xl text-text-secondary max-w-2xl mx-auto mb-8">
-          Start free, verify instantly, and only pay for what you actually need.
+          Verify instantly, and only pay for what you actually need.
         </p>
         <div class="flex flex-wrap justify-center gap-4">
           <NuxtLink
             to="/register"
             class="py-3 px-6 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors"
           >
-            Get Started Free
+            Get Started
           </NuxtLink>
           <NuxtLink
             to="/solution"

@@ -1,5 +1,5 @@
-import { addIntegrationsDefaults, addPlatformStatsDefaults, applyAiAssistantRefresh, applyCopyRefresh } from '../homepage-seed'
-import { applyConnectionsRefresh, applyPricingRefresh } from '../solution-page-seed'
+import { addIntegrationsDefaults, addPlatformStatsDefaults, applyAiAssistantRefresh, applyCopyRefresh, applyNoFreeOfferRefresh as homepageNoFree } from '../homepage-seed'
+import { applyConnectionsRefresh, applyNoFreeOfferRefresh as pricingNoFree, applyPricingRefresh } from '../solution-page-seed'
 import featureItem from '../../components/marketing/feature-item.json'
 import audienceSegment from '../../components/marketing/audience-segment.json'
 
@@ -290,6 +290,49 @@ describe('applyPricingRefresh', () => {
     const { strapi, update } = fakeStrapi(null)
     await applyPricingRefresh(strapi, { documentId: 'sol1', header: 'Pay for the certificates you send' })
     await applyPricingRefresh(strapi, { documentId: 'sol1', header: 'Our prices' })
+    expect(update).not.toHaveBeenCalled()
+  })
+})
+
+describe('applyNoFreeOfferRefresh', () => {
+  it('takes the free offer off the homepage, keeping edited fields', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      heroButtonLabel: 'Issue your first 50 free',
+      closingButtonLabel: 'Ours',
+      closingSubheader: 'Set up your organization today. Your first 50 certificates are free, and recipients never pay.',
+    })
+    await homepageNoFree(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    expect(data).toEqual({
+      heroButtonLabel: 'Get started',
+      closingSubheader: 'Set up your organization today. Recipients never pay to receive, share or check their certificates.',
+    })
+  })
+
+  it('takes the free offer off the pricing page', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      subheader: 'Your first 50 are free. After that, buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.',
+      tiers: [
+        { id: 1, tierId: 'event', ctaLabel: 'Issue your first 50 free', note: 'Pay once. There is no subscription.' },
+        { id: 2, tierId: 'pro', ctaLabel: 'Start free', note: 'Every organisation starts free and can move up later.' },
+        { id: 3, tierId: 'enterprise', ctaLabel: 'Talk to us', note: 'Cancel any time.' },
+      ],
+    })
+    await pricingNoFree(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    expect(data.subheader).not.toMatch(/free/i)
+    expect(data.tiers.map((t: any) => t.ctaLabel)).toEqual(['Get started', 'Get started', 'Talk to us'])
+    expect(data.tiers[1].note).toBe('Move between plans whenever you need to.')
+    expect(data.tiers[0].note).toBe('Pay once. There is no subscription.')
+    expect(data.tiers.some((t: any) => 'id' in t)).toBe(false)
+  })
+
+  it('does nothing once the text has changed', async () => {
+    const { strapi, update } = fakeStrapi({ documentId: 'abc123', subheader: 'Edited', heroButtonLabel: 'Edited', tiers: [{ id: 1, tierId: 'pro', ctaLabel: 'Get started' }] })
+    await homepageNoFree(strapi, EXISTING)
+    await pricingNoFree(strapi, EXISTING)
     expect(update).not.toHaveBeenCalled()
   })
 })

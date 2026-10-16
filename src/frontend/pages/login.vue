@@ -267,7 +267,7 @@ onMounted(() => {
           <p class="text-sm text-text-secondary">
             Don't have an account?
             <NuxtLink to="/register" class="font-medium text-[#28A745] hover:text-[#28A745]/80">
-              Sign up for free
+              Create an account
             </NuxtLink>
           </p>
         </div> -->

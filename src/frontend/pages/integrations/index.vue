@@ -70,7 +70,7 @@ const safety = [
         </p>
         <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
           <NuxtLink to="/register" class="py-3 px-6 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors">
-            Get Started Free
+            Get Started
           </NuxtLink>
           <NuxtLink to="/integrations/guide" class="py-3 px-6 rounded-full bg-[#28A745] text-black hover:bg-[#28A745]/90 transition-colors">
             Read the Setup Guide
@@ -280,7 +280,7 @@ Idempotency-Key: student-1042-course-7
           Included in every paid plan
         </h2>
         <p class="text-xl text-text-secondary mb-8">
-          API keys come with Pro and Enterprise. Start free, issue your first credentials by hand, and connect your systems when you are ready.
+          API keys come with Pro and Enterprise. Issue your first credentials by hand, and connect your systems when you are ready.
         </p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
           <NuxtLink to="/solution" class="py-3 px-6 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors">

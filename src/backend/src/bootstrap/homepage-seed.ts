@@ -217,7 +217,7 @@ const homepageCopy = () => ({
   heroHighlight: 'tonight',
   heroTitleAfter: '',
   heroSubtitle: 'Upload your attendance list, choose a design and send. Each person gets their own certificate by email, and anyone they show it to can scan it to see it came from you and has not been changed. There is nothing to print or sign, and it is free for recipients.',
-  heroButtonLabel: 'Issue your first 50 free',
+  heroButtonLabel: 'Get started',
 
   featuresHeader: 'From attendance list to verified certificate in one sitting',
   featuresSubheader: 'All you need to start is a list of names and emails.',
@@ -268,8 +268,8 @@ const homepageCopy = () => ({
   howItWorksSubheader: 'Design it, send it, and let people check it.',
 
   closingHeader: 'Have an event coming up?',
-  closingSubheader: 'Set up your organization today. Your first 50 certificates are free, and recipients never pay.',
-  closingButtonLabel: 'Issue your first 50 free',
+  closingSubheader: 'Set up your organization today. Recipients never pay to receive, share or check their certificates.',
+  closingButtonLabel: 'Get started',
 });
 
 /**
@@ -348,6 +348,29 @@ export async function applyCopyRefresh(strapi: any, existing: any): Promise<void
   strapi.log.info('[Seed] Homepage: replaced the first copy with the current one.');
 }
 
+// The "first 50 free" offer as first written, and its replacement.
+const FREE_OFFER_HOMEPAGE_TEXT: Record<string, [string, string]> = {
+  heroButtonLabel: ['Issue your first 50 free', 'Get started'],
+  closingButtonLabel: ['Issue your first 50 free', 'Get started'],
+  closingSubheader: ['Set up your organization today. Your first 50 certificates are free, and recipients never pay.', 'Set up your organization today. Recipients never pay to receive, share or check their certificates.'],
+};
+
+/**
+ * Takes the "first 50 free" offer off an install still showing it, field by
+ * field: only text still exactly as first written is replaced.
+ */
+export async function applyNoFreeOfferRefresh(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::homepage.homepage').findFirst();
+  if (!full) return;
+  const data: any = {};
+  for (const [field, [from, to]] of Object.entries(FREE_OFFER_HOMEPAGE_TEXT)) {
+    if (full[field] === from) data[field] = to;
+  }
+  if (!Object.keys(data).length) return;
+  await strapi.documents('api::homepage.homepage').update({ documentId: existing.documentId, data } as any);
+  strapi.log.info(`[Seed] Homepage: removed the free-certificate offer (${Object.keys(data).join(', ')}).`);
+}
+
 export async function seedHomepage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::homepage.homepage').findFirst();
@@ -359,6 +382,7 @@ export async function seedHomepage(strapi: any): Promise<void> {
       await addIntegrationsDefaults(strapi, existing);
       await applyAiAssistantRefresh(strapi, existing);
       await applyCopyRefresh(strapi, existing);
+      await applyNoFreeOfferRefresh(strapi, existing);
       strapi.log.info('[Seed] Homepage already seeded, skipping...');
       return;
     }

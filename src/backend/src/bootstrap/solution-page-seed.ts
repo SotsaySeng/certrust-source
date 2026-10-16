@@ -8,10 +8,10 @@
 
 /**
  * The pricing page's words. Three cards, named after the situation they
- * suit; the Free plan is not a card but the first credentials every
- * organization gets. Display copy only: the enforced limits live in Tier
- * Settings and the real prices in Stripe, so edit these in the Content
- * Manager when either changes.
+ * suit. No free-certificate offer: the Free plan and the trial still exist
+ * in Tier and Billing Settings, they are just not advertised. Display copy
+ * only: the enforced limits live in Tier Settings and the real prices in
+ * Stripe, so edit these in the Content Manager when either changes.
  */
 // What paid plans add over pay-per-certificate: the API, Google Sheets and
 // Forms and the MCP connection all need API access (Pro and Enterprise).
@@ -22,9 +22,23 @@ const ENTERPRISE_EXTRA_FEATURE = 'All Year-round connections, plus a dedicated a
 const FIRST_PRO_EXTRA_FEATURE = 'Google Sheets connector and priority email support';
 const FIRST_ENTERPRISE_EXTRA_FEATURE = 'Integration API and a dedicated account manager';
 
+// Pricing words without a free-certificate offer, and what they replace
+// (applyNoFreeOfferRefresh swaps a field only while it still has the old text).
+const PRICING_SUBHEADER = 'Buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.';
+const CTA_LABEL = 'Get started';
+const PRO_NOTE = 'Move between plans whenever you need to.';
+const FREE_OFFER_TEXT: Record<string, [string, string]> = {
+  subheader: ['Your first 50 are free. After that, buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.', PRICING_SUBHEADER],
+};
+const FREE_OFFER_TIER_TEXT: Record<string, [string, string]> = {
+  'ctaLabel:Issue your first 50 free': ['Issue your first 50 free', CTA_LABEL],
+  'ctaLabel:Start free': ['Start free', CTA_LABEL],
+  'note:Every organisation starts free and can move up later.': ['Every organisation starts free and can move up later.', PRO_NOTE],
+};
+
 const pricingCopy = () => ({
   header: 'Pay for the certificates you send',
-  subheader: 'Your first 50 are free. After that, buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.',
+  subheader: PRICING_SUBHEADER,
   mostPopularLabel: 'Start here',
   limitLabelCredentials: 'certificates',
   limitLabelDesignTemplates: 'designs',
@@ -42,7 +56,7 @@ const pricingCopy = () => ({
       designTemplatesLimit: '5',
       achievementsLimit: '5',
       extraFeature: 'Buy 50 or more for $10 and up. Unused ones carry over to your next event',
-      ctaLabel: 'Issue your first 50 free',
+      ctaLabel: CTA_LABEL,
       ctaHref: '/register',
       highlighted: true,
       note: 'Pay once. There is no subscription.',
@@ -56,10 +70,10 @@ const pricingCopy = () => ({
       designTemplatesLimit: '50',
       achievementsLimit: '1,000',
       extraFeature: PRO_EXTRA_FEATURE,
-      ctaLabel: 'Start free',
+      ctaLabel: CTA_LABEL,
       ctaHref: '/register',
       highlighted: false,
-      note: 'Every organisation starts free and can move up later.',
+      note: PRO_NOTE,
     },
     {
       tierId: 'enterprise',
@@ -70,7 +84,7 @@ const pricingCopy = () => ({
       designTemplatesLimit: 'Unlimited',
       achievementsLimit: 'Unlimited',
       extraFeature: ENTERPRISE_EXTRA_FEATURE,
-      ctaLabel: 'Start free',
+      ctaLabel: CTA_LABEL,
       ctaHref: '/register',
       highlighted: false,
       note: 'Cancel any time. Your issued certificates keep verifying.',
@@ -127,6 +141,35 @@ export async function applyConnectionsRefresh(strapi: any, existing: any): Promi
   strapi.log.info('[Seed] Solution page: plan cards now list Sheets, Forms, the API and the MCP connection.');
 }
 
+/**
+ * Takes the "first 50 free" offer off an install still showing it. Field by
+ * field: only text still exactly as first written is replaced, so anything
+ * changed in the Content Manager stays, and nothing matches a second time.
+ */
+export async function applyNoFreeOfferRefresh(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::solution-page.solution-page').findFirst({ populate: { tiers: true } } as any);
+  if (!full) return;
+  const data: any = {};
+  for (const [field, [from, to]] of Object.entries(FREE_OFFER_TEXT)) {
+    if (full[field] === from) data[field] = to;
+  }
+  let tiersChanged = false;
+  const tiers = (full.tiers ?? []).map(({ id, ...tier }: any) => {
+    for (const field of ['ctaLabel', 'note']) {
+      const rule = FREE_OFFER_TIER_TEXT[`${field}:${tier[field]}`];
+      if (rule) {
+        tier[field] = rule[1];
+        tiersChanged = true;
+      }
+    }
+    return tier;
+  });
+  if (tiersChanged) data.tiers = tiers;
+  if (!Object.keys(data).length) return;
+  await strapi.documents('api::solution-page.solution-page').update({ documentId: existing.documentId, data } as any);
+  strapi.log.info(`[Seed] Solution page: removed the free-certificate offer (${Object.keys(data).join(', ')}).`);
+}
+
 export async function seedSolutionPage(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::solution-page.solution-page').findFirst();
@@ -134,6 +177,7 @@ export async function seedSolutionPage(strapi: any): Promise<void> {
     if (existing) {
       await applyPricingRefresh(strapi, existing);
       await applyConnectionsRefresh(strapi, existing);
+      await applyNoFreeOfferRefresh(strapi, existing);
       strapi.log.info('[Seed] Solution page already seeded, skipping...');
       return;
     }
