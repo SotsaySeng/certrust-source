@@ -71,13 +71,14 @@ test.describe('developers menu and integration manuals', () => {
     await expect(page).toHaveURL(/\/integrations\/google-sheets$/)
   })
 
-  test('the overview links to all four manuals', async ({ page }) => {
+  test('the overview links to all five manuals', async ({ page }) => {
     await page.goto('/integrations')
     const cards = page.getByTestId('manual-card')
-    await expect(cards).toHaveCount(4)
+    await expect(cards).toHaveCount(5)
     expect(await cards.evaluateAll(els => els.map(el => el.getAttribute('href')))).toEqual([
       '/integrations/google-sheets',
       '/integrations/google-forms',
+      '/guide/connect-ai-assistant',
       '/integrations/student-records',
       '/integrations/guide',
     ])

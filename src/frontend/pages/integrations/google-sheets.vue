@@ -51,6 +51,16 @@ const statuses = [
       Keep your list of participants in Google Sheets as you do today. Each new row with a name and an email gets a verifiable certificate, and the sheet shows the result and the certificate link next to it. Setup takes about ten minutes and needs no technical knowledge.
     </p>
 
+    <video
+      class="tutorial mt-8"
+      src="/guide/integrations/sheets-tutorial.mp4"
+      poster="/guide/integrations/sheets-4c-issued.jpg"
+      controls
+      preload="none"
+      playsinline
+      data-testid="guide-video"
+    />
+
     <div class="note mt-8">
       <strong>Before you start</strong> you need a Certrust Pro or Enterprise plan, at least one achievement created in Certrust, and a Google account.
     </div>
@@ -60,8 +70,11 @@ const statuses = [
       <ol>
         <li>Sign in to Certrust and go to <strong>Manage → API keys</strong>.</li>
         <li>Name the key "Google Sheets" and keep the <strong>Read</strong> and <strong>Issue</strong> permissions ticked.</li>
-        <li>Select <strong>Create key</strong> and copy the key. It starts with <code>crt_</code> and is shown only once.</li>
+        <li>Select <strong>Create key</strong>.</li>
       </ol>
+      <img class="shot" src="/guide/integrations/sheets-1a-create-key.jpg" alt="The API keys page with a new key named Google Sheets, Read and Issue ticked" loading="lazy">
+      <p>Copy the key straight away. It starts with <code>crt_</code> and is shown only once. Keep it somewhere safe until step 3.</p>
+      <img class="shot" src="/guide/integrations/sheets-1b-key-created.jpg" alt="Your new API key, with a Copy button (the key is blurred here)" loading="lazy">
     </section>
 
     <section>
@@ -69,6 +82,9 @@ const statuses = [
       <ol>
         <li>Open your Google Sheet, or create a new one.</li>
         <li>In the menu, choose <strong>Extensions → Apps Script</strong>. A new browser tab opens.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-2a-extensions-menu.jpg" alt="The Extensions menu in Google Sheets with Apps Script highlighted" loading="lazy">
+      <ol start="3">
         <li>Delete the few lines of code that are there.</li>
         <li>
           Copy the Certrust script and paste it in:
@@ -83,8 +99,11 @@ const statuses = [
             Your browser did not allow copying. Use the download link and copy the file's contents instead.
           </p>
         </li>
-        <li>Select the <strong>Save</strong> icon (the disk), then close that browser tab.</li>
-        <li>Back in your sheet, reload the page. A <strong>Certrust</strong> menu appears after a few seconds.</li>
+        <li>Select the <strong>Save</strong> icon (the disk). It says "Saved to Drive". Then close that browser tab.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-2c-script-saved.jpg" alt="The Certrust script pasted into the Apps Script editor and saved" loading="lazy">
+      <ol start="6">
+        <li>Back in your sheet, reload the page. A <strong>Certrust</strong> menu appears next to Help after a few seconds.</li>
       </ol>
     </section>
 
@@ -92,25 +111,46 @@ const statuses = [
       <h2>3. Connect the sheet</h2>
       <ol>
         <li>Choose <strong>Certrust → Connect this tab…</strong></li>
-        <li>
-          The first time, Google asks for permission. Choose your account. If Google shows "Google hasn't verified this app", select <strong>Advanced</strong>, then <strong>Go to … (unsafe)</strong>. Then select <strong>Allow</strong>.
-        </li>
-        <li>Choose <strong>Certrust → Connect this tab…</strong> again, paste your API key and select <strong>Connect</strong>.</li>
-        <li>Pick the achievement this tab should issue and select <strong>Save</strong>.</li>
       </ol>
+      <img class="shot" src="/guide/integrations/sheets-3a-certrust-menu.jpg" alt="The Certrust menu in the sheet, with Connect this tab… at the top" loading="lazy">
+      <ol start="2">
+        <li>
+          The first time, Google asks for permission. Click <strong>OK</strong> and choose your account. If Google shows "Google hasn't verified this app", select <strong>Advanced</strong>, then <strong>Go to … (unsafe)</strong>. Then select <strong>Allow</strong>.
+        </li>
+      </ol>
+      <img class="shot narrow" src="/guide/integrations/sheets-3b-google-permission.jpg" alt="Google's permission screen listing what the script may do, with Allow and Deny buttons" loading="lazy">
       <div class="note">
-        <strong>Why the Google warning?</strong> The script is a copy that belongs to you and runs only in your Google account, so Google has not reviewed it. It asks for three things: to edit this spreadsheet, to connect to Certrust, and to run on a timer. It is open for anyone to read at the download link above.
+        <strong>Why the Google warning?</strong> The script is a copy that belongs to you and runs only in your Google account, so Google has not reviewed it. Google lists four permissions: to see and edit your spreadsheets (the script only reads and writes the tabs you connect), to connect to an external service (Certrust), to run when you are not present (for automatic issuing), and to show the Connect window inside Sheets. The script is open for anyone to read at the download link above.
       </div>
+      <ol start="3">
+        <li>Choose <strong>Certrust → Connect this tab…</strong> again, paste your API key and select <strong>Connect</strong>. It says "Checking…" for a few seconds.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-3c-connect-dialog.jpg" alt="The Connect to Certrust window with an API key box and a Connect button" loading="lazy">
+      <ol start="4">
+        <li>Pick the achievement this tab should issue and select <strong>Save</strong>. An empty tab gets the column headings for you.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-3d-connected-choose-achievement.jpg" alt="Connected to the organisation, with the achievement Introduction to Data Analytics selected and a Save button" loading="lazy">
     </section>
 
     <section>
       <h2>4. Issue certificates</h2>
       <ol>
-        <li>Add people under <strong>Name</strong> and <strong>Email</strong>, one per row. An empty tab gets these headings for you.</li>
-        <li>Choose <strong>Certrust → Issue new rows now</strong>.</li>
-        <li>Each row gets a status and a certificate link. The person receives their certificate by email.</li>
+        <li>Add people under <strong>Name</strong> and <strong>Email</strong>, one per row.</li>
       </ol>
-      <p>To issue without clicking, choose <strong>Certrust → Turn on automatic issuing</strong>. New rows are then issued every 5 minutes, even when the sheet is closed.</p>
+      <img class="shot" src="/guide/integrations/sheets-4a-rows-added.jpg" alt="Three people added to the sheet with their names and email addresses" loading="lazy">
+      <ol start="2">
+        <li>Choose <strong>Certrust → Issue new rows now</strong>.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-4b-issue-menu.jpg" alt="The Certrust menu with Issue new rows now highlighted" loading="lazy">
+      <ol start="3">
+        <li>Each row gets a status and a certificate link.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/sheets-4c-issued.jpg" alt="Each row now says Issued with today's date and has a certificate link" loading="lazy">
+      <p>Each person receives their certificate by email, from your organisation, with a button to view it:</p>
+      <img class="shot" src="/guide/integrations/sheets-5-email.jpg" alt="The certificate email in the recipient's inbox, with a View your credential button" loading="lazy">
+      <h3>Issue automatically</h3>
+      <p>To issue without clicking, choose <strong>Certrust → Turn on automatic issuing</strong>. New rows are then issued every 5 minutes, even when the sheet is closed. Choose <strong>Turn off automatic issuing</strong> to stop.</p>
+      <img class="shot" src="/guide/integrations/sheets-6-automatic-menu.jpg" alt="The Certrust menu with Turn on automatic issuing highlighted" loading="lazy">
       <p>Collecting names with a form? See <a href="/integrations/google-forms">Google Forms</a>: each person who submits the form gets their certificate straight away.</p>
     </section>
 
@@ -168,6 +208,11 @@ const statuses = [
       <h2>If something doesn't work</h2>
       <ul>
         <li><strong>No Certrust menu:</strong> reload the sheet and wait a few seconds. Check that the script was saved in Extensions → Apps Script.</li>
+        <li>
+          <strong>"An error occurred" when you click OK on Google's permission request:</strong> Google's sign-in window was blocked. This happens in some embedded browsers and when you are signed in to several Google accounts. Open the sheet in a normal Chrome, Edge or Safari window, signed in only to the account that owns the sheet, and choose <strong>Certrust → Connect this tab…</strong> again. You only need to do this once.
+          <img class="shot narrow" src="/guide/integrations/sheets-3b-authorization-required.jpg" alt="Google's An error occurred message with a Reload link" loading="lazy">
+        </li>
+        <li><strong>A red "Cannot call SpreadsheetApp.getUi()" message in the Apps Script editor:</strong> you pressed Run in the editor. That's harmless. Use the <strong>Certrust</strong> menu in the sheet instead.</li>
         <li><strong>"That API key is not valid":</strong> the key was mistyped, revoked or has expired. Create a new one and connect again.</li>
         <li><strong>"This key needs both the Read and the Issue permission":</strong> create a new key with both ticked.</li>
         <li><strong>No achievements listed:</strong> the list shows achievements created by the person who made the key. Create one in Certrust first.</li>

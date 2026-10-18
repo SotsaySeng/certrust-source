@@ -38,6 +38,49 @@ const howItWorksHeaderMotion = revealVariants(0)
 const sectionHoverLift = useHoverLift(4, 1.005)
 const sectionMotions = sections.map((_, index) => ({ ...revealVariants(index * 100), ...sectionHoverLift }))
 const closingMotion = revealVariants(0)
+
+// Search engines and AI assistants: say plainly what this is and who it's
+// for, plus schema.org data they can quote without guessing.
+const homeDescription = 'Send verifiable digital certificates and badges after workshops, courses and events. Upload a list of names and emails, pick a design, and each person gets a certificate anyone can check online or by QR code.'
+useSeoMeta({
+  description: homeDescription,
+  ogDescription: homeDescription,
+})
+useHead({
+  title: 'Digital certificates for workshops, courses and events',
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': `${WEBSITE_URL}/#org`,
+          name: 'Certrust',
+          url: WEBSITE_URL,
+          logo: `${WEBSITE_URL}/android-chrome-512x512.png`,
+          email: 'support@certrust.app',
+        },
+        {
+          '@type': 'WebSite',
+          name: 'Certrust',
+          url: WEBSITE_URL,
+          publisher: { '@id': `${WEBSITE_URL}/#org` },
+        },
+        {
+          '@type': 'SoftwareApplication',
+          name: 'Certrust',
+          url: WEBSITE_URL,
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          description: homeDescription,
+          publisher: { '@id': `${WEBSITE_URL}/#org` },
+          offers: { '@type': 'Offer', price: '0.20', priceCurrency: 'USD', description: 'Per certificate, smallest purchase 50', url: `${WEBSITE_URL}/solution` },
+        },
+      ],
+    }),
+  }],
+})
 </script>
 
 <template>

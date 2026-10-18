@@ -1,0 +1,177 @@
+{
+ "audio": "../out/integrations/sheets-tutorial.wav",
+ "scenes": [
+  {
+   "shot": "sheets-4c-issued",
+   "focus": [
+    0.45,
+    0.15
+   ],
+   "zoom": 1.15
+  },
+  {
+   "shot": "sheets-1a-create-key",
+   "focus": [
+    0.5,
+    0.55
+   ],
+   "zoom": 1.25
+  },
+  {
+   "shot": "sheets-1b-key-created",
+   "focus": [
+    0.35,
+    0.3
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "sheets-2a-extensions-menu",
+   "focus": [
+    0.5,
+    0.05
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "sheets-2b-script-pasted",
+   "focus": [
+    0.45,
+    0.25
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "sheets-3a-certrust-menu",
+   "focus": [
+    0.55,
+    0.05
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "sheets-3b-google-permission",
+   "focus": [
+    0.5,
+    0.5
+   ],
+   "zoom": 1.05
+  },
+  {
+   "shot": "sheets-3c-connect-dialog",
+   "focus": [
+    0.4,
+    0.3
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "sheets-3d-connected-choose-achievement",
+   "focus": [
+    0.5,
+    0.45
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "sheets-4a-rows-added",
+   "focus": [
+    0.15,
+    0.1
+   ],
+   "zoom": 1.4
+  },
+  {
+   "shot": "sheets-4b-issue-menu",
+   "focus": [
+    0.55,
+    0.1
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "sheets-4c-issued",
+   "focus": [
+    0.4,
+    0.1
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "sheets-5-email",
+   "focus": [
+    0.45,
+    0.6
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "sheets-5b-certificate",
+   "focus": [
+    0.5,
+    0.3
+   ],
+   "zoom": 1.15
+  },
+  {
+   "shot": "sheets-6-automatic-menu",
+   "focus": [
+    0.75,
+    0.15
+   ],
+   "zoom": 1.35
+  }
+ ],
+ "titles": [
+  "Certificates from Google Sheets",
+  "1 \u00b7 Create an API key",
+  "Copy the key",
+  "2 \u00b7 Add the Certrust script",
+  "Paste the script",
+  "3 \u00b7 Connect the sheet",
+  "Allow it once",
+  "Paste your key",
+  "Pick the achievement",
+  "4 \u00b7 Add people",
+  "Issue",
+  "Every row issued",
+  "Delivered by email",
+  "Verified by anyone",
+  "Optional: automatic issuing"
+ ],
+ "captions": [
+  "Keep your participant list in Google Sheets, and Sert trust issues a verifiable certificate for every new row. Here is how to set it up in about ten minutes.",
+  "First, in Sert trust, open Manage, then A P I keys. Name the key Google Sheets, keep Read and Issue ticked, and select Create key.",
+  "Copy the key straight away. It is only shown once.",
+  "Now open your Google Sheet, and choose Extensions, then Apps Script.",
+  "Delete the starter code, paste the Sert trust script from our setup guide, and save.",
+  "Reload the sheet. A Sert trust menu appears. Choose Connect this tab.",
+  "The first time, Google asks for permission. If it says the app is unverified, choose Advanced, then go to the project, and allow. The script is your own private copy.",
+  "Choose Connect this tab again, paste your A P I key, and select Connect.",
+  "Pick the achievement this tab should issue, and save. The column headings are added for you.",
+  "Now add people, one per row, with a name and an email address.",
+  "Then choose Sert trust, Issue new rows now.",
+  "Each row gets a status, and a link to its certificate.",
+  "Every person receives their certificate by email,",
+  "with a page that anyone can use to check that it is genuine.",
+  "To issue without clicking, turn on automatic issuing. New rows are then issued every five minutes. The full guide is at sert trust dot app."
+ ],
+ "durations": [
+  9.33,
+  8.44,
+  3.14,
+  4.04,
+  4.85,
+  4.57,
+  10.65,
+  4.32,
+  5.19,
+  3.98,
+  2.76,
+  3.42,
+  3.27,
+  3.59,
+  8.99
+ ],
+ "voice": "kokoro:af_heart"
+}

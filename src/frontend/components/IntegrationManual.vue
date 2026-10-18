@@ -126,4 +126,16 @@ withDefaults(defineProps<{
   color: #374151;
   line-height: 1.6;
 }
+/* Step screenshots and the tutorial video. */
+.manual :deep(.shot),
+.manual :deep(.tutorial) {
+  margin-top: 1rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+.manual :deep(.shot.narrow) {
+  max-width: 30rem;
+}
 </style>

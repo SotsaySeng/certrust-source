@@ -33,7 +33,7 @@ const steps = [
 const permissions = [
   { name: 'Read', does: 'Look up your achievements, events and the certificates you have issued.', when: 'Always. The assistant needs it to find things.' },
   { name: 'Issue', does: 'Issue certificates to one person or a whole list, and renew them.', when: 'When you want it to send certificates for you.' },
-  { name: 'Revoke', does: 'Cancel a certificate so it no longer verifies. This can\'t be undone.', when: 'Only if you really need it. You can always revoke on the dashboard yourself.' },
+  { name: 'Revoke', does: 'Cancel a certificate so it no longer verifies. This can\'t be undone.', when: 'Only if you really need it.' },
   { name: 'Manage', does: 'Create and edit achievements and events.', when: 'Rarely. Most people set these up on the website.' },
 ]
 
@@ -52,6 +52,16 @@ const prompts = [
     <p class="lead">
       Connect Certrust to the AI assistant you already use, such as Claude or ChatGPT, and ask it in plain words to issue, find or check your certificates. Setting it up takes about two minutes and needs no technical knowledge.
     </p>
+
+    <video
+      class="tutorial mt-8"
+      src="/guide/integrations/claude-tutorial.mp4"
+      poster="/guide/integrations/claude-7d-issued.jpg"
+      controls
+      preload="none"
+      playsinline
+      data-testid="guide-video"
+    />
 
     <nav class="steps mt-8 rounded-xl border border-gray-100 bg-gray-50 p-5" aria-label="Steps">
       <p class="font-semibold text-gray-900">
@@ -93,12 +103,26 @@ const prompts = [
     <section id="claude">
       <h2>3. Connect Claude</h2>
       <ol>
-        <li>On <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> or in the Claude app, open <strong>Settings</strong>, then <strong>Connectors</strong>.</li>
-        <li>Click <strong>Add custom connector</strong>. Name it <strong>Certrust</strong> and paste the address <code>{{ mcpUrl }}</code>. Click <strong>Add</strong>.</li>
-        <li>Click <strong>Connect</strong> next to Certrust. A Certrust page opens. Sign in if asked.</li>
-        <li>Choose what Claude may do (see <a href="#permissions">step 5</a>) and click <strong>Allow Claude</strong>.</li>
-        <li>You are taken back to Claude, and Certrust shows as connected.</li>
+        <li>On <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> or in the Claude app, open <strong>Customize</strong>, then <strong>Connectors</strong>. Select <strong>+ Add</strong>, then <strong>Add custom connector</strong>.</li>
       </ol>
+      <img class="shot" src="/guide/integrations/claude-1-connectors.jpg" alt="Claude's Connectors list with the + Add button" loading="lazy">
+      <ol start="2">
+        <li>Name it <strong>Certrust</strong>, paste the address <code>{{ mcpUrl }}</code> and select <strong>Continue</strong>.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/claude-2-add-custom-connector.jpg" alt="Claude's Add custom connector window with the name Certrust and the address filled in" loading="lazy">
+      <ol start="3">
+        <li>Claude checks Certrust and picks the sign-in settings for you: <strong>Sign in now</strong> and <strong>Register automatically</strong>, both marked "Detected". Leave them as they are, scroll down and select <strong>Add</strong>.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/claude-3-auth-detected.jpg" alt="Claude's connector settings with Sign in now and Register automatically marked Detected" loading="lazy">
+      <ol start="4">
+        <li>Select <strong>Connect</strong>. A Certrust page opens. Sign in if asked.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/claude-4-not-connected-yet.jpg" alt="The new Certrust connector in Claude with a Connect button" loading="lazy">
+      <ol start="5">
+        <li>Choose what Claude may do (see <a href="#permissions">step 5</a>) and select <strong>Allow Claude</strong>.</li>
+        <li>You are taken back to Claude, which now lists the Certrust tools. By default Claude asks you before it uses each one.</li>
+      </ol>
+      <img class="shot" src="/guide/integrations/claude-6-connected-tools.jpg" alt="Certrust connected in Claude, listing read-only and write tools, each set to Needs approval" loading="lazy">
       <img class="narrow" src="/guide/ai-1-consent.jpg" alt="The Certrust page asking to connect Claude to Aroha Academy, with Read and Issue ticked" loading="lazy">
       <div class="note">
         Check the line <strong>You will be sent back to …</strong> before you click Allow. For Claude it says <strong>claude.ai</strong>. If it shows a website you don't recognise, click <strong>Cancel</strong>.
@@ -159,6 +183,10 @@ const prompts = [
           <em>"{{ p }}"</em>
         </li>
       </ul>
+      <p>When Claude wants to issue, it shows exactly who will receive what and waits for you:</p>
+      <img class="shot" src="/guide/integrations/claude-7c-issue-approval.jpg" alt="Claude asking for approval to issue a credential, showing the achievement, recipient email and name, with Allow once and Decline" loading="lazy">
+      <p>Select <strong>Allow once</strong>, and it confirms with a link to the certificate:</p>
+      <img class="shot" src="/guide/integrations/claude-7d-issued.jpg" alt="Claude confirming it issued the certificate to Ana Ruiz, with the credential ID and a link" loading="lazy">
       <div class="note">
         <strong>Issuing is real.</strong> Every certificate is emailed to the recipient straight away and counts towards your credential allowance. Before it issues, the assistant should show you who will receive what. Read it, and only say yes when it is right. If you ask twice by mistake, the same person won't get the same certificate twice within 24 hours.
       </div>

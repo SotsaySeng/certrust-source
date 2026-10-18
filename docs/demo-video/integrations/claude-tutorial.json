@@ -1,0 +1,122 @@
+{
+ "audio": "../out/integrations/claude-tutorial.wav",
+ "scenes": [
+  {
+   "shot": "claude-7d-issued",
+   "focus": [
+    0.5,
+    0.3
+   ],
+   "zoom": 1.25
+  },
+  {
+   "shot": "claude-1-connectors",
+   "focus": [
+    0.85,
+    0.12
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "claude-2-add-custom-connector",
+   "focus": [
+    0.5,
+    0.4
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "claude-3-auth-detected",
+   "focus": [
+    0.75,
+    0.35
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "claude-4-not-connected-yet",
+   "focus": [
+    0.5,
+    0.5
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "claude-5-certrust-consent",
+   "focus": [
+    0.5,
+    0.45
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "claude-6-connected-tools",
+   "focus": [
+    0.45,
+    0.4
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "claude-7a-prompt",
+   "focus": [
+    0.5,
+    0.55
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "claude-7c-issue-approval",
+   "focus": [
+    0.5,
+    0.76
+   ],
+   "zoom": 1.25
+  },
+  {
+   "shot": "claude-7d-issued",
+   "focus": [
+    0.6,
+    0.35
+   ],
+   "zoom": 1.3
+  }
+ ],
+ "titles": [
+  "Issue certificates by asking Claude",
+  "1 · Add a custom connector",
+  "Enter the Certrust address",
+  "Keep the detected settings",
+  "Connect",
+  "2 · Choose what it may do",
+  "You approve each action",
+  "3 · Just ask",
+  "You stay in control",
+  "Done"
+ ],
+ "captions": [
+  "Connect Claude to Sert trust, and you can issue and look up certificates just by asking.",
+  "In Claude, open Customize, then Connectors, and choose Add, then Add custom connector.",
+  "Name it Sert trust, and enter the server address: A P I dot sert trust dot app, slash M C P.",
+  "Claude detects the sign in settings for you. Keep them, and add the connector.",
+  "Then select Connect.",
+  "Sign in to Sert trust, choose what Claude may do, and allow it. You can disconnect it at any time.",
+  "Claude now lists the Sert trust tools. By default, it asks before it uses each one.",
+  "Now just ask. For example: issue the Introduction to Data Analytics certificate to Anna Roo ease.",
+  "Claude shows exactly what it will issue, and waits for your approval.",
+  "And it is done. Anna gets her certificate by email. Connect your assistant at sert trust dot app."
+ ],
+ "durations": [
+  5.09,
+  5.73,
+  6.11,
+  4.57,
+  1.63,
+  5.94,
+  5.38,
+  6.6,
+  3.91,
+  6.24
+ ],
+ "voice": "kokoro:af_heart"
+}

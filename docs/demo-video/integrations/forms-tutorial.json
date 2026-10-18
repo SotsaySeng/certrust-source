@@ -1,0 +1,111 @@
+{
+ "audio": "../out/integrations/forms-tutorial.wav",
+ "scenes": [
+  {
+   "shot": "forms-7-issued-automatically",
+   "focus": [
+    0.6,
+    0.12
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "forms-1-questions",
+   "focus": [
+    0.45,
+    0.4
+   ],
+   "zoom": 1.15
+  },
+  {
+   "shot": "forms-2-link-to-sheets",
+   "focus": [
+    0.55,
+    0.15
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "forms-2b-response-sheet",
+   "focus": [
+    0.25,
+    0.1
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "forms-4-connected",
+   "focus": [
+    0.45,
+    0.35
+   ],
+   "zoom": 1.25
+  },
+  {
+   "shot": "forms-5-turn-on-automatic",
+   "focus": [
+    0.4,
+    0.2
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "forms-6-filled",
+   "focus": [
+    0.5,
+    0.5
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "forms-7-issued-automatically",
+   "focus": [
+    0.6,
+    0.12
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "forms-8-email-arrived",
+   "focus": [
+    0.5,
+    0.22
+   ],
+   "zoom": 1.3
+  }
+ ],
+ "titles": [
+  "Certificates from Google Forms",
+  "1 \u00b7 Build the form",
+  "2 \u00b7 Send answers to a sheet",
+  "The response sheet",
+  "3 \u00b7 Connect it to Certrust",
+  "4 \u00b7 Turn on automatic issuing",
+  "A participant fills it in",
+  "Issued automatically",
+  "In their inbox"
+ ],
+ "captions": [
+  "Give a certificate to everyone who fills in your Google Form, like a feedback form at the end of a workshop.",
+  "Build your form as usual. Add a Name question and an Email question, and make both required. Then add any other questions you like.",
+  "On the Responses tab, choose Link to Sheets, and create a new spreadsheet.",
+  "Every answer now lands as a row in that sheet.",
+  "Add the Sert trust script to this sheet, exactly as in our Google Sheets guide, and connect it with your A P I key.",
+  "Then choose Sert trust, Turn on automatic issuing. From now on, every form submission is issued straight away.",
+  "A participant fills in the form, and submits it.",
+  "Within a minute, their row says Issued, with a link to the certificate,",
+  "and the certificate is already in their inbox. Set it up at sert trust dot app."
+ ],
+ "durations": [
+  6.11,
+  8.14,
+  4.47,
+  2.89,
+  7.03,
+  7.18,
+  3.02,
+  3.96,
+  4.85
+ ],
+ "voice": "kokoro:af_heart"
+}

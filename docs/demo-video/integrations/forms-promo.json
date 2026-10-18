@@ -1,0 +1,56 @@
+{
+ "audio": "../out/integrations/forms-promo.wav",
+ "scenes": [
+  {
+   "shot": "forms-6-filled",
+   "focus": [
+    0.5,
+    0.5
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "forms-6-submitted",
+   "focus": [
+    0.5,
+    0.2
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "forms-7-issued-automatically",
+   "focus": [
+    0.6,
+    0.12
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "forms-8-email-arrived",
+   "focus": [
+    0.5,
+    0.22
+   ],
+   "zoom": 1.3
+  }
+ ],
+ "titles": [
+  "Running a workshop?",
+  "They submit",
+  "Issued automatically",
+  "certrust.app"
+ ],
+ "captions": [
+  "Running a workshop? Ask people to fill in your feedback form,",
+  "and the moment they submit,",
+  "their certificate is issued automatically,",
+  "and lands in their inbox. Nothing to chase. Sert trust, at sert trust dot app."
+ ],
+ "durations": [
+  3.61,
+  1.78,
+  2.8,
+  5.26
+ ],
+ "voice": "kokoro:af_heart"
+}

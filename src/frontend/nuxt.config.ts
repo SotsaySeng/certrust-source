@@ -42,10 +42,15 @@ export default defineNuxtConfig({
       hostname: websiteUrl,
       gzip: true,
       trailingSlash: false,
-      // Static routes always in sitemap. Credential pages are deliberately
-      // absent: they carry people's names and are noindex (Privacy Policy s.4).
-      staticRoutes: ['/', '/verify', '/login'],
-      exclude: ['/credentials/**'],
+      // Allow-list, so a new signed-in page never leaks in (the old exclude
+      // list published /dashboard, /billing, /admin/*...). Credential pages
+      // are deliberately absent: they carry people's names and are noindex
+      // (Privacy Policy s.4).
+      include: [
+        '/', '/about', '/solution', '/verify', '/get-started', '/register', '/login',
+        '/linkedin', '/guide/**', '/integrations', '/integrations/**',
+        '/privacy-policy', '/terms-and-conditions', '/data-processing-agreement', '/subprocessors',
+      ],
     }],
   ],
   svgo: {

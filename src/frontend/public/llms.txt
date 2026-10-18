@@ -4,6 +4,19 @@
 
 Certrust lets organizations issue tamper-proof digital credentials (badges, certificates, diplomas) to recipients who can share and verify them publicly. Built on Open Badges 3.0 and W3C Verifiable Credentials standards.
 
+## For organizations (no technical knowledge needed)
+
+Certrust is for training providers, workshop and event organizers, schools, universities and anyone who gives out certificates. Upload a list of names and emails (or type one name), pick a certificate or badge design, and send. Each person receives their certificate by email, can add it to LinkedIn or share a link, and anyone can check it is genuine on a public page or by scanning its QR code, without an account.
+
+- Typical uses: workshop and event attendance certificates, course completion certificates and diplomas, training that expires (first aid, safety, licences), badges for skills
+- Send hundreds at once from a CSV file, or schedule them for the day of the ceremony
+- Issue straight from Google Sheets, Google Forms, a student records system, or by asking Claude or ChatGPT (MCP connection)
+- Pricing: pay $0.20 per certificate (smallest purchase 50), or a yearly plan. Recipients never pay. Details: https://certrust.app/solution
+- Start here: https://certrust.app/get-started
+- Step-by-step guide: https://certrust.app/guide/issue-your-first-certificate
+- Check a certificate: https://certrust.app/verify
+- Contact: support@certrust.app
+
 ## Key capabilities
 
 - Issue Open Badges 3.0 credentials with cryptographic proof

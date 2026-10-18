@@ -3,7 +3,7 @@ const pricing = await useSolutionContent()
 // The homepage's "Works with your systems" cards (Sheets, Forms, the MCP
 // connection, the API): what the paid plans connect to.
 const { integrations } = await useHomeContent()
-const pageDescription = ref('Plans and pricing for issuing Open Badges 3.0 and W3C Verifiable Credentials with Certrust.')
+const pageDescription = ref('Certrust pricing: pay $0.20 per certificate for a single event, or choose a yearly plan. Recipients never pay to receive, share or check their certificates.')
 
 useSeoMeta({
   description: pageDescription.value,
@@ -12,7 +12,7 @@ useSeoMeta({
 })
 
 useHead({
-  title: 'Solution',
+  title: 'Pricing',
   link: [
     { rel: 'canonical', href: `${WEBSITE_URL}/solution` }
   ]

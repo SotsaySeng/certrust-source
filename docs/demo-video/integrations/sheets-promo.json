@@ -1,0 +1,67 @@
+{
+ "audio": "../out/integrations/sheets-promo.wav",
+ "scenes": [
+  {
+   "shot": "sheets-4a-rows-added",
+   "focus": [
+    0.15,
+    0.1
+   ],
+   "zoom": 1.4
+  },
+  {
+   "shot": "sheets-4b-issue-menu",
+   "focus": [
+    0.55,
+    0.1
+   ],
+   "zoom": 1.35
+  },
+  {
+   "shot": "sheets-4c-issued",
+   "focus": [
+    0.4,
+    0.1
+   ],
+   "zoom": 1.3
+  },
+  {
+   "shot": "sheets-5-email",
+   "focus": [
+    0.45,
+    0.6
+   ],
+   "zoom": 1.2
+  },
+  {
+   "shot": "sheets-5b-certificate",
+   "focus": [
+    0.5,
+    0.3
+   ],
+   "zoom": 1.15
+  }
+ ],
+ "titles": [
+  "Your list, in Google Sheets",
+  "One click",
+  "Certificates for everyone",
+  "Straight to their inbox",
+  "certrust.app"
+ ],
+ "captions": [
+  "Already keep your class list in Google Sheets?",
+  "Choose Issue new rows now,",
+  "and every row gets a verifiable certificate,",
+  "delivered straight to each person's inbox.",
+  "Anyone can check it is genuine. Sert trust. Get started at sert trust dot app."
+ ],
+ "durations": [
+  2.61,
+  1.82,
+  3.04,
+  2.53,
+  5.26
+ ],
+ "voice": "kokoro:af_heart"
+}
