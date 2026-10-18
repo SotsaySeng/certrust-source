@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-10-16T04:42:33.428Z"
+    "x-generation-date": "2026-10-18T05:44:47.333Z"
   },
   "openapi": "3.0.0",
   "x-strapi-config": {
@@ -24,7 +24,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:1357/api",
+      "url": "http://localhost:1355/api",
       "description": "Development server"
     }
   ],
@@ -27824,10 +27824,10 @@
               "socialGithubUrl": {
                 "type": "string"
               },
-              "socialDiscordUrl": {
+              "socialFacebookUrl": {
                 "type": "string"
               },
-              "socialTwitterUrl": {
+              "socialYoutubeUrl": {
                 "type": "string"
               },
               "contactEmail": {
@@ -28533,10 +28533,10 @@
           "socialGithubUrl": {
             "type": "string"
           },
-          "socialDiscordUrl": {
+          "socialFacebookUrl": {
             "type": "string"
           },
-          "socialTwitterUrl": {
+          "socialYoutubeUrl": {
             "type": "string"
           },
           "contactEmail": {
@@ -28756,10 +28756,10 @@
                 "socialGithubUrl": {
                   "type": "string"
                 },
-                "socialDiscordUrl": {
+                "socialFacebookUrl": {
                   "type": "string"
                 },
-                "socialTwitterUrl": {
+                "socialYoutubeUrl": {
                   "type": "string"
                 },
                 "contactEmail": {

@@ -21,8 +21,8 @@
     "tagline": { "type": "string" },
     "description": { "type": "text" },
     "socialGithubUrl": { "type": "string" },
-    "socialDiscordUrl": { "type": "string" },
-    "socialTwitterUrl": { "type": "string" },
+    "socialFacebookUrl": { "type": "string" },
+    "socialYoutubeUrl": { "type": "string" },
     "contactEmail": { "type": "email" },
     "contactWebsiteLabel": {
       "type": "string",

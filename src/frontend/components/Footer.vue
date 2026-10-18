@@ -31,24 +31,24 @@ const { globalSettings } = useGlobalSettings()
               <div class="i-lucide-github w-4 h-4 color-[#000]" />
             </a>
             <a
-              v-if="globalSettings.socialDiscordUrl"
-              :href="globalSettings.socialDiscordUrl"
+              v-if="globalSettings.socialFacebookUrl"
+              :href="globalSettings.socialFacebookUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="w-8 h-8 flex items-center justify-center rounded-full bg-[#28A745] text-white hover:opacity-80 transition-opacity"
-              title="Discord"
+              title="Facebook"
             >
-              <div class="i-lucide-message-circle w-4 h-4 color-[#000]" />
+              <div class="i-lucide-facebook w-4 h-4 color-[#000]" />
             </a>
             <a
-              v-if="globalSettings.socialTwitterUrl"
-              :href="globalSettings.socialTwitterUrl"
+              v-if="globalSettings.socialYoutubeUrl"
+              :href="globalSettings.socialYoutubeUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="w-8 h-8 flex items-center justify-center rounded-full bg-[#28A745] text-white hover:opacity-80 transition-opacity"
-              title="Twitter"
+              title="YouTube"
             >
-              <div class="i-lucide-twitter w-4 h-4 color-[#000]" />
+              <div class="i-lucide-youtube w-4 h-4 color-[#000]" />
             </a>
           </div>
         </div>

@@ -1035,9 +1035,9 @@ export interface ApiGlobalSettingsGlobalSettings
     publishedAt: Schema.Attribute.DateTime;
     quickLinks: Schema.Attribute.Component<'marketing.link-item', true>;
     resourceLinks: Schema.Attribute.Component<'marketing.link-item', true>;
-    socialDiscordUrl: Schema.Attribute.String;
+    socialFacebookUrl: Schema.Attribute.String;
     socialGithubUrl: Schema.Attribute.String;
-    socialTwitterUrl: Schema.Attribute.String;
+    socialYoutubeUrl: Schema.Attribute.String;
     tagline: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

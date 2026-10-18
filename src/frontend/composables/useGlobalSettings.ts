@@ -8,8 +8,8 @@ export interface GlobalSettings {
   tagline: string
   description: string
   socialGithubUrl: string | null
-  socialDiscordUrl: string | null
-  socialTwitterUrl: string | null
+  socialFacebookUrl: string | null
+  socialYoutubeUrl: string | null
   contactEmail: string | null
   contactWebsiteLabel: string | null
   contactWebsiteUrl: string | null
@@ -24,8 +24,8 @@ const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
   tagline: '',
   description: '',
   socialGithubUrl: null,
-  socialDiscordUrl: null,
-  socialTwitterUrl: null,
+  socialFacebookUrl: null,
+  socialYoutubeUrl: null,
   contactEmail: null,
   contactWebsiteLabel: null,
   contactWebsiteUrl: null,
@@ -74,8 +74,8 @@ export default function useGlobalSettings() {
         tagline: raw.tagline ?? '',
         description: raw.description ?? '',
         socialGithubUrl: raw.socialGithubUrl || null,
-        socialDiscordUrl: raw.socialDiscordUrl || null,
-        socialTwitterUrl: raw.socialTwitterUrl || null,
+        socialFacebookUrl: raw.socialFacebookUrl || null,
+        socialYoutubeUrl: raw.socialYoutubeUrl || null,
         contactEmail: raw.contactEmail || null,
         contactWebsiteLabel: raw.contactWebsiteLabel || null,
         contactWebsiteUrl: raw.contactWebsiteUrl || null,
