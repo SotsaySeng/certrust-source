@@ -158,5 +158,6 @@ Pass Type ID certificate to sign `.pkpass` files).
    and restart it. The button appears once all three are set. On Cloudflare:
    add them to `src/backend/.env.production` (see
    `deploy/cloudflare/env.production.example`), run
-   `deploy/cloudflare/push-secrets.sh`, then redeploy the API (the container
-   only receives keys listed in `deploy/cloudflare/api/src/index.ts`).
+   `deploy/cloudflare/push-secrets.sh`, then `deploy/cloudflare/restart-api.sh`
+   (the running container keeps its old settings until restarted, and only
+   receives keys listed in `deploy/cloudflare/api/src/index.ts`).

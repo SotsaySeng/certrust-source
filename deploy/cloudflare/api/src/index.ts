@@ -132,6 +132,16 @@ export default {
       }
       return Response.json({ retired: await retireOldInstances(env) })
     }
+    // A running container keeps the env it booted with: redeploys and
+    // `wrangler secret` changes reach it only after it stops. This stops it;
+    // the next request boots a fresh one (a cold start, ~1-3 min).
+    if (url.pathname === '/__ops/restart-backend') {
+      if (request.method !== 'POST' || !tokenMatches(request.headers.get('x-ops-token'), env.OPS_TOKEN)) {
+        return new Response('Not Found', { status: 404 })
+      }
+      await backend(env).destroy()
+      return Response.json({ restarted: INSTANCE })
+    }
 
     // The backend trusts X-Forwarded-For (IS_PROXIED) for rate limiting, so
     // overwrite it with the address Cloudflare saw - never pass through

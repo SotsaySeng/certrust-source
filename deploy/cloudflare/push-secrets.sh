@@ -76,4 +76,4 @@ fi
 
 cd "$ROOT/deploy/cloudflare/api"
 "$WRANGLER" secret bulk "$tmp"
-echo "Done. Redeploy (deploy.sh) or wait for the next container start for them to take effect."
+echo "Done. Run deploy/cloudflare/restart-api.sh for them to take effect (a redeploy alone does not restart the running container)."

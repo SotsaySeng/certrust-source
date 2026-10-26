@@ -99,3 +99,8 @@ cd deploy/cloudflare/api
 npx wrangler tail            # live logs from the API Worker and container
 npx wrangler containers list # container status
 ```
+
+**Changed a secret?** `push-secrets.sh`, then `restart-api.sh`. A running
+container keeps the settings it booted with, and a redeploy does not restart
+it; `restart-api.sh` stops it (protected by `OPS_TOKEN`) and waits for a fresh
+one, which means 1-3 minutes of API downtime.
