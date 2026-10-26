@@ -136,8 +136,12 @@ LinkedIn/Facebook/WhatsApp (`pages/credentials/[id]/index.vue`):
 - **Google Wallet** - `GET /api/credentials/:id/google-wallet` returns
   `{ url }`, a `pay.google.com/gp/v/save/<jwt>` link. The JWT
   (`services/google-wallet.ts`) carries a Generic pass: issuer name, credential
-  name, recipient name, dates, certificate image (public credentials only)
-  and a QR code to the credential page. Same audience as the LinkedIn button;
+  name, recipient name, dates, the Certrust logo and a QR code to the
+  credential page. No certificate picture: Google rejects the whole pass
+  ("Image cannot be loaded") when an image loads slowly, and the rendered
+  certificate/badge images take ~3 s. Google's save page only says
+  "Something went wrong" - to see the real error, insert the object with the
+  Wallet REST API using the same service account. Same audience as the LinkedIn button;
   not offered for revoked credentials. A saved pass does not change when the
   credential is revoked later - its QR opens the live page, which says so.
 

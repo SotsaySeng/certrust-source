@@ -53,15 +53,14 @@ describe('google wallet service', () => {
     expect(obj.cardTitle.defaultValue.value).toBe('Zettabyte Lab')
     expect(obj.header.defaultValue.value).toBe('Jane Doe')
     expect(obj.barcode.value).toBe('https://certrust.app/credentials/urn%3Auuid%3Aabc-123')
-    expect(obj.heroImage.sourceUri.uri).toBe('https://api.certrust.app/api/credentials/urn%3Auuid%3Aabc-123/share-image')
-    expect(obj.logo.sourceUri.uri).toContain('/badge?size=660')
+    // Static images only: Google rejects a pass whose image loads slowly.
+    expect(obj.heroImage).toBeUndefined()
+    expect(obj.logo.sourceUri.uri).toBe('https://certrust.app/android-chrome-512x512.png')
     expect(obj.validTimeInterval.end.date).toBe('2027-09-25T00:00:00.000Z')
   })
 
-  it('leaves non-public images off a private credential', () => {
-    const obj: any = service.buildObject({ ...credential, visibility: 'private', expirationDate: null }, 'x')
-    expect(obj.heroImage).toBeUndefined()
-    expect(obj.logo.sourceUri.uri).toBe('https://certrust.app/android-chrome-512x512.png')
+  it('leaves the expiry off a credential that does not expire', () => {
+    const obj: any = service.buildObject({ ...credential, expirationDate: null }, 'x')
     expect(obj.validTimeInterval).toBeUndefined()
     expect(obj.textModulesData).toHaveLength(1)
   })

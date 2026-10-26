@@ -16,7 +16,6 @@
  */
 
 import { SignJWT, importPKCS8 } from 'jose'
-import { isCredentialPrivate } from '../../../utils/public-credential'
 import { issuerDisplayName } from '../../../utils/issuer-display-name'
 
 const CLASS_SUFFIX = 'certrust_credential'
@@ -40,11 +39,8 @@ export default ({ strapi }) => ({
   /** Pass object for a credential row (achievement/issuer/recipient populated). */
   buildObject(credential: any, issuerId: string) {
     const frontendUrl = String(strapi.config.get('frontend.url', 'http://localhost:3000')).replace(/\/+$/, '')
-    const apiUrl = String(strapi.config.get('server.url', 'http://localhost:1337')).replace(/\/+$/, '')
     const id = encodeURIComponent(credential.credentialId)
     const pageUrl = `${frontendUrl}/credentials/${id}`
-    // Google fetches images anonymously; private credentials' images are not public.
-    const isPublic = !isCredentialPrivate(credential)
     const name = credential.name || credential.achievement?.name || 'Credential'
 
     const textModulesData = [{ id: 'issued', header: 'Issued', body: day(credential.issuanceDate) }]
@@ -60,20 +56,14 @@ export default ({ strapi }) => ({
       cardTitle: text(issuerDisplayName(credential.issuer)),
       subheader: text(name),
       header: text(credential.recipient?.name || name),
+      // A static file only: Google rejects the whole pass ("Image cannot be
+      // loaded") when an image is slow, and the rendered certificate/badge
+      // images take ~3 s. ponytail: no certificate picture on the pass; add
+      // one back as a pre-rendered file (e.g. on R2) if it is wanted.
       logo: {
-        sourceUri: {
-          uri: isPublic && credential.badgeDesignSnapshot
-            ? `${apiUrl}/api/credentials/${id}/badge?size=660`
-            : `${frontendUrl}/android-chrome-512x512.png`,
-        },
+        sourceUri: { uri: `${frontendUrl}/android-chrome-512x512.png` },
         contentDescription: text(name),
       },
-      ...(isPublic && {
-        heroImage: {
-          sourceUri: { uri: `${apiUrl}/api/credentials/${id}/share-image` },
-          contentDescription: text(name),
-        },
-      }),
       hexBackgroundColor: '#1B2420',
       barcode: { type: 'QR_CODE', value: pageUrl },
       textModulesData,
