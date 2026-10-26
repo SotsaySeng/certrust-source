@@ -13,6 +13,14 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TOKEN="$(sed -n 's/^OPS_TOKEN=//p' "$ROOT/src/backend/.env.production" | tr -d '"'"'")"
 [ -n "$TOKEN" ] || { echo "OPS_TOKEN missing in src/backend/.env.production" >&2; exit 1; }
 
+# After a deploy Cloudflare rolls the new image out first ("provisioning");
+# a container restarted before that boots the previous image.
+WRANGLER="$ROOT/deploy/cloudflare/api/node_modules/.bin/wrangler"
+echo "Waiting for the container rollout..."
+until (cd "$ROOT/deploy/cloudflare/api" && "$WRANGLER" containers list 2>/dev/null) | grep certrust-api-strapibackend | grep -vq provisioning; do
+  sleep 30
+done
+
 curl -fsS -X POST -H "x-ops-token: $TOKEN" https://api.certrust.app/__ops/restart-backend
 echo
 echo "Waiting for the API to boot..."

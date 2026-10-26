@@ -759,18 +759,17 @@ async function submitRenewal() {
                 </a>
               </template>
               <!-- Wallets: a quiet second row, the share buttons stay the main action. -->
-              <div v-if="canAddToGoogleWallet || canManage" class="flex w-full flex-wrap gap-2 lg:justify-end">
+              <div v-if="canAddToGoogleWallet || canManage" class="flex w-full flex-wrap items-center gap-2 lg:justify-end">
+                <!-- Google's official artwork, unmodified (brand guidelines: black,
+                     at least 48px tall, localized, no restyling). -->
                 <button
                   v-if="canAddToGoogleWallet"
                   type="button"
-                  class="wallet-button"
+                  class="google-wallet-button"
                   data-testid="add-google-wallet"
-                  :title="t('credential.addToGoogleWallet')"
-                  :aria-label="t('credential.addToGoogleWallet')"
                   @click="addToGoogleWallet"
                 >
-                  <span class="i-lucide-wallet-cards w-4 h-4" aria-hidden="true" />
-                  Google Wallet
+                  <img :src="`/wallet/add-to-google-wallet-${locale}.svg`" :alt="t('credential.addToGoogleWallet')" height="48" class="h-12 w-auto">
                 </button>
                 <button
                   v-if="canManage"
@@ -1216,6 +1215,11 @@ async function submitRenewal() {
   background-color: #f3f4f6;
   color: #111827;
 }
+.google-wallet-button {
+  display: inline-flex;
+  border-radius: 9999px;
+}
+.google-wallet-button:focus-visible,
 .wallet-button:focus-visible {
   outline: 2px solid #1a202c;
   outline-offset: 2px;
