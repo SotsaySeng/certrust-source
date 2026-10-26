@@ -151,7 +151,11 @@
     "renewSuccess": "Justificatif renouvelé avec succès",
     "issueSuccess": "Justificatif émis avec succès",
     "allChecksPassed": "Toutes les vérifications ont réussi.",
-    "someChecksFailed": "Une ou plusieurs vérifications ont échoué. Voir le détail ci-dessous."
+    "someChecksFailed": "Une ou plusieurs vérifications ont échoué. Voir le détail ci-dessous.",
+    "addToGoogleWallet": "Ajouter à Google Wallet",
+    "downloadOpenBadge": "Fichier Open Badge",
+    "openBadgeHelp": "Téléchargez le fichier Open Badge signé pour l’importer dans Credly, Canvas Credentials ou Learner Credential Wallet.",
+    "walletError": "Une erreur s’est produite. Veuillez réessayer."
   },
   "achievement": {
     "title": "Réalisation",

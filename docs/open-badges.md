@@ -121,3 +121,42 @@ The `endorsement` content type mirrors the OBv3 Endorsement Credential shape
 (`endorser`, `endorsedObject`, `claim`, `proof`) and has a controller `verify`
 route (`endorsement-verify.ts`), but no dedicated serialization/signing service
 comparable to `open-badge.ts` — it's less built out than `credential`.
+
+## Wallets
+
+The credential page offers two "keep it in a wallet" buttons next to
+LinkedIn/Facebook/WhatsApp (`pages/credentials/[id]/index.vue`):
+
+- **Open Badge file** - `GET /api/credentials/:id/open-badge` returns the
+  signed OBv3 credential above as a `.json` download, for badge wallets
+  (Credly, Canvas Credentials, Learner Credential Wallet). Issuer or
+  recipient only (signed in), public or private: the signed
+  `credentialSubject.id` is the recipient's email and cannot be removed
+  without breaking the proof.
+- **Google Wallet** - `GET /api/credentials/:id/google-wallet` returns
+  `{ url }`, a `pay.google.com/gp/v/save/<jwt>` link. The JWT
+  (`services/google-wallet.ts`) carries a Generic pass: issuer name, credential
+  name, recipient name, dates, certificate image (public credentials only)
+  and a QR code to the credential page. Same audience as the LinkedIn button;
+  not offered for revoked credentials. A saved pass does not change when the
+  credential is revoked later - its QR opens the live page, which says so.
+
+Apple Wallet is not supported (it needs a paid Apple Developer account and a
+Pass Type ID certificate to sign `.pkpass` files).
+
+### Google Wallet setup (once)
+
+1. [Google Pay & Wallet Console](https://pay.google.com/business/console) -
+   create the issuer account; note the **Issuer ID**.
+2. Google Cloud console - enable the **Google Wallet API**, create a service
+   account, and download a JSON key for it.
+3. Back in the Wallet Console - **Users**: add the service account's email.
+   Then request **publishing access**; until Google approves it, only the
+   test accounts listed in the console can save passes.
+4. Set `GOOGLE_WALLET_ISSUER_ID`, `GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL`
+   (`client_email`) and `GOOGLE_WALLET_PRIVATE_KEY` (`private_key`) on the API
+   and restart it. The button appears once all three are set. On Cloudflare:
+   add them to `src/backend/.env.production` (see
+   `deploy/cloudflare/env.production.example`), run
+   `deploy/cloudflare/push-secrets.sh`, then redeploy the API (the container
+   only receives keys listed in `deploy/cloudflare/api/src/index.ts`).

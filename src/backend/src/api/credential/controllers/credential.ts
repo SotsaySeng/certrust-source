@@ -163,7 +163,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
         const canManage = !!user && await canManageCredential(strapi, user, credential)
         const verificationService = strapi.service('api::credential.verification')
         const result = await verificationService.verifyCredential(credential.credentialId, { fullView: canManage })
-        return { ...result, viewer: { canManage } }
+        return { ...result, viewer: { canManage }, wallet: { google: strapi.service('api::credential.google-wallet').isConfigured() } }
       } catch (error) {
         // The old fallback here re-queried and returned the unsanitised row
         // (recipient email/telephone included). Not found is the answer.
@@ -539,6 +539,52 @@ export default factories.createCoreController('api::credential.credential', ({ s
     } catch (error) {
       console.error('Error generating share image:', error)
       return ctx.internalServerError('Failed to generate share image')
+    }
+  },
+
+  /**
+   * GET /credentials/:id/google-wallet - { url } of the "Save to Google
+   * Wallet" page. Same audience as the LinkedIn button: anyone for a public
+   * credential, only its issuer or recipient for a private one.
+   */
+  async getGoogleWallet(ctx) {
+    try {
+      const wallet = strapi.service('api::credential.google-wallet')
+      const credential = await findPublicCredential(strapi, ctx.params.id)
+      if (!wallet.isConfigured() || !credential || credential.revoked ||
+        (isCredentialPrivate(credential) && !(await canManageCredential(strapi, await optionalUser(strapi, ctx), credential)))) {
+        return ctx.notFound('Credential not found')
+      }
+      ctx.set('Cache-Control', 'private, no-store')
+      return { url: await wallet.saveUrl(credential) }
+    } catch (error) {
+      console.error('Error creating Google Wallet pass:', error)
+      return ctx.internalServerError('Failed to create Google Wallet pass')
+    }
+  },
+
+  /**
+   * GET /credentials/:id/open-badge - the signed Open Badges 3.0 credential
+   * as a .json download, for badge wallets (Credly, Canvas Credentials,
+   * Learner Credential Wallet). Issuer or recipient only, public or not:
+   * the signed subject is the recipient's email, which cannot be stripped
+   * without breaking the proof.
+   */
+  async downloadOpenBadge(ctx) {
+    try {
+      const credential = await findPublicCredential(strapi, ctx.params.id)
+      if (!credential || !(await canManageCredential(strapi, await optionalUser(strapi, ctx), credential))) {
+        return ctx.notFound('Credential not found')
+      }
+      const vc = await strapi.service('api::credential.open-badge').serializeCredential(credential.id)
+      const fileName = String(credential.name || 'credential').replace(/[^\w .-]/g, '').trim() || 'credential'
+      ctx.set('Cache-Control', 'private, no-store')
+      ctx.set('Content-Disposition', `attachment; filename="${fileName}.json"`)
+      ctx.type = 'application/json'
+      ctx.body = JSON.stringify(vc, null, 2)
+    } catch (error) {
+      console.error('Error exporting Open Badge:', error)
+      return ctx.internalServerError('Failed to export Open Badge')
     }
   },
 

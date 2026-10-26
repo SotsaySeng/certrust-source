@@ -151,7 +151,11 @@
     "renewSuccess": "Credencial renovada com sucesso",
     "issueSuccess": "Credencial emitida com sucesso",
     "allChecksPassed": "Todas as verificações foram aprovadas.",
-    "someChecksFailed": "Uma ou mais verificações falharam. Veja os detalhes abaixo."
+    "someChecksFailed": "Uma ou mais verificações falharam. Veja os detalhes abaixo.",
+    "addToGoogleWallet": "Adicionar à Google Wallet",
+    "downloadOpenBadge": "Arquivo Open Badge",
+    "openBadgeHelp": "Baixe o arquivo Open Badge assinado para importar no Credly, Canvas Credentials ou Learner Credential Wallet.",
+    "walletError": "Algo deu errado. Tente novamente."
   },
   "achievement": {
     "title": "Conquista",

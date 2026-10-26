@@ -151,7 +151,11 @@
     "renewSuccess": "Credential renewed successfully",
     "issueSuccess": "Credential issued successfully",
     "allChecksPassed": "All verification checks passed.",
-    "someChecksFailed": "One or more verification checks failed. See the details below."
+    "someChecksFailed": "One or more verification checks failed. See the details below.",
+    "addToGoogleWallet": "Add to Google Wallet",
+    "downloadOpenBadge": "Open Badge file",
+    "openBadgeHelp": "Download the signed Open Badge file to import into Credly, Canvas Credentials or Learner Credential Wallet.",
+    "walletError": "Something went wrong. Please try again."
   },
   "achievement": {
     "title": "Achievement",

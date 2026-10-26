@@ -151,7 +151,11 @@
     "renewSuccess": "Credencial renovada exitosamente",
     "issueSuccess": "Credencial emitida exitosamente",
     "allChecksPassed": "Se superaron todas las comprobaciones.",
-    "someChecksFailed": "Una o más comprobaciones han fallado. Consulta los detalles abajo."
+    "someChecksFailed": "Una o más comprobaciones han fallado. Consulta los detalles abajo.",
+    "addToGoogleWallet": "Añadir a Google Wallet",
+    "downloadOpenBadge": "Archivo Open Badge",
+    "openBadgeHelp": "Descarga el archivo Open Badge firmado para importarlo en Credly, Canvas Credentials o Learner Credential Wallet.",
+    "walletError": "Algo salió mal. Inténtalo de nuevo."
   },
   "achievement": {
     "title": "Logro",

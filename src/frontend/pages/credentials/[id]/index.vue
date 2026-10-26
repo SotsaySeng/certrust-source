@@ -464,6 +464,40 @@ function getWhatsAppShareUrl() {
   return `https://wa.me/?text=${encodeURIComponent(text)}`
 }
 
+// Wallets. The API signs the Google pass; the Open Badge file is the
+// holder's own signed credential (it carries their email), so it is
+// for the issuer and recipient only - the API checks that too.
+const canAddToGoogleWallet = computed(() =>
+  !!verificationData.value?.wallet?.google && !verificationData.value?.rawCredential?.revoked)
+const walletError = ref('')
+
+async function addToGoogleWallet() {
+  walletError.value = ''
+  try {
+    const res = await fetch(`${apiUrl}/api/credentials/${encodeURIComponent(credentialId)}/google-wallet`, { credentials: 'include' })
+    if (!res.ok) {
+      throw new Error(`Google Wallet failed (${res.status})`)
+    }
+    // Same tab: Android hands the link to the Wallet app, and no popup blocker.
+    window.location.href = (await res.json()).url
+  }
+  catch (err) {
+    console.error('Error adding to Google Wallet:', err)
+    walletError.value = t('credential.walletError')
+  }
+}
+
+async function downloadOpenBadge() {
+  walletError.value = ''
+  try {
+    await downloadServerFile(`${apiUrl}/api/credentials/${encodeURIComponent(credentialId)}/open-badge`, getCredentialName() || 'credential', 'json')
+  }
+  catch (err) {
+    console.error('Error downloading Open Badge:', err)
+    walletError.value = t('credential.walletError')
+  }
+}
+
 // ============================================================================
 // EXPIRATION & RENEWAL
 // ============================================================================
@@ -724,7 +758,37 @@ async function submitRenewal() {
                   WhatsApp
                 </a>
               </template>
+              <button
+                v-if="canAddToGoogleWallet"
+                type="button"
+                class="share-button bg-black hover:bg-[#3c4043]"
+                data-testid="add-google-wallet"
+                :title="t('credential.addToGoogleWallet')"
+                :aria-label="t('credential.addToGoogleWallet')"
+                @click="addToGoogleWallet"
+              >
+                <span class="i-lucide-wallet-cards w-5 h-5" aria-hidden="true" />
+                Google Wallet
+              </button>
+              <button
+                v-if="canManage"
+                type="button"
+                class="share-button bg-[#2a2a72] hover:bg-[#1c1c52]"
+                data-testid="download-open-badge"
+                :title="t('credential.openBadgeHelp')"
+                :aria-label="t('credential.downloadOpenBadge')"
+                @click="downloadOpenBadge"
+              >
+                <span class="i-simple-icons-openbadges w-5 h-5" aria-hidden="true" />
+                {{ t('credential.downloadOpenBadge') }}
+              </button>
             </template>
+            <p v-if="canManage" class="w-full text-sm text-gray-500 lg:text-right">
+              {{ t('credential.openBadgeHelp') }}
+            </p>
+            <p v-if="walletError" class="w-full text-sm text-red-600 lg:text-right" role="alert">
+              {{ walletError }}
+            </p>
           </div>
         </div>
 

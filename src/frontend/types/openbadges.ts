@@ -188,6 +188,8 @@ export interface VerificationResult {
   rawCredential?: any
   /** Set by the API when the viewer is signed in as the issuer or recipient. */
   viewer?: { canManage: boolean }
+  /** Wallets the API is set up for. */
+  wallet?: { google: boolean }
 }
 
 export interface VerificationCheck {

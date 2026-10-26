@@ -117,6 +117,35 @@ export default {
       },
     },
 
+    // ---------------------------------------------------------------
+    // Wallets - auth:false like the images, the controllers check who may
+    // have a private credential (and the Open Badge file always).
+    // ---------------------------------------------------------------
+
+    // "Add to Google Wallet" link ({ url })
+    {
+      method: 'GET',
+      path: '/credentials/:id/google-wallet',
+      handler: 'credential.getGoogleWallet',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+
+    // Signed Open Badges 3.0 file, for the holder's badge wallet
+    {
+      method: 'GET',
+      path: '/credentials/:id/open-badge',
+      handler: 'credential.downloadOpenBadge',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+      },
+    },
+
     // Short-form direct certificate URL (/verify/<id>)
     {
       method: 'GET',

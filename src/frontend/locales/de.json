@@ -151,7 +151,11 @@
     "renewSuccess": "Nachweis erfolgreich erneuert",
     "issueSuccess": "Nachweis erfolgreich ausgestellt",
     "allChecksPassed": "Alle Prüfungen wurden bestanden.",
-    "someChecksFailed": "Mindestens eine Prüfung ist fehlgeschlagen. Details siehe unten."
+    "someChecksFailed": "Mindestens eine Prüfung ist fehlgeschlagen. Details siehe unten.",
+    "addToGoogleWallet": "Zu Google Wallet hinzufügen",
+    "downloadOpenBadge": "Open-Badge-Datei",
+    "openBadgeHelp": "Laden Sie die signierte Open-Badge-Datei herunter, um sie in Credly, Canvas Credentials oder Learner Credential Wallet zu importieren.",
+    "walletError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
   },
   "achievement": {
     "title": "Auszeichnung",
