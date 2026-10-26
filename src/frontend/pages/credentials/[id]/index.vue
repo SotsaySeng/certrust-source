@@ -758,34 +758,34 @@ async function submitRenewal() {
                   WhatsApp
                 </a>
               </template>
-              <button
-                v-if="canAddToGoogleWallet"
-                type="button"
-                class="share-button bg-black hover:bg-[#3c4043]"
-                data-testid="add-google-wallet"
-                :title="t('credential.addToGoogleWallet')"
-                :aria-label="t('credential.addToGoogleWallet')"
-                @click="addToGoogleWallet"
-              >
-                <span class="i-lucide-wallet-cards w-5 h-5" aria-hidden="true" />
-                Google Wallet
-              </button>
-              <button
-                v-if="canManage"
-                type="button"
-                class="share-button bg-[#2a2a72] hover:bg-[#1c1c52]"
-                data-testid="download-open-badge"
-                :title="t('credential.openBadgeHelp')"
-                :aria-label="t('credential.downloadOpenBadge')"
-                @click="downloadOpenBadge"
-              >
-                <span class="i-simple-icons-openbadges w-5 h-5" aria-hidden="true" />
-                {{ t('credential.downloadOpenBadge') }}
-              </button>
+              <!-- Wallets: a quiet second row, the share buttons stay the main action. -->
+              <div v-if="canAddToGoogleWallet || canManage" class="flex w-full flex-wrap gap-2 lg:justify-end">
+                <button
+                  v-if="canAddToGoogleWallet"
+                  type="button"
+                  class="wallet-button"
+                  data-testid="add-google-wallet"
+                  :title="t('credential.addToGoogleWallet')"
+                  :aria-label="t('credential.addToGoogleWallet')"
+                  @click="addToGoogleWallet"
+                >
+                  <span class="i-lucide-wallet-cards w-4 h-4" aria-hidden="true" />
+                  Google Wallet
+                </button>
+                <button
+                  v-if="canManage"
+                  type="button"
+                  class="wallet-button"
+                  data-testid="download-open-badge"
+                  :title="t('credential.openBadgeHelp')"
+                  :aria-label="t('credential.downloadOpenBadge')"
+                  @click="downloadOpenBadge"
+                >
+                  <span class="i-simple-icons-openbadges w-4 h-4" aria-hidden="true" />
+                  {{ t('credential.downloadOpenBadge') }}
+                </button>
+              </div>
             </template>
-            <p v-if="canManage" class="w-full text-sm text-gray-500 lg:text-right">
-              {{ t('credential.openBadgeHelp') }}
-            </p>
             <p v-if="walletError" class="w-full text-sm text-red-600 lg:text-right" role="alert">
               {{ walletError }}
             </p>
@@ -1198,6 +1198,26 @@ async function submitRenewal() {
 }
 .share-button:focus-visible {
   outline: 3px solid #1a202c;
+  outline-offset: 2px;
+}
+.wallet-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.wallet-button:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+.wallet-button:focus-visible {
+  outline: 2px solid #1a202c;
   outline-offset: 2px;
 }
 </style>
