@@ -50,6 +50,10 @@ const pageDescription = ref('Your Certrust dashboard: manage your issued and rec
 
 const receivedCertificates = ref<Certificate[]>([])
 const issuedCertificates = ref<Certificate[]>([])
+
+function markRevoked(id: number | string) {
+  issuedCertificates.value = issuedCertificates.value.map(cert => cert.id === id ? { ...cert, revoked: true } : cert)
+}
 const dashboardStats = ref<DashboardStats | null>(null)
 const organizationUsage = ref<OrganizationUsage>({ tier: null, limit: null })
 
@@ -327,7 +331,7 @@ onMounted(async () => {
             Issue Your First Certificate
           </NuxtLink>
         </div>
-        <IssuedCredentialsTable v-else :credentials="issuedCertificates" />
+        <IssuedCredentialsTable v-else :credentials="issuedCertificates" @revoked="markRevoked" />
       </div>
     </template>
   </div>

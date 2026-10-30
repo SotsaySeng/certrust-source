@@ -225,7 +225,9 @@
       "next": "Weiter",
       "downloadFailed": "Zertifikat konnte nicht heruntergeladen werden",
       "downloadImage": "Bild herunterladen (PNG)",
-      "downloadPdf": "PDF herunterladen"
+      "downloadPdf": "PDF herunterladen",
+      "revokeWarning": "Das kann nicht rückgängig gemacht werden: Die Prüfung schlägt ab sofort fehl. Der Grund ist für alle sichtbar, die den Nachweis prüfen.",
+      "revokeFailed": "Der Nachweis konnte nicht widerrufen werden. Bitte versuchen Sie es erneut."
     }
   },
   "errors": {

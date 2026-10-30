@@ -43,7 +43,7 @@ export default () => ({
 
       const credential = await credentialService.issue(
         achievement,
-        recipient,
+        { ...recipient, name: item.recipientName || recipient.name },
         [],
         item.expirationDate ? new Date(item.expirationDate).toISOString() : undefined,
         item.scheduledById ?? undefined,

@@ -105,7 +105,7 @@ export default ({ strapi }) => ({
       }
 
       // Get required data
-      const recipientName = credential.recipient?.name || 'Recipient'
+      const recipientName = credential.recipientName || credential.recipient?.name || 'Recipient'
       const achievementName = credential.achievement?.name || credential.name || 'Achievement'
       // Organisation name, not the admin's username (see issuer-display-name.ts)
       const issuerName = issuerDisplayName(credential.issuer as any, 'Issuer')

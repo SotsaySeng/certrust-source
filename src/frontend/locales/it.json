@@ -225,7 +225,9 @@
       "next": "Successiva",
       "downloadFailed": "Impossibile scaricare il certificato",
       "downloadImage": "Scarica immagine (PNG)",
-      "downloadPdf": "Scarica PDF"
+      "downloadPdf": "Scarica PDF",
+      "revokeWarning": "L'operazione è irreversibile: da ora la verifica non andrà a buon fine. Il motivo è visibile a chiunque la verifichi.",
+      "revokeFailed": "Impossibile revocare la credenziale. Riprova."
     }
   },
   "errors": {

@@ -225,7 +225,9 @@
       "next": "Próxima",
       "downloadFailed": "Não foi possível baixar o certificado",
       "downloadImage": "Baixar imagem (PNG)",
-      "downloadPdf": "Baixar PDF"
+      "downloadPdf": "Baixar PDF",
+      "revokeWarning": "Não é possível desfazer: a partir de agora, a verificação falhará. O motivo fica visível para quem a verificar.",
+      "revokeFailed": "Não foi possível revogar a credencial. Tente novamente."
     }
   },
   "errors": {

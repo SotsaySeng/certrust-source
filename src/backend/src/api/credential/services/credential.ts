@@ -120,6 +120,8 @@ export default factories.createCoreService('api::credential.credential', ({ stra
           achievement: achievement.id,
           issuer: achievement.creator?.id,
           recipient: recipientEntity.id,
+          // The name as issued. One profile per email, so its name can differ.
+          recipientName: String(recipient?.name ?? '').trim() || recipientEntity.name,
           issuanceDate: new Date(),
           revoked: false,
           // Not in the signed payload: visibility is the recipient's to change.

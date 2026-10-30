@@ -225,7 +225,9 @@
       "next": "Next",
       "downloadFailed": "Could not download the certificate",
       "downloadImage": "Download image (PNG)",
-      "downloadPdf": "Download PDF"
+      "downloadPdf": "Download PDF",
+      "revokeWarning": "This can't be undone: it will fail verification from now on. The reason is shown to anyone who verifies it.",
+      "revokeFailed": "Could not revoke the credential. Please try again."
     }
   },
   "errors": {

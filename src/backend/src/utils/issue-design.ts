@@ -143,7 +143,7 @@ export function credentialPlaceholderData(credential: any, defs: CustomAttribute
   const frontendUrl = strapi.config.get('frontend.url', 'http://localhost:3000')
   const issuer = credential.issuer
   const data: PlaceholderData = {
-    'recipient.name': credential.recipient?.name || '',
+    'recipient.name': credential.recipientName || credential.recipient?.name || '',
     'credential.id': String(credential.credentialId || '').replace(/^urn:uuid:/, ''),
     'credential.issued_on': formatDate(credential.issuanceDate),
     'credential.expires_on': formatDate(credential.expirationDate),

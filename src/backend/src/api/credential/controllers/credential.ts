@@ -296,7 +296,7 @@ export default factories.createCoreController('api::credential.credential', ({ s
       const credentialService = strapi.service('api::credential.credential')
       const newCredential = await credentialService.issue(
         existing.achievement,
-        existing.recipient,
+        { ...existing.recipient, name: existing.recipientName || existing.recipient?.name },
         [],
         parsedDate.toISOString(),
         ctx.state.user?.id

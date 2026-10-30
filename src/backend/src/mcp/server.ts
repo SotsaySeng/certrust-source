@@ -48,7 +48,7 @@ function credentialSummary(c: any) {
     credentialId: c.credentialId,
     name: c.name ?? c.achievement?.name,
     achievement: c.achievement ? { id: c.achievement.id, name: c.achievement.name } : undefined,
-    recipient: c.recipient ? { name: c.recipient.name, email: c.recipient.email } : undefined,
+    recipient: c.recipient ? { name: c.recipientName || c.recipient.name, email: c.recipient.email } : undefined,
     issuedAt: c.issuanceDate ?? c.createdAt,
     expiresAt: c.expirationDate ?? null,
     status: c.revoked ? 'revoked' : expired ? 'expired' : 'active',

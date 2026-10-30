@@ -225,7 +225,9 @@
       "next": "Suivant",
       "downloadFailed": "Impossible de télécharger le certificat",
       "downloadImage": "Télécharger l'image (PNG)",
-      "downloadPdf": "Télécharger le PDF"
+      "downloadPdf": "Télécharger le PDF",
+      "revokeWarning": "Cette action est irréversible : la vérification échouera désormais. La raison est visible par toute personne qui le vérifie.",
+      "revokeFailed": "Impossible de révoquer le justificatif. Veuillez réessayer."
     }
   },
   "errors": {

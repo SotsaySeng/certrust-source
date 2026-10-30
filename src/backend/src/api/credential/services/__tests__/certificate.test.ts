@@ -31,6 +31,13 @@ describe('certificate service', () => {
     expect(findOne.mock.calls[0][2].populate).toContain('issuer.organization')
   })
 
+  it('prints the name it was issued with, not the shared profile name', async () => {
+    const { strapi } = strapiReturning({ ...baseCredential, recipientName: 'Jane Corrected', issuer: { name: 'Jane Smith', organization: null } })
+    const svg = await certificateServiceFactory({ strapi }).generateCertificate(1)
+    expect(svg).toContain('Jane Corrected')
+    expect(svg).not.toContain('Jane Doe')
+  })
+
   it('falls back to the profile name for an issuer without an organisation', async () => {
     const { strapi } = strapiReturning({ ...baseCredential, issuer: { name: 'Jane Smith', organization: null } })
     const svg = await certificateServiceFactory({ strapi }).generateCertificate(1)

@@ -55,7 +55,7 @@ export default ({ strapi }) => ({
       state: 'ACTIVE',
       cardTitle: text(issuerDisplayName(credential.issuer)),
       subheader: text(name),
-      header: text(credential.recipient?.name || name),
+      header: text(credential.recipientName || credential.recipient?.name || name),
       // A static file only: Google rejects the whole pass ("Image cannot be
       // loaded") when an image is slow, and the rendered certificate/badge
       // images take ~3 s. ponytail: no certificate picture on the pass; add

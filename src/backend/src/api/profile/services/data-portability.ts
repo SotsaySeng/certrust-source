@@ -138,6 +138,7 @@ export default ({ strapi }: { strapi: any }) => ({
           achievement: achievementId,
           issuer: profile.id,
           recipient: recipientEntity.id,
+          recipientName: credential.recipientName,
           proof: credential.proof,
         },
       });

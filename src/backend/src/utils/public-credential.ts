@@ -87,7 +87,7 @@ export function toPublicCredential(credential: any, { fullView = false }: { full
       certificate: !!credential.certificateDesignSnapshot,
       badge: !!credential.badgeDesignSnapshot,
     },
-    recipient: !isPrivate && credential.recipient?.name ? { name: credential.recipient.name } : null,
+    recipient: !isPrivate && (credential.recipientName || credential.recipient?.name) ? { name: credential.recipientName || credential.recipient.name } : null,
     evidence: isPrivate
       ? []
       : (credential.evidence ?? []).map((ev: any) => ({

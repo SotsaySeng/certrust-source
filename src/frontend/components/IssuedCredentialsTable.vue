@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 const toast = useSimpleToast()
+const emit = defineEmits<{ revoked: [id: number | string] }>()
 
 type StatusFilter = 'all' | 'active' | 'expired' | 'revoked'
 const PAGE_SIZE = 20
@@ -45,7 +46,7 @@ const rows = computed(() => props.credentials
   .map(cred => ({
     id: cred.id,
     credentialId: cred.credentialId || cred.id,
-    recipientName: cred.recipient?.name || '',
+    recipientName: cred.recipientName || cred.recipient?.name || '',
     recipientEmail: cred.recipient?.email || '',
     achievementName: cred.achievement?.name || cred.name || '',
     templateType: cred.achievement?.templateType || null,
@@ -124,6 +125,39 @@ async function downloadCertificate(
   catch (error) {
     console.error('Error downloading certificate:', error)
     toast.show(t('dashboard.issuedTable.downloadFailed'), '', 'error')
+  }
+}
+
+const revokeTarget = ref<{ id: number | string, recipientName: string, achievementName: string } | null>(null)
+const revokeReason = ref('')
+const revoking = ref(false)
+const revokeReasonInput = ref<HTMLTextAreaElement | null>(null)
+
+async function askRevoke(row: { id: number | string, recipientName: string, achievementName: string }) {
+  revokeReason.value = ''
+  revokeTarget.value = row
+  // Focus inside the dialog, so Esc reaches it.
+  await nextTick()
+  revokeReasonInput.value?.focus()
+}
+
+async function confirmRevoke() {
+  if (!revokeTarget.value || revoking.value) {
+    return
+  }
+  revoking.value = true
+  try {
+    await apiClient.revokeCertificate(revokeTarget.value.id, revokeReason.value.trim())
+    emit('revoked', revokeTarget.value.id)
+    toast.show(t('credential.revokeSuccess'), '', 'success')
+    revokeTarget.value = null
+  }
+  catch (error) {
+    console.error('Error revoking credential:', error)
+    toast.show(t('dashboard.issuedTable.revokeFailed'), '', 'error')
+  }
+  finally {
+    revoking.value = false
   }
 }
 
@@ -259,6 +293,17 @@ function statusLabel(status: StatusFilter) {
                 >
                   <span class="block i-heroicons-document-arrow-down w-5 h-5" />
                 </button>
+                <button
+                  v-if="row.status !== 'revoked'"
+                  type="button"
+                  class="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  :title="t('credential.revoke')"
+                  :aria-label="t('credential.revoke')"
+                  data-testid="revoke-credential"
+                  @click="askRevoke(row)"
+                >
+                  <span class="block i-heroicons-no-symbol w-5 h-5" />
+                </button>
               </div>
             </td>
           </tr>
@@ -294,5 +339,49 @@ function statusLabel(status: StatusFilter) {
         </button>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="revokeTarget"
+        class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+        @click.self="revokeTarget = null"
+        @keydown.esc="revokeTarget = null"
+      >
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" role="alertdialog" aria-modal="true" aria-labelledby="revoke-title">
+          <h2 id="revoke-title" class="text-lg font-semibold text-gray-900">
+            {{ t('credential.revoke') }}
+          </h2>
+          <p class="mt-2 text-sm text-gray-600">
+            {{ t('credential.revokeConfirm') }} {{ t('dashboard.issuedTable.revokeWarning') }}
+          </p>
+          <p class="mt-3 text-sm font-medium text-gray-900">
+            {{ revokeTarget.recipientName || '-' }} · {{ revokeTarget.achievementName || '-' }}
+          </p>
+          <label for="revoke-reason" class="mt-4 block text-xs font-medium text-text-secondary">{{ t('credential.revokeReason') }}</label>
+          <textarea
+            id="revoke-reason"
+            ref="revokeReasonInput"
+            v-model="revokeReason"
+            rows="2"
+            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            data-testid="revoke-reason"
+          />
+          <div class="mt-6 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50" @click="revokeTarget = null">
+              {{ t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              :disabled="revoking"
+              data-testid="revoke-confirm"
+              @click="confirmRevoke"
+            >
+              {{ t('credential.revoke') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
