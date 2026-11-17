@@ -33,8 +33,8 @@ const statItems = computed(() => (props.audience.stats?.items ?? []).map(item =>
 </script>
 
 <template>
-  <section class="mb-24 md:mb-32">
-    <div v-motion="headerMotion" class="max-w-2xl" :class="audience.stats ? 'mb-10' : 'mb-12'">
+  <section class="mb-16 md:mb-20">
+    <div v-motion="headerMotion" class="max-w-2xl" :class="audience.stats ? 'mb-8' : 'mb-10'">
       <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
         01 — When you need it
       </p>
@@ -49,7 +49,7 @@ const statItems = computed(() => (props.audience.stats?.items ?? []).map(item =>
          is open — audience.stats is null otherwise, so on a young or
          unreachable install this section renders exactly as it did before the
          strip existed. -->
-    <div v-if="audience.stats && statItems.length" class="mb-12">
+    <div v-if="audience.stats && statItems.length" class="mb-8">
       <p
         v-if="audience.stats.heading"
         v-motion="statsHeadingMotion"

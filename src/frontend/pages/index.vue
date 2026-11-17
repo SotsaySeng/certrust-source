@@ -86,7 +86,7 @@ useHead({
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
     <!-- Hero -->
-    <div class="relative grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-16 items-center mt-16 mb-28 md:mt-24 md:mb-36">
+    <div class="relative grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-16 items-center mt-16 mb-16 md:mt-24 md:mb-20">
       <!-- A single precise divider, not a gradient blob - the grid does the work -->
       <div class="hidden lg:block absolute left-[54%] top-4 bottom-4 w-px bg-text-primary/10" aria-hidden="true" />
 
@@ -125,7 +125,7 @@ useHead({
     <HomeAudienceGrid :audience="audience" />
 
     <!-- What it does -->
-    <section class="mb-24 md:mb-32">
+    <section class="mb-16 md:mb-20">
       <div v-motion="featuresHeaderMotion" class="max-w-2xl mb-12">
         <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
           02 — What it does
@@ -148,7 +148,7 @@ useHead({
     </section>
 
     <!-- How it works -->
-    <section class="mb-24 md:mb-32">
+    <section class="mb-16 md:mb-20">
       <div v-motion="howItWorksHeaderMotion" class="max-w-2xl mb-12">
         <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
           03 — How it works

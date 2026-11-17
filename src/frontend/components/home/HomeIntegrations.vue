@@ -24,7 +24,7 @@ const linkInGrid = gap > 0 && !!props.integrations.linkLabel
 </script>
 
 <template>
-  <section v-if="integrations.items.length" class="mb-24 md:mb-32" data-testid="home-integrations">
+  <section v-if="integrations.items.length" class="mb-16 md:mb-20" data-testid="home-integrations">
     <div v-motion="headerMotion" class="max-w-2xl mb-12">
       <p class="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-3">
         {{ eyebrow }}
