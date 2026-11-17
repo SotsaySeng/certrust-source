@@ -66,8 +66,7 @@ function showSetup() {
 
 /** Checks the key and returns the organization and its achievements. */
 function certrustConnect(apiKey) {
-  var key = String(apiKey || '').trim() || storedKey_();
-  if (!key) throw new Error('Paste your API key first.');
+  var key = keyFrom_(apiKey);
 
   var me = api_(key, 'get', '/api/api-keys/me');
   if (me.code === 401) throw new Error('That API key is not valid, or it has been revoked or has expired.');
@@ -96,8 +95,7 @@ function certrustConnect(apiKey) {
 
 /** Saves the key and the achievement for the active tab, and prepares its columns. */
 function certrustSave(apiKey, achievementId, achievementName) {
-  var key = String(apiKey || '').trim() || storedKey_();
-  if (!key) throw new Error('Paste your API key first.');
+  var key = keyFrom_(apiKey);
   if (!achievementId) throw new Error('Choose an achievement.');
 
   var attributes = [];
@@ -287,6 +285,16 @@ function removeTriggers_() {
 
 // ---------------------------------------------------------------- helpers
 
+/** The pasted key (or the saved one), checked for shape before it goes into a request header. */
+function keyFrom_(apiKey) {
+  var key = String(apiKey || '').trim() || storedKey_();
+  if (!key) throw new Error('Paste your API key first.');
+  if (!/^crt_[A-Za-z0-9_-]{20,100}$/.test(key)) {
+    throw new Error('That does not look like a Certrust API key. A key starts with crt_ and is about 47 characters long - copy it again from Certrust (Manage > API keys).');
+  }
+  return key;
+}
+
 function storedKey_() {
   return PropertiesService.getUserProperties().getProperty(KEY_PROPERTY) || '';
 }
@@ -310,6 +318,19 @@ function layout_(sheet) {
     for (var i = 0; i < headers.length; i++) if (names.indexOf(headers[i]) !== -1) return i;
     return -1;
   };
+  // Form questions are often longer: "English full name (as it should
+  // appear on the certificate)" still counts as a "full name" column.
+  var findWithin = function (names) {
+    var exact = find(names);
+    if (exact !== -1) return exact;
+    for (var i = 0; i < headers.length; i++) {
+      var heading = ' ' + headers[i].replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+      for (var n = 0; n < names.length; n++) {
+        if (names[n].indexOf(' ') !== -1 && heading.indexOf(' ' + names[n] + ' ') !== -1) return i;
+      }
+    }
+    return -1;
+  };
   var config = tabConfig_(sheet);
   var attributeCols = {};
   var attributes = (config && config.attributes) || [];
@@ -319,8 +340,8 @@ function layout_(sheet) {
   }
   return {
     values: values,
-    nameCol: find(NAME_HEADERS),
-    emailCol: find(EMAIL_HEADERS),
+    nameCol: findWithin(NAME_HEADERS),
+    emailCol: findWithin(EMAIL_HEADERS),
     expiryCol: find(EXPIRY_HEADERS),
     statusCol: find([normalize_(STATUS_HEADER)]),
     linkCol: find([normalize_(LINK_HEADER)]),
