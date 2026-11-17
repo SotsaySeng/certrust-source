@@ -324,9 +324,25 @@ describe('applyNoFreeOfferRefresh', () => {
     const { data } = update.mock.calls[0][0]
     expect(data.subheader).not.toMatch(/free/i)
     expect(data.tiers.map((t: any) => t.ctaLabel)).toEqual(['Get started', 'Get started', 'Talk to us'])
-    expect(data.tiers[1].note).toBe('Move between plans whenever you need to.')
+    expect(data.tiers[1].note).toMatch(/^Paying monthly\? That includes 100 a month\./)
     expect(data.tiers[0].note).toBe('Pay once. There is no subscription.')
     expect(data.tiers.some((t: any) => 'id' in t)).toBe(false)
+  })
+
+  it('adds the per-period credential wording to the live pricing cards', async () => {
+    const { strapi, update } = fakeStrapi({
+      documentId: 'abc123',
+      tiers: [
+        { id: 1, tierId: 'event', credentialsLimit: 'Prepaid', note: 'Pay once. There is no subscription.' },
+        { id: 2, tierId: 'pro', credentialsLimit: '1,000', note: 'Move between plans whenever you need to.' },
+        { id: 3, tierId: 'enterprise', credentialsLimit: 'Unlimited', note: 'Cancel any time. Your issued certificates keep verifying.' },
+      ],
+    })
+    await pricingNoFree(strapi, EXISTING)
+    const { data } = update.mock.calls[0][0]
+    expect(data.tiers.map((t: any) => t.credentialsLimit)).toEqual(['Prepaid', '1,000/year', 'Unlimited'])
+    expect(data.tiers[1].note).toMatch(/100 a month/)
+    expect(data.tiers[2].note).toMatch(/1,000 a month/)
   })
 
   it('does nothing once the text has changed', async () => {

@@ -271,6 +271,13 @@ export interface SettingsUsageLimits extends Struct.ComponentSchema {
         },
         number
       >;
+    monthlyCredentialLimit: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     premiumTemplates: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
   };

@@ -198,7 +198,12 @@
       "credentialsIssued": "Justificatifs émis",
       "unlimited": "Illimité",
       "nearLimit": "Vous approchez de votre limite de justificatifs.",
-      "atLimit": "Limite de justificatifs atteinte."
+      "atLimit": "Limite de justificatifs atteinte.",
+      "issuedThis": {
+        "month": "Émis ce mois de facturation",
+        "year": "Émis cette année de facturation"
+      },
+      "packLeft": "Plus {count} justificatifs prépayés, utilisés une fois le quota de votre offre épuisé."
     },
     "analytics": {
       "title": "Analytique",
@@ -447,8 +452,8 @@
       "enterprise": "Enterprise"
     },
     "tierBlurb": {
-      "pro": "Pour les équipes qui émettent régulièrement des certificats, avec des limites bien plus élevées.",
-      "enterprise": "Pour les grandes organisations, avec les limites les plus élevées (ou illimitées)."
+      "pro": "1 000 certificats par an, ou 100 par mois avec la facturation mensuelle.",
+      "enterprise": "Certificats illimités avec la facturation annuelle, ou 1 000 par mois avec la facturation mensuelle."
     },
     "status": {
       "none": "Free",
@@ -485,7 +490,7 @@
       "range": "De {min} à {max}",
       "total": "Total",
       "buy": "Acheter des certificats",
-      "owned": "Certificats achetés : {count}",
+      "owned": "Justificatifs prépayés restants : {count}",
       "success": "Merci ! Votre paiement a été reçu. Vos nouveaux certificats peuvent mettre quelques secondes à apparaître."
     },
     "banner": {

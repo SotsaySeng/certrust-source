@@ -66,6 +66,7 @@ export default {
     // the tier-limit lifecycle hooks need tier-settings to exist).
     await seedOrgTypes(strapi);
     await seedTierSettings(strapi);
+    await strapi.service('api::organization.usage').backfillPackCreditsUsed();
     await seedDesignCategories(strapi);
     // Starter templates + elements; needs the categories above.
     await seedDesignLibrary(strapi);

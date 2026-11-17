@@ -113,15 +113,30 @@ export default factories.createCoreController('api::organization.organization', 
         return { data: { tier: null, limit: null, limits: null } };
       }
 
-      const { tier } = profileWithOrg.organization;
+      const org = profileWithOrg.organization;
+      const { tier } = org;
       const usage = strapi.service('api::organization.usage');
-      const [credential, designTemplate, achievement] = await Promise.all([
-        usage.getCredentialLimit(profileWithOrg.organization),
+      const [allowance, designTemplate, achievement] = await Promise.all([
+        usage.getCredentialAllowance(org),
         usage.getTierLimit(tier, 'designTemplate'),
         usage.getTierLimit(tier, 'achievement'),
       ]);
+      const credential = allowance.limit;
+      // used/period: credentials counted against `limit` in the current
+      // window (period 'lifetime', 'month' or 'year'); packCreditsLeft is
+      // the prepaid top-up spent once that runs out.
+      const used = await usage.countOrganizationCredentials(org.id, allowance.since);
 
-      return { data: { tier, limit: credential, limits: { credential, designTemplate, achievement } } };
+      return {
+        data: {
+          tier,
+          limit: credential,
+          used,
+          period: allowance.period,
+          packCreditsLeft: usage.packCreditsLeft(org),
+          limits: { credential, designTemplate, achievement },
+        },
+      };
     } catch (err) {
       strapi.log.error('[organization.usage] Error:', { error: (err as Error).message });
       return ctx.badRequest('Error fetching usage', { error: (err as Error).message });

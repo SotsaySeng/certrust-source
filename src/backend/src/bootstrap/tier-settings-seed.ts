@@ -10,11 +10,13 @@
 
 const DEFAULT_TIER_SETTINGS = {
   free: { credentialLimit: 50, designTemplateLimit: 3, achievementLimit: 50, premiumTemplates: false },
-  pro: { credentialLimit: 1000, designTemplateLimit: 50, achievementLimit: 1000, premiumTemplates: true },
-  enterprise: { credentialLimit: null, designTemplateLimit: null, achievementLimit: null, premiumTemplates: true },
-  // Design Studio limits while an organization is trialing (only the design
-  // dimensions are read from this column - see usage.getDesignLimits).
-  trial: { credentialLimit: null, designTemplateLimit: 10, achievementLimit: null, premiumTemplates: false },
+  // Paid plans: credentialLimit per billing year, monthlyCredentialLimit per
+  // billing month on a monthly subscription (see usage.getCredentialAllowance).
+  pro: { credentialLimit: 1000, monthlyCredentialLimit: 100, designTemplateLimit: 50, achievementLimit: 1000, premiumTemplates: true },
+  enterprise: { credentialLimit: null, monthlyCredentialLimit: 1000, designTemplateLimit: null, achievementLimit: null, premiumTemplates: true },
+  // Limits while an organization is trialing: the design dimensions (see
+  // usage.getDesignLimits) and credentials, ever (blank = follow the tier).
+  trial: { credentialLimit: 50, designTemplateLimit: 10, achievementLimit: null, premiumTemplates: false },
 };
 
 /**
@@ -44,12 +46,41 @@ async function addDesignStudioDefaults(strapi: any, existing: any): Promise<void
   strapi.log.info(`[Seed] Tier settings: added Design Studio defaults (${Object.keys(patch).join(', ')}).`);
 }
 
+/**
+ * Records seeded before per-period credential limits: credential limits
+ * were lifetime, so one paid month bought a whole paid allowance for good,
+ * and a trial ran on the full paid allowance. Sets the monthly limits and
+ * the trial cap once: it only runs while Pro and Enterprise both have no
+ * monthly limit, which is never true again after the first run.
+ */
+async function addMonthlyCredentialDefaults(strapi: any, existing: any): Promise<void> {
+  const full: any = await strapi.documents('api::tier-settings.tier-settings').findFirst({
+    populate: ['free', 'pro', 'enterprise', 'trial'],
+  } as any);
+  if (!full?.pro || !full?.enterprise) return;
+  if (full.pro.monthlyCredentialLimit != null || full.enterprise.monthlyCredentialLimit != null) return;
+  const strip = ({ id, ...rest }: any) => rest;
+  const patch: any = {
+    pro: { ...strip(full.pro), monthlyCredentialLimit: DEFAULT_TIER_SETTINGS.pro.monthlyCredentialLimit },
+    enterprise: { ...strip(full.enterprise), monthlyCredentialLimit: DEFAULT_TIER_SETTINGS.enterprise.monthlyCredentialLimit },
+  };
+  if (full.trial && full.trial.credentialLimit == null) {
+    patch.trial = { ...strip(full.trial), credentialLimit: DEFAULT_TIER_SETTINGS.trial.credentialLimit };
+  }
+  await strapi.documents('api::tier-settings.tier-settings').update({
+    documentId: existing.documentId,
+    data: patch,
+  } as any);
+  strapi.log.info(`[Seed] Tier settings: added monthly credential limits (${Object.keys(patch).join(', ')}).`);
+}
+
 export async function seedTierSettings(strapi: any): Promise<void> {
   try {
     const existing = await strapi.documents('api::tier-settings.tier-settings').findFirst();
 
     if (existing) {
       await addDesignStudioDefaults(strapi, existing);
+      await addMonthlyCredentialDefaults(strapi, existing);
       return;
     }
 

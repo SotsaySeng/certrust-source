@@ -198,7 +198,12 @@
       "credentialsIssued": "Ausgestellte Nachweise",
       "unlimited": "Unbegrenzt",
       "nearLimit": "Sie nähern sich Ihrem Nachweislimit.",
-      "atLimit": "Nachweislimit erreicht."
+      "atLimit": "Nachweislimit erreicht.",
+      "issuedThis": {
+        "month": "In diesem Abrechnungsmonat ausgestellt",
+        "year": "In diesem Abrechnungsjahr ausgestellt"
+      },
+      "packLeft": "Dazu {count} vorausbezahlte Nachweise, die genutzt werden, wenn das Kontingent Ihres Tarifs aufgebraucht ist."
     },
     "analytics": {
       "title": "Analysen",
@@ -447,8 +452,8 @@
       "enterprise": "Enterprise"
     },
     "tierBlurb": {
-      "pro": "Für Teams, die regelmäßig Nachweise ausstellen, mit deutlich höheren Limits.",
-      "enterprise": "Für große Organisationen mit den höchsten (oder unbegrenzten) Limits."
+      "pro": "1.000 Nachweise pro Jahr oder 100 pro Monat bei monatlicher Abrechnung.",
+      "enterprise": "Unbegrenzte Nachweise bei jährlicher Abrechnung oder 1.000 pro Monat bei monatlicher Abrechnung."
     },
     "status": {
       "none": "Free",
@@ -485,7 +490,7 @@
       "range": "Von {min} bis {max}",
       "total": "Gesamt",
       "buy": "Nachweise kaufen",
-      "owned": "Gekaufte Nachweise: {count}",
+      "owned": "Verbleibende vorausbezahlte Nachweise: {count}",
       "success": "Vielen Dank! Ihre Zahlung ist eingegangen. Es kann einige Sekunden dauern, bis Ihre neuen Nachweise erscheinen."
     },
     "banner": {

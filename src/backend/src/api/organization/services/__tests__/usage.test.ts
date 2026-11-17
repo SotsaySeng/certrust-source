@@ -7,23 +7,66 @@ describe('Organization Usage Service', () => {
     jest.clearAllMocks()
   })
 
-  describe('getCredentialLimit', () => {
-    const settings = { free: { credentialLimit: 50 }, enterprise: { credentialLimit: null } }
+  describe('getCredentialAllowance', () => {
+    const settings = {
+      free: { credentialLimit: 50 },
+      pro: { credentialLimit: 1000, monthlyCredentialLimit: 100 },
+      enterprise: { credentialLimit: null, monthlyCredentialLimit: 1000 },
+      trial: { credentialLimit: 50 },
+    }
+    const now = new Date('2026-11-17T00:00:00Z')
+    const end = '2026-12-10T00:00:00.000Z'
+    const allowance = (org: any, s: any = settings) => {
+      global.strapi = { documents: () => ({ findOne: jest.fn(), findFirst: jest.fn().mockResolvedValue(s) }) } as any
+      return usageFactory().getCredentialAllowance(org, now)
+    }
 
-    it('adds purchased credentials to the tier limit', async () => {
-      global.strapi = { documents: () => ({ findFirst: jest.fn().mockResolvedValue(settings) }) } as any
-      service = usageFactory()
-
-      expect(await service.getCredentialLimit({ tier: 'free', purchasedCredentials: 120 })).toBe(170)
-      expect(await service.getCredentialLimit({ tier: 'free' })).toBe(50)
-      expect(await service.getCredentialLimit({ tier: 'free', purchasedCredentials: null })).toBe(50)
+    it('free and trial count every credential ever issued', async () => {
+      expect(await allowance({ tier: 'free' })).toEqual({ limit: 50, since: null, period: 'lifetime' })
+      expect(await allowance({ tier: 'pro', subscriptionStatus: 'trialing', billingInterval: 'month', currentPeriodEnd: end }))
+        .toEqual({ limit: 50, since: null, period: 'lifetime' })
     })
 
-    it('stays unlimited on a tier with no limit', async () => {
-      global.strapi = { documents: () => ({ findFirst: jest.fn().mockResolvedValue(settings) }) } as any
-      service = usageFactory()
+    it('a trial with no trial limit follows its tier', async () => {
+      const r = await allowance({ tier: 'pro', subscriptionStatus: 'trialing', billingInterval: 'year', currentPeriodEnd: end }, { ...settings, trial: { credentialLimit: null } })
+      expect(r).toEqual({ limit: 1000, since: new Date('2025-12-10T00:00:00Z'), period: 'year' })
+    })
 
-      expect(await service.getCredentialLimit({ tier: 'enterprise', purchasedCredentials: 120 })).toBeNull()
+    it('monthly subscriptions get the monthly limit for the current billing month', async () => {
+      expect(await allowance({ tier: 'pro', subscriptionStatus: 'active', billingInterval: 'month', currentPeriodEnd: end }))
+        .toEqual({ limit: 100, since: new Date('2026-11-10T00:00:00Z'), period: 'month' })
+      expect(await allowance({ tier: 'enterprise', subscriptionStatus: 'active', billingInterval: 'month', currentPeriodEnd: end }))
+        .toEqual({ limit: 1000, since: new Date('2026-11-10T00:00:00Z'), period: 'month' })
+    })
+
+    it('yearly subscriptions get the yearly limit for the current billing year (enterprise unlimited)', async () => {
+      expect(await allowance({ tier: 'pro', subscriptionStatus: 'active', billingInterval: 'year', currentPeriodEnd: end }))
+        .toEqual({ limit: 1000, since: new Date('2025-12-10T00:00:00Z'), period: 'year' })
+      expect((await allowance({ tier: 'enterprise', subscriptionStatus: 'active', billingInterval: 'year', currentPeriodEnd: end })).limit).toBeNull()
+    })
+
+    it('a hand-granted plan (no subscription) gets the yearly limit over the last 12 months', async () => {
+      expect(await allowance({ tier: 'pro', subscriptionStatus: 'none' }))
+        .toEqual({ limit: 1000, since: new Date('2025-11-17T00:00:00Z'), period: 'year' })
+    })
+
+    it('a blank monthly limit falls back to the yearly one', async () => {
+      const r = await allowance({ tier: 'pro', subscriptionStatus: 'active', billingInterval: 'month', currentPeriodEnd: end }, { ...settings, pro: { credentialLimit: 1000 } })
+      expect(r.limit).toBe(1000)
+    })
+
+    it('fails open without settings', async () => {
+      expect((await allowance({ tier: 'pro' }, null)).limit).toBeNull()
+    })
+  })
+
+  describe('packCreditsLeft', () => {
+    it('is bought minus spent, never negative', () => {
+      const service = usageFactory()
+      expect(service.packCreditsLeft({ purchasedCredentials: 120, packCreditsUsed: 20 })).toBe(100)
+      expect(service.packCreditsLeft({ purchasedCredentials: 120 })).toBe(120)
+      expect(service.packCreditsLeft({})).toBe(0)
+      expect(service.packCreditsLeft({ purchasedCredentials: 5, packCreditsUsed: 9 })).toBe(0)
     })
   })
 
@@ -97,6 +140,14 @@ describe('Organization Usage Service', () => {
         },
       })
       expect(result).toBe(7)
+    })
+
+    it('counts only credentials created since a date when given one', async () => {
+      const count = jest.fn().mockResolvedValue(3)
+      global.strapi = { db: { query: () => ({ count }) } } as any
+      const since = new Date('2026-11-10T00:00:00Z')
+      await usageFactory().countOrganizationCredentials(42, since)
+      expect(count).toHaveBeenCalledWith({ where: { issuer: { organization: 42 }, createdAt: { $gte: since } } })
     })
   })
 

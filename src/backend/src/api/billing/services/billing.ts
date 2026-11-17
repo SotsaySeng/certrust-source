@@ -245,6 +245,7 @@ export default ({ strapi }: { strapi: any }) => ({
       // A manually granted plan: paid tier with no Stripe subscription behind it.
       isManualPlan: status === 'none' && org.tier !== 'free',
       purchasedCredentials: org.purchasedCredentials || 0,
+      packCreditsLeft: Math.max(0, (org.purchasedCredentials || 0) - (org.packCreditsUsed || 0)),
       banner,
       stripeConfigured: isStripeConfigured(),
       trialRequiresCard: settings.trialRequiresCard,
@@ -416,8 +417,8 @@ export default ({ strapi }: { strapi: any }) => ({
 
   /**
    * A paid pay-per-credential checkout: add the credentials to the
-   * organization and record the payment. usage.getCredentialLimit() adds
-   * purchasedCredentials on top of the tier's limit.
+   * organization and record the payment. They are a top-up balance, spent
+   * once the plan's allowance runs out (usage.usePackCredit).
    */
   async onPackPurchased(session: any) {
     // 'no_payment_required' = a 100% promotion code.

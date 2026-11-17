@@ -111,7 +111,7 @@ export default {
     const organizationId = issuer.organization.id;
 
     const usage = strapi.service('api::organization.usage');
-    const limit = await usage.getCredentialLimit(issuer.organization);
+    const { limit, since, period } = await usage.getCredentialAllowance(issuer.organization);
 
     // null = unlimited (enterprise, or an unrecognized tier - fail open
     // rather than block issuance over a config problem).
@@ -119,11 +119,14 @@ export default {
       return;
     }
 
-    const currentCount = await usage.countOrganizationCredentials(organizationId);
-    if (currentCount >= limit) {
-      throw new errors.ApplicationError(
-        `This organization has reached its limit of ${limit} credentials. Buy more credentials or upgrade the plan on the Billing page to issue more.`
-      );
-    }
+    const used = await usage.countOrganizationCredentials(organizationId, since);
+    if (used < limit) return;
+    // Plan allowance used up: spend a prepaid pack credit if there is one.
+    if (await usage.usePackCredit(organizationId)) return;
+
+    const when = period === 'lifetime' ? '' : ` for this ${period}`;
+    throw new errors.ApplicationError(
+      `This organization has reached its limit of ${limit} credentials${when}. Buy more credentials or upgrade the plan on the Billing page to issue more.`
+    );
   },
 };

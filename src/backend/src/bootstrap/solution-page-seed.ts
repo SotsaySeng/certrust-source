@@ -26,7 +26,13 @@ const FIRST_ENTERPRISE_EXTRA_FEATURE = 'Integration API and a dedicated account 
 // (applyNoFreeOfferRefresh swaps a field only while it still has the old text).
 const PRICING_SUBHEADER = 'Buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.';
 const CTA_LABEL = 'Get started';
-const PRO_NOTE = 'Move between plans whenever you need to.';
+const FIRST_PRO_NOTE = 'Move between plans whenever you need to.';
+const FIRST_ENTERPRISE_NOTE = 'Cancel any time. Your issued certificates keep verifying.';
+// Credential allowances reset each billing period (usage.getCredentialAllowance):
+// yearly as listed, monthly plans 100 (Pro) or 1,000 (Enterprise) a month.
+const PRO_CREDENTIALS = '1,000/year';
+const PRO_NOTE = 'Paying monthly? That includes 100 a month. Move between plans whenever you need to.';
+const ENTERPRISE_NOTE = 'Unlimited on a yearly plan; paying monthly includes 1,000 a month. Cancel any time.';
 const FREE_OFFER_TEXT: Record<string, [string, string]> = {
   subheader: ['Your first 50 are free. After that, buy certificates for a single event or keep a plan running all year. Recipients and the people who check a certificate never pay.', PRICING_SUBHEADER],
 };
@@ -34,6 +40,10 @@ const FREE_OFFER_TIER_TEXT: Record<string, [string, string]> = {
   'ctaLabel:Issue your first 50 free': ['Issue your first 50 free', CTA_LABEL],
   'ctaLabel:Start free': ['Start free', CTA_LABEL],
   'note:Every organisation starts free and can move up later.': ['Every organisation starts free and can move up later.', PRO_NOTE],
+  // Per-period credential allowances (2026-11).
+  [`note:${FIRST_PRO_NOTE}`]: [FIRST_PRO_NOTE, PRO_NOTE],
+  [`note:${FIRST_ENTERPRISE_NOTE}`]: [FIRST_ENTERPRISE_NOTE, ENTERPRISE_NOTE],
+  'credentialsLimit:1,000': ['1,000', PRO_CREDENTIALS],
 };
 
 const pricingCopy = () => ({
@@ -66,7 +76,7 @@ const pricingCopy = () => ({
       name: 'Year-round',
       tagline: 'Courses and trainings that run through the year',
       price: '$19/month or $199/year',
-      credentialsLimit: '1,000',
+      credentialsLimit: PRO_CREDENTIALS,
       designTemplatesLimit: '50',
       achievementsLimit: '1,000',
       extraFeature: PRO_EXTRA_FEATURE,
@@ -87,7 +97,7 @@ const pricingCopy = () => ({
       ctaLabel: CTA_LABEL,
       ctaHref: '/register',
       highlighted: false,
-      note: 'Cancel any time. Your issued certificates keep verifying.',
+      note: ENTERPRISE_NOTE,
     },
   ],
 });
@@ -142,7 +152,8 @@ export async function applyConnectionsRefresh(strapi: any, existing: any): Promi
 }
 
 /**
- * Takes the "first 50 free" offer off an install still showing it. Field by
+ * Takes the "first 50 free" offer off an install still showing it, and adds
+ * the per-period credential wording (2026-11). Field by
  * field: only text still exactly as first written is replaced, so anything
  * changed in the Content Manager stays, and nothing matches a second time.
  */
@@ -155,7 +166,7 @@ export async function applyNoFreeOfferRefresh(strapi: any, existing: any): Promi
   }
   let tiersChanged = false;
   const tiers = (full.tiers ?? []).map(({ id, ...tier }: any) => {
-    for (const field of ['ctaLabel', 'note']) {
+    for (const field of ['ctaLabel', 'note', 'credentialsLimit']) {
       const rule = FREE_OFFER_TIER_TEXT[`${field}:${tier[field]}`];
       if (rule) {
         tier[field] = rule[1];
@@ -167,7 +178,7 @@ export async function applyNoFreeOfferRefresh(strapi: any, existing: any): Promi
   if (tiersChanged) data.tiers = tiers;
   if (!Object.keys(data).length) return;
   await strapi.documents('api::solution-page.solution-page').update({ documentId: existing.documentId, data } as any);
-  strapi.log.info(`[Seed] Solution page: removed the free-certificate offer (${Object.keys(data).join(', ')}).`);
+  strapi.log.info(`[Seed] Solution page: updated pricing wording (${Object.keys(data).join(', ')}).`);
 }
 
 export async function seedSolutionPage(strapi: any): Promise<void> {

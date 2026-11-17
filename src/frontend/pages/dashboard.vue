@@ -41,6 +41,11 @@ interface DashboardStats {
 interface OrganizationUsage {
   tier: string | null
   limit: number | null
+  // Credentials counted against `limit` in the current period; prepaid
+  // pack credits are spent once that is used up.
+  used?: number
+  period?: 'lifetime' | 'month' | 'year'
+  packCreditsLeft?: number
 }
 
 const authStore = useAuthStore()
@@ -57,19 +62,28 @@ function markRevoked(id: number | string) {
 const dashboardStats = ref<DashboardStats | null>(null)
 const organizationUsage = ref<OrganizationUsage>({ tier: null, limit: null })
 
+const usedCredentials = computed(() => organizationUsage.value.used ?? dashboardStats.value?.credentialsIssued ?? 0)
+const packCreditsLeft = computed(() => organizationUsage.value.packCreditsLeft ?? 0)
+const usageLabel = computed(() => {
+  const period = organizationUsage.value.period
+  return period === 'month' || period === 'year' ? t(`dashboard.usage.issuedThis.${period}`) : t('dashboard.usage.credentialsIssued')
+})
+
 // Usage-bar math, derived from real stats rather than guessed.
 const usageRatio = computed(() => {
   const limit = organizationUsage.value.limit
   if (!limit || limit <= 0) {
     return 0
   }
-  const used = dashboardStats.value?.credentialsIssued ?? 0
-  return used / limit
+  return usedCredentials.value / limit
 })
 
 const usagePercentage = computed(() => Math.min(100, Math.round(usageRatio.value * 100)))
 
 const usageStatus = computed<'ok' | 'near' | 'at'>(() => {
+  if (usageRatio.value >= 1 && packCreditsLeft.value > 0) {
+    return 'ok'
+  }
   if (usageRatio.value >= 1) {
     return 'at'
   }
@@ -192,11 +206,14 @@ onMounted(async () => {
         </div>
 
         <div class="flex items-center justify-between text-sm text-text-secondary mb-2">
-          <span>{{ t('dashboard.usage.credentialsIssued') }}</span>
+          <span>{{ usageLabel }}</span>
           <span class="font-medium text-text-primary">
-            {{ dashboardStats?.credentialsIssued ?? 0 }} / {{ organizationUsage.limit === null ? t('dashboard.usage.unlimited') : organizationUsage.limit }}
+            {{ usedCredentials }} / {{ organizationUsage.limit === null ? t('dashboard.usage.unlimited') : organizationUsage.limit }}
           </span>
         </div>
+        <p v-if="packCreditsLeft > 0" class="text-xs text-text-secondary mb-2">
+          {{ t('dashboard.usage.packLeft', { count: packCreditsLeft }) }}
+        </p>
 
         <div v-if="organizationUsage.limit !== null" class="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
           <div

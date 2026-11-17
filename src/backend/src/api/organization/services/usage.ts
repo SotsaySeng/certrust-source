@@ -112,26 +112,99 @@ export default () => ({
   },
 
   /**
-   * The credential limit for one organization: its tier's limit plus the
-   * credentials it bought (purchasedCredentials, written by the billing
-   * webhook). null = unlimited, whatever was bought.
+   * How many credentials this organization may issue, and since when they
+   * count. Nothing here includes credential packs: those are a separate
+   * top-up balance (packCreditsLeft / usePackCredit), spent only once this
+   * allowance is used up.
+   *
+   * - trialing, with a trial credentialLimit set: that many, ever
+   * - free: the free limit, ever
+   * - paid, monthly subscription: monthlyCredentialLimit (or credentialLimit
+   *   when blank) for the current billing month
+   * - paid, yearly subscription or a hand-granted plan: credentialLimit for
+   *   the current billing year (a hand-granted plan has no billing period,
+   *   so the last 12 months)
+   *
+   * limit null = unlimited (also when no tier-settings record or column
+   * exists: fail open, same as before).
    */
-  async getCredentialLimit(organization: { tier?: string | null, purchasedCredentials?: number | null }): Promise<number | null> {
-    const limit = await this.getTierLimit(organization.tier, 'credential');
-    return limit == null ? null : limit + (organization.purchasedCredentials || 0);
+  async getCredentialAllowance(
+    organization: { tier?: string | null, subscriptionStatus?: string | null, billingInterval?: string | null, currentPeriodEnd?: string | Date | null },
+    now: Date = new Date(),
+  ): Promise<{ limit: number | null, since: Date | null, period: 'lifetime' | 'month' | 'year' }> {
+    const settings: any = await this.getTierSettings();
+    const trialLimit = settings?.trial?.credentialLimit;
+    if (organization.subscriptionStatus === 'trialing' && trialLimit != null) {
+      return { limit: trialLimit, since: null, period: 'lifetime' };
+    }
+    const tier = organization.tier || 'free';
+    const column = settings?.[tier];
+    if (!column) return { limit: null, since: null, period: 'lifetime' };
+    if (tier === 'free') return { limit: column.credentialLimit ?? null, since: null, period: 'lifetime' };
+
+    const end = organization.currentPeriodEnd ? new Date(organization.currentPeriodEnd) : null;
+    const since = new Date(end ?? now);
+    // ponytail: period start = period end minus one month/year; Stripe's own
+    // period start isn't stored. Can be off by a day or two at month ends.
+    if (organization.billingInterval === 'month' && end && organization.subscriptionStatus !== 'none') {
+      since.setUTCMonth(since.getUTCMonth() - 1);
+      return { limit: column.monthlyCredentialLimit ?? column.credentialLimit ?? null, since, period: 'month' };
+    }
+    since.setUTCFullYear(since.getUTCFullYear() - 1);
+    return { limit: column.credentialLimit ?? null, since, period: 'year' };
+  },
+
+  /** Credentials bought in packs and not yet spent. */
+  packCreditsLeft(organization: { purchasedCredentials?: number | null, packCreditsUsed?: number | null }): number {
+    return Math.max(0, (organization.purchasedCredentials || 0) - (organization.packCreditsUsed || 0));
+  },
+
+  /**
+   * Spend one pack credit, atomically (one SQL update), so parallel
+   * issuance can't spend the same credit twice. false = none left.
+   * ponytail: spent before the credential row is written; if that write
+   * then fails, the credit is gone. Hand it back in the admin if it matters.
+   */
+  async usePackCredit(organizationId: string | number): Promise<boolean> {
+    const knex = strapi.db.connection;
+    const changed = await knex('organizations')
+      .where({ id: organizationId })
+      .whereRaw('coalesce(pack_credits_used, 0) < coalesce(purchased_credentials, 0)')
+      .update({ pack_credits_used: knex.raw('coalesce(pack_credits_used, 0) + 1') });
+    return changed > 0;
+  },
+
+  /**
+   * Organizations that bought packs before packCreditsUsed existed: under
+   * the old rule a pack simply raised the lifetime limit, so whatever was
+   * issued above the tier limit came out of the packs. Runs at boot, only
+   * touches rows where packCreditsUsed is still empty.
+   */
+  async backfillPackCreditsUsed(): Promise<void> {
+    const orgs: any[] = await strapi.db.query('api::organization.organization').findMany({
+      where: { purchasedCredentials: { $gt: 0 }, packCreditsUsed: { $null: true } },
+    } as any);
+    for (const org of orgs) {
+      const tierLimit = (await this.getTierLimit(org.tier || 'free', 'credential')) ?? 0;
+      const issued = await this.countOrganizationCredentials(org.id);
+      const used = Math.min(org.purchasedCredentials, Math.max(0, issued - tierLimit));
+      await strapi.db.query('api::organization.organization').update({ where: { id: org.id }, data: { packCreditsUsed: used } } as any);
+      strapi.log.info(`[usage] org ${org.id}: ${used} of ${org.purchasedCredentials} pack credits already spent`);
+    }
   },
 
   /**
    * Live count of credentials issued by any profile belonging to this
-   * organization - the entire replacement for a stored
-   * current_month_usage counter. credential has no direct `organization`
-   * column by design, so this is scoped transitively through issuer, same
-   * as src/policies/is-in-organization.ts.
+   * organization, optionally only those created since a date - the entire
+   * replacement for a stored current_month_usage counter. credential has
+   * no direct `organization` column by design, so this is scoped
+   * transitively through issuer, same as src/policies/is-in-organization.ts.
    */
-  async countOrganizationCredentials(organizationId: string | number): Promise<number> {
+  async countOrganizationCredentials(organizationId: string | number, since: Date | null = null): Promise<number> {
     return strapi.db.query('api::credential.credential').count({
       where: {
         issuer: { organization: organizationId },
+        ...(since ? { createdAt: { $gte: since } } : {}),
       },
     } as any);
   },

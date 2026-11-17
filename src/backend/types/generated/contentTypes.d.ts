@@ -1369,6 +1369,14 @@ export interface ApiOrganizationOrganization
       'plugin::users-permissions.user'
     >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
+    packCreditsUsed: Schema.Attribute.Integer &
+      Schema.Attribute.Private &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     pastDueSince: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
     purchasedCredentials: Schema.Attribute.Integer &

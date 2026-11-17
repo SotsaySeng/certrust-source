@@ -256,8 +256,8 @@ onMounted(async () => {
               <p class="mt-2 text-text-secondary">
                 {{ planDetail }}
               </p>
-              <p v-if="status.purchasedCredentials" class="mt-1 text-text-secondary">
-                {{ t('billing.pack.owned', { count: status.purchasedCredentials }) }}
+              <p v-if="status.packCreditsLeft" class="mt-1 text-text-secondary">
+                {{ t('billing.pack.owned', { count: status.packCreditsLeft }) }}
               </p>
             </div>
             <button

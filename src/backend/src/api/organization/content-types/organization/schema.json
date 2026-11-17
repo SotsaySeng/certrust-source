@@ -138,6 +138,11 @@
       "default": 0,
       "min": 0,
       "private": true
+    },
+    "packCreditsUsed": {
+      "type": "integer",
+      "min": 0,
+      "private": true
     }
   }
 }

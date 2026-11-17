@@ -198,7 +198,12 @@
       "credentialsIssued": "Credenciais emitidas",
       "unlimited": "Ilimitado",
       "nearLimit": "Você está se aproximando do seu limite de credenciais.",
-      "atLimit": "Limite de credenciais atingido."
+      "atLimit": "Limite de credenciais atingido.",
+      "issuedThis": {
+        "month": "Emitidas neste mês de faturamento",
+        "year": "Emitidas neste ano de faturamento"
+      },
+      "packLeft": "Mais {count} credenciais pré-pagas, usadas quando a cota do seu plano acabar."
     },
     "analytics": {
       "title": "Análises",
@@ -447,8 +452,8 @@
       "enterprise": "Enterprise"
     },
     "tierBlurb": {
-      "pro": "Para equipas que emitem credenciais regularmente, com limites muito mais altos.",
-      "enterprise": "Para grandes organizações, com os limites mais altos (ou ilimitados)."
+      "pro": "1.000 credenciais por ano, ou 100 por mês com faturação mensal.",
+      "enterprise": "Credenciais ilimitadas com faturação anual, ou 1.000 por mês com faturação mensal."
     },
     "status": {
       "none": "Free",
@@ -485,7 +490,7 @@
       "range": "De {min} a {max}",
       "total": "Total",
       "buy": "Comprar credenciais",
-      "owned": "Credenciais compradas: {count}",
+      "owned": "Credenciais pré-pagas restantes: {count}",
       "success": "Obrigado! Recebemos o seu pagamento. As novas credenciais podem demorar alguns segundos a aparecer."
     },
     "banner": {

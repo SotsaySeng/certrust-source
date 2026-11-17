@@ -198,7 +198,12 @@
       "credentialsIssued": "Credentials issued",
       "unlimited": "Unlimited",
       "nearLimit": "You're approaching your credential limit.",
-      "atLimit": "Credential limit reached."
+      "atLimit": "Credential limit reached.",
+      "issuedThis": {
+        "month": "Issued this billing month",
+        "year": "Issued this billing year"
+      },
+      "packLeft": "Plus {count} prepaid credentials, used once your plan's allowance runs out."
     },
     "analytics": {
       "title": "Analytics",
@@ -447,8 +452,8 @@
       "enterprise": "Enterprise"
     },
     "tierBlurb": {
-      "pro": "For teams issuing credentials regularly, with much higher limits.",
-      "enterprise": "For large organizations with the highest (or unlimited) limits."
+      "pro": "1,000 credentials a year, or 100 a month when billed monthly.",
+      "enterprise": "Unlimited credentials when billed yearly, or 1,000 a month when billed monthly."
     },
     "status": {
       "none": "Free",
@@ -479,13 +484,13 @@
     "compare": "Compare plans",
     "pack": {
       "title": "Pay per credential",
-      "blurb": "For a single event. You pay once and there is no subscription. The credentials you buy are added to your limit and do not expire.",
+      "blurb": "For a single event. You pay once and there is no subscription. Bought credentials are used once your plan's allowance runs out, and they do not expire.",
       "unitPrice": "{price} per credential",
       "quantity": "Number of credentials",
       "range": "From {min} to {max}",
       "total": "Total",
       "buy": "Buy credentials",
-      "owned": "Purchased credentials: {count}",
+      "owned": "Prepaid credentials left: {count}",
       "success": "Thank you! Your payment was received. It can take a few seconds for your new credentials to appear."
     },
     "banner": {
